@@ -1,0 +1,69 @@
+-- Go through all the subfolders in this directory and run each test case
+
+dirs = getSubDirectories(GetCurrentDirectory())
+
+-- create the folder where the testing results are placed
+testResultDir = GetCurrentDirectory() .. "/result" .. os.date("_%Y_%b_%d_%H_%M_%S")
+clearAndCreateFolder(testResultDir)
+out_log = testResultDir .. "/" .. "log.txt"
+io.output(out_log)
+			
+for idx, folderName in pairs(dirs) do
+
+	testFiles = getDirectoryFiles(GetCurrentDirectory() .. "/" .. folderName)
+	
+	for idx, testFBX in pairs(testFiles) do
+		
+		if string.upper(getFileExtention(testFBX)) == "FBX" then
+			testFBX = GetCurrentDirectory() .. "/" .. folderName .. "/scene.FBX"
+			testScript = GetCurrentDirectory() .. "/" .. folderName .. "/script.txt"
+			
+			-- Create the temporary folder for the converted FBX scenes
+			convertedSceneDir = testResultDir .. "/converted_scene"
+			clearAndCreateFolder(convertedSceneDir)
+			
+			sceneFile, frameUpdates = ConvertFBX(testFBX, convertedSceneDir)
+			if sceneFile ~= nil then
+				res, kd_build_time, actual_tri_cnt, leaf_tri_cnt = LoadScene(sceneFile)
+				if not res then
+					print("Failed to load " .. sceneFile)
+				else
+					
+					io.write("<<< " .. testFBX .. " >>>\n")
+					io.write("----------------------------------------------------------------\n")
+					io.write("kd-tree building time is " .. kd_build_time .. "\n")
+					io.write("original triangle count is " .. actual_tri_cnt .. "\n")
+					io.write("leaf triangle count is " .. leaf_tri_cnt .. "\n")
+					
+					frameCnt = table.getn(frameUpdates)
+					if frameCnt > 1 then
+						for frame_i = 1, frameCnt do
+							res = UpdateScene(frameUpdates[frame_i])
+							if res then
+								out_image = testResultDir .. "/" .. folderName .. string.format("%05d", frame_i) .. ".png"
+								res, render_time = Render(800, 600, out_image)
+								io.write("Frame".. string.format("%05d", frame_i) .."rendering time is " .. render_time .. "\n")
+							end
+						end
+					else
+						out_image = testResultDir .. "/" .. folderName .. ".png"
+						res, render_time = Render(1600, 1200, out_image)
+						io.write("rendering time is " .. render_time .. "\n")
+					end
+					
+					io.write("----------------------------------------------------------------\n\n\n")
+					
+					CloseScene()
+				end	
+			end
+			
+			deleteFolder(convertedSceneDir)
+			
+		end
+	end -- for each FBX file in the folder
+	
+end
+
+-- make sure the result is flushed to disk file
+io.flush()
+io.close()
