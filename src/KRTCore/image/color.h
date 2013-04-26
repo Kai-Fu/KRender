@@ -3,7 +3,7 @@
 #include <common/defines/typedefs.h>
 
 
-struct KRT_IMAGE_API KColor
+struct KColor
 {
 	float r, g, b;
 	KColor() {r= 0; g = 0; b = 0;}

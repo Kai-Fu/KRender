@@ -12,8 +12,8 @@
 
 #include "SceneLoader.h"
 
-#include <KRTImageLib/BitmapObject.h>
-#include <KRTImageLib/color.h>
+#include "../image/BitmapObject.h"
+#include "../image/color.h"
 
 #include <vector>
 #include <common/defines/stl_inc.h>

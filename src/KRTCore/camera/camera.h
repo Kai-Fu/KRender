@@ -7,7 +7,7 @@
 #include "../base/geometry.h"
 #include "../intersection/EyeRayGen.h"
 
-#include <KRTImageLib/color.h>
+#include "../image/color.h"
 
 class TracingInstance;
 

@@ -2,7 +2,7 @@
 #include <common/defines/typedefs.h>
 #include <common/defines/config.h>
 
-class KRT_IMAGE_API BitmapObject
+class BitmapObject
 {
 public:
 	enum PixelFormat {

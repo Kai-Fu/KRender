@@ -9,7 +9,7 @@
 
 #include <assert.h>
 
-#include <KRTImageLib/basic_map.h>
+#include "../image/basic_map.h"
 
 namespace KRayTracer {
 

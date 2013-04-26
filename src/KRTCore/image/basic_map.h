@@ -24,7 +24,7 @@ public:
 	virtual UINT32 GetHeight() const = 0;
 };
 
-class KRT_IMAGE_API Mipmap2D : public Tex2D
+class Mipmap2D : public Tex2D
 {
 public:
 	Mipmap2D();
@@ -46,7 +46,7 @@ private:
 
 };
 
-class KRT_IMAGE_API Image2D : public Tex2D
+class Image2D : public Tex2D
 {
 public:
 	Image2D();
@@ -67,7 +67,7 @@ private:
 	void* mpData;
 };
 
-class KRT_IMAGE_API Procedure2D : public Tex2D
+class Procedure2D : public Tex2D
 {
 public:
 	Procedure2D();
@@ -87,7 +87,7 @@ public:
 };
 
 
-class KRT_IMAGE_API TextureManager
+class TextureManager
 {
 public:
 	TextureManager();

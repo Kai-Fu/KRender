@@ -1,6 +1,6 @@
 #pragma once
 #include "BaseHeader.h"
-#include <KRTImageLib/color.h>
+#include "../image/color.h"
 #include <vector>
 #include <string>
 #include <xmmintrin.h>

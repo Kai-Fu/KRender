@@ -1,6 +1,6 @@
 #pragma once
 #include "../shader/surface_shader.h"
-#include <KRTImageLib/basic_map.h>
+#include "../image/basic_map.h"
 
 #define BASIC_PHONG "basic_phong"
 #define MIRROR		"mirror"

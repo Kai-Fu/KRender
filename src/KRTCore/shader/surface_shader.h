@@ -3,7 +3,7 @@
 #include "../base/geometry.h"
 #include "surface_shader_api.h"
 
-#include <KRTImageLib/basic_map.h>
+#include "../image/basic_map.h"
 #include <string>
 
 #define SHADING_FLAG_DIFFUSE_ONLY	0x0001

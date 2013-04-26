@@ -1,5 +1,5 @@
 #pragma once
-#include <KRTImageLib/BitmapObject.h>
+#include "../image/BitmapObject.h"
 #include "../util/thread_model.h"
 #include "../util/tile2d.h"
 #include "../base/bit_array.h"

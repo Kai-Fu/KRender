@@ -1,7 +1,7 @@
 #pragma once
 #include "TracingThread.h"
 #include "SceneLoader.h"
-#include <KRTImageLib/BitmapObject.h>
+#include "../image/BitmapObject.h"
 
 namespace KRayTracer {
 

@@ -3,7 +3,7 @@
 #include "../base/geometry.h"
 #include "surface_shader_api.h"
 
-#include <KRTImageLib/color.h>
+#include "../image/color.h"
 #include <assert.h>
 #include <vector>
 #include <set>

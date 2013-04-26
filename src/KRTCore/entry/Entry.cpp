@@ -3,7 +3,7 @@
 #include "../util/HelperFunc.h"
 #include "../camera/camera_manager.h"
 #include "../material/material_library.h"
-#include <IL/il.h>
+#include <FreeImage.h>
 
 namespace KRayTracer {
 
@@ -11,7 +11,7 @@ static KRayTracer_Root* g_pRoot = NULL;
 
 KRayTracer_Root* InitializeKRayTracer()
 {
-	ilInit();
+	FreeImage_Initialise();
 
 	Material_Library::Initialize();
 	CameraManager::Initialize();
@@ -30,6 +30,7 @@ void DestroyKRayTracer()
 	if (g_pRoot)
 		delete g_pRoot;
 	g_pRoot = NULL;
+	FreeImage_DeInitialise();
 }
 
 KRayTracer_Root::KRayTracer_Root()

@@ -4,8 +4,8 @@
 #include "../camera/camera.h"
 
 #include <common/defines/typedefs.h>
-#include <KRTImageLib/Color.h>
-#include <KRTImageLib/BitmapObject.h>
+#include "../image/Color.h"
+#include "../image/BitmapObject.h"
 
 
 
