@@ -1,4 +1,5 @@
 #include "raw_geometry.h"
+#include "geometry.h"
 #include "../util/memory_pool.h"
 #include <assert.h>
 

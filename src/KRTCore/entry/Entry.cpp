@@ -3,9 +3,10 @@
 #include "../util/HelperFunc.h"
 #include "../camera/camera_manager.h"
 #include "../material/material_library.h"
-#include <FreeImage.h>
+#include "../base/raw_geometry.h"
 #include "../api/KRT_API.h"
 
+#include <FreeImage.h>
 
 namespace KRayTracer {
 
@@ -301,4 +302,13 @@ unsigned KRT_AddLightSource(float pos[3], float xyz_rot[3])
 void KRT_DeleteAllLights()
 {
 	LightScheme::GetInstance()->ClearLightSource();
+}
+
+unsigned KRT_AddMeshToSubScene(Geom::RawMesh* pMesh, SubSceneHandle subScene)
+{
+	KScene* pScene = (KScene*)subScene;
+	UINT32 meshIdx = pScene->AddMesh();
+	Geom::CompileOptimizedMesh(*pMesh, *pScene->GetMesh(meshIdx));
+
+	return meshIdx;
 }

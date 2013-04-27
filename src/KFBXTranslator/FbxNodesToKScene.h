@@ -5,8 +5,8 @@
 #include <fbxsdk.h>
 #include <list>
 #include <map>
-/*#include <KRTCore/base/geometry.h>
-#include <KRTCore/scene/KKDBBoxScene.h>*/
+#include <KRTCore/api/KRT_API.h>
+#include <common/defines/typedefs.h>
 
 #define INSTANCED_GEOM_LIMIT 60
 
@@ -53,16 +53,16 @@ void FilterNodes(Filtered_Nodes& out_filtered_nodes, FbxNode* node, int instance
   Build the static nodes specified by the input parameter static_nodes, the scene
   info will be stored in the input KKDTreeScene.
 **/
-bool BuildStaticGeometry(std::list<FbxNode*>& static_nodes, FbxNode* pRootNode, KKDTreeScene& static_scene);
+bool BuildStaticGeometry(std::list<FbxNode*>& static_nodes, FbxNode* pRootNode, SubSceneHandle static_scene);
 
 /**
   Build the static instanced nodes specified by the input parameter instanced_nodes, the scene
   info will be stored in the input KKDBBoxScene.
 **/
-bool BuildStaticInstanceGeometry(std::list<FbxNode*>& instanced_nodes, KKDBBoxScene& bbox_scene);
+bool BuildStaticInstanceGeometry(std::list<FbxNode*>& instanced_nodes, TopSceneHandle bbox_scene);
 
 bool GatherAnimatedGeometry(FbxNode* animated_root, std::list<FbxNode*>& out_local_static_nodes, std::list<FbxNode*>& out_animated_nodes_next_pass);
-bool ProccessAnimatedGeometry(std::list<FbxNode*>& animated_nodes, KKDBBoxScene& bbox_scene);
+bool ProccessAnimatedGeometry(std::list<FbxNode*>& animated_nodes, TopSceneHandle bbox_scene);
 
 /**
   Proccessing the animated part of the scene.
@@ -72,7 +72,7 @@ int ProccessAnimatedNodes(const INDEX_TO_FBXNODE& camera_nodes, const INDEX_TO_F
 /**
   Input is a FbxMesh, the outputs are the converted mesh index and material index into the input scene.
 **/
-int FbxMeshToKUVMesh(FbxMesh* pInMesh, KScene& scene, std::vector<int>& out_mesh_idx, std::vector<int>& out_mesh_matId);
+int FbxMeshToKUVMesh(FbxMesh* pInMesh, SubSceneHandle scene, std::vector<int>& out_mesh_idx, std::vector<int>& out_mesh_matId);
 
 
 int ProccessFBXFile(const char* output_file);

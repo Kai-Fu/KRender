@@ -1,12 +1,7 @@
 #include "FbxNodesToKScene.h"
 #include <set>
 #include <assert.h>
-/*#include <KRTCore/material/material_library.h>
-#include <KRTCore/material/standard_mtl.h>
-#include <KRTCore/camera/camera_manager.h>
-#include <KRTCore/shader/light_scheme.h>
 #include <KRTCore/base/raw_geometry.h>
-#include <KRTCore/entry/Entry.h>*/
 
 #include <common/math/Matnnt.cpp>
 
@@ -14,7 +9,6 @@ static FbxManager* mySdkManager = NULL;
 static FbxImporter* myImporter = NULL;
 static FbxScene* myScene = NULL;
 static std::map<FbxObject*, std::pair<FbxMesh*, int> > myObjectToMesh;
-extern KRayTracer::KRayTracer_Root* gRoot;
 static FbxLongLong myRBAnimInteropCnt = 8;
 
 /************************************************************************/
@@ -227,7 +221,7 @@ void FilterNodes(Filtered_Nodes& out_filtered_nodes, FbxNode* node, int instance
 }
 
 
-int FbxMeshToKUVMesh(FbxMesh* pInMesh, KScene& scene, std::vector<int>& out_mesh_idx, std::vector<int>& out_mesh_matId)
+int FbxMeshToKUVMesh(FbxMesh* pInMesh, SubSceneHandle scene, std::vector<int>& out_mesh_idx, std::vector<int>& out_mesh_matId)
 {
 	FbxLayerElementNormal* fbxNormalLayer = NULL;
 	FbxLayerElementUV* fbxTexcrdLayer = NULL;
@@ -363,10 +357,9 @@ int FbxMeshToKUVMesh(FbxMesh* pInMesh, KScene& scene, std::vector<int>& out_mesh
 	if (!matIDset.empty()) {
 		std::map<int, std::vector<UINT32> >::iterator it = matIDset.begin();
 		for (; it != matIDset.end(); ++it) {
-			UINT32 meshIdx = scene.AddMesh();
 			Geom::RawMesh* pTempRawMesh = new Geom::RawMesh();
 			pRawMesh->Detach(it->second, *pTempRawMesh);
-			Geom::CompileOptimizedMesh(*pTempRawMesh, *scene.GetMesh(meshIdx));
+			UINT32 meshIdx = KRT_AddMeshToSubScene(pTempRawMesh, scene);
 			delete pTempRawMesh;
 			out_mesh_idx.push_back((int)meshIdx);
 			out_mesh_matId.push_back(it->first);
@@ -374,8 +367,7 @@ int FbxMeshToKUVMesh(FbxMesh* pInMesh, KScene& scene, std::vector<int>& out_mesh
 		return (int)matIDset.size();
 	}
 	else {
-		UINT32 meshIdx = scene.AddMesh();
-		Geom::CompileOptimizedMesh(*pRawMesh, *scene.GetMesh(meshIdx));
+		UINT32 meshIdx = KRT_AddMeshToSubScene(pRawMesh, scene);
 		out_mesh_idx.push_back((int)meshIdx);
 		out_mesh_matId.push_back(singleMatId);
 		return 1;
@@ -400,7 +392,7 @@ static void MatrixConvert(FbxAMatrix& src, KMatrix4& dst)
 }
 
 
-bool BuildStaticGeometry(std::list<FbxNode*>& static_nodes, FbxNode* pRootNode, KKDTreeScene& static_scene)
+bool BuildStaticGeometry(std::list<FbxNode*>& static_nodes, FbxNode* pRootNode, SubSceneHandle static_scene)
 {
 	std::vector<int> out_mesh_idx;
 	std::vector<int> out_mesh_matId;

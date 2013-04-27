@@ -5,7 +5,10 @@
 // the optimized internal format for ray tracing.
 /************************************************************************/
 #pragma once
-#include "geometry.h"
+#include "../api/KRT_API.h"
+#include <common/defines/typedefs.h>
+
+class KTriMesh;
 
 namespace Geom {
 	struct FaceVertIndex {
@@ -14,7 +17,7 @@ namespace Geom {
 
 
 
-	struct RawMesh {
+	struct KRT_API RawMesh {
 		std::vector<FaceVertIndex> mFacePosIdx;
 		std::vector<KVec3> mPosData;
 

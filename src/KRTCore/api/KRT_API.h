@@ -50,6 +50,13 @@ struct KRT_RenderStatistic
 
 };
 
+typedef void* SubSceneHandle;
+typedef void* TopSceneHandle;
+
+namespace Geom {
+	struct RawMesh;
+}
+
 extern "C" {
 
 	KRT_API bool KRT_Initialize();
@@ -73,5 +80,7 @@ extern "C" {
 
 	KRT_API unsigned KRT_AddLightSource(float pos[3], float xyz_rot[3]);
 	KRT_API void KRT_DeleteAllLights();
+
+	KRT_API unsigned KRT_AddMeshToSubScene(Geom::RawMesh* pMesh, SubSceneHandle subScene);
 
 }
