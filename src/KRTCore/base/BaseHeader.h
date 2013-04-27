@@ -6,7 +6,6 @@
 #include <memory.h>
 #include <common/defines/typedefs.h>
 
-#include <common/defines/config.h>
 
 extern UINT32 PIXEL_SAMPLE_CNT_EVAL;
 extern UINT32 PIXEL_SAMPLE_CNT_MORE;
@@ -32,6 +31,6 @@ extern UINT32 ENABLE_MB;
 
 
 // Render options and global constants
-bool KRT_API SetGlobalConstant(const char* name, const char* value);
-bool KRT_API SetRenderOptions(const char* name, const char* value);
+bool SetGlobalConstant(const char* name, const char* value);
+bool SetRenderOptions(const char* name, const char* value);
 unsigned long GetConfigedThreadCount();

@@ -12,3 +12,7 @@ typedef unsigned char	BYTE;
 typedef unsigned long	DWORD;
 typedef unsigned int	UINT32;
 typedef unsigned short  UINT16;
+
+#ifdef _WIN32
+	typedef unsigned __int64 UINT64;
+#endif

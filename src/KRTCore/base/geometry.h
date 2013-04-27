@@ -64,7 +64,7 @@ struct IntersectContext
 	void Reset();
 };
 
-class KRT_API KRay 
+class KRay 
 {
 private:
 	vec4 mOrign;
@@ -110,7 +110,7 @@ class KAccelTriangle;
 struct KAccleTriVertPos;
 class KBBoxOpt;
 
-class KRT_API KBSphere
+class KBSphere
 {
 public:
 	KVec3 mCenter;
@@ -126,7 +126,7 @@ public:
 };
 
 
-class KRT_API KBBox
+class KBBox
 {
 public:
 	KVec3 mMin;
@@ -150,7 +150,7 @@ public:
 	const KBBox& operator = (const KBBoxOpt& bbox);
 };
 
-class KRT_API KBBoxOpt
+class KBBoxOpt
 {
 public:
 	vec4 mXXYY;
@@ -161,7 +161,7 @@ public:
 	const KBBoxOpt& operator = (const KBBox& bbox);
 };
 
-class KRT_API KBBox4
+class KBBox4
 {
 public:
 	vec4f mMin[3];
@@ -184,7 +184,7 @@ struct KAccleTriVertPos {
 };
 
 // Data structure to accelerate ray-triangle intersection
-class KRT_API KAccelTriangle
+class KAccelTriangle
 {
 public:
 	UINT32	mNodeMeshIdx;
@@ -198,7 +198,7 @@ public:
 
 
 // This is the optimized version of KAccelTriangle(four triangles and one ray)
-class KRT_API KAccelTriangleOpt
+class KAccelTriangleOpt
 {
 public:
 	// first 16 byte half cache line
@@ -223,7 +223,7 @@ public:
 };
 
 // This is the optimized version of KAccelTriangle(one triangle and four rays)
-class KRT_API KAccelTriangleOpt1r4t
+class KAccelTriangleOpt1r4t
 {
 public:
 	// first 16 byte half cache line
@@ -248,9 +248,9 @@ public:
 
 };
 
-void KRT_API PrecomputeAccelTri(const KAccleTriVertPos& tri, UINT32 tri_id, KAccelTriangleOpt &triAccel);
+void PrecomputeAccelTri(const KAccleTriVertPos& tri, UINT32 tri_id, KAccelTriangleOpt &triAccel);
 
-class KRT_API KTriMesh
+class KTriMesh
 {
 
 public:
@@ -290,7 +290,7 @@ public:
 
 class KScene;
 class ISurfaceShader;
-class KRT_API KNode
+class KNode
 {
 	friend class KScene;
 public:
@@ -316,7 +316,7 @@ public:
 };
 
 
-class KRT_API KScene
+class KScene
 {
 protected:
 	std::vector<KTriMesh*>	mpMesh;
@@ -363,6 +363,6 @@ private:
 void Vec3TransformCoord(KVec3& res, const KVec3& v, const KMatrix4& mat);
 void Vec3TransformNormal(KVec3& res, const KVec3& v, const KMatrix4& mat);
 
-bool KRT_API ClampRayByBBox(KRay& in_out_ray, const KBBox& bbox);
+bool ClampRayByBBox(KRay& in_out_ray, const KBBox& bbox);
 
 

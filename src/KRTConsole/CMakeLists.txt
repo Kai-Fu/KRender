@@ -3,6 +3,7 @@ add_executable( ${KRT_CONSOLE_MODULE_NAME} ${KRT_CONSOLE_SRC} )
 
 # Link against KRTCore
 target_link_libraries( ${KRT_CONSOLE_MODULE_NAME} ${KRT_CORE_MODULE_NAME} )
+include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/lua-5.2.2_src" )
 
 foreach( build_type ${KRT_BUILD_TYPE_LIST} )  
 

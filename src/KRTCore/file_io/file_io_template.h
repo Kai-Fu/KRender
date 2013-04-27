@@ -1,4 +1,5 @@
 #pragma once
+#include <common/defines/typedefs.h>
 #include "../base/BaseHeader.h"
 #include <typeinfo>
 

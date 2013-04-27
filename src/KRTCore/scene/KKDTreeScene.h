@@ -10,7 +10,7 @@
 
 class KKDTreeScene;
 
-class KRT_API SceneSplitTask : public ThreadModel::IThreadTask 
+class SceneSplitTask : public ThreadModel::IThreadTask 
 {
 public:
 	KKDTreeScene* pKDScene;
@@ -26,7 +26,7 @@ public:
 	virtual void Execute();
 };
 
-class KRT_API KKDTreeScene : public KScene
+class KKDTreeScene : public KScene
 {
 public:
 	KKDTreeScene(void);

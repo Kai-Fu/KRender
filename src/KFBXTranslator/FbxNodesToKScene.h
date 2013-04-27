@@ -5,8 +5,8 @@
 #include <fbxsdk.h>
 #include <list>
 #include <map>
-#include <KRTCore/base/geometry.h>
-#include <KRTCore/scene/KKDBBoxScene.h>
+/*#include <KRTCore/base/geometry.h>
+#include <KRTCore/scene/KKDBBoxScene.h>*/
 
 #define INSTANCED_GEOM_LIMIT 60
 

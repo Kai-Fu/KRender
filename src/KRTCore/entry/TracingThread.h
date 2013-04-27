@@ -20,7 +20,7 @@
 
 namespace KRayTracer {
 
-	class KRT_API ImageSampler : public ThreadModel::IThreadTask
+	class ImageSampler : public ThreadModel::IThreadTask
 	{
 	public:
 		class EventCallBack

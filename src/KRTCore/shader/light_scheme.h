@@ -17,7 +17,7 @@ struct ShadingContext;
 class LightScheme;
 
 
-class KRT_API ILightObject
+class ILightObject
 {
 	friend class LightScheme;
 public:
@@ -44,7 +44,7 @@ protected:
 
 };
 
-class KRT_API PointLightBase : public ILightObject
+class PointLightBase : public ILightObject
 {
 public:
 	PointLightBase();
@@ -73,7 +73,7 @@ protected:
 
 };
 
-class KRT_API RectLightBase : public ILightObject
+class RectLightBase : public ILightObject
 {
 public:
 	RectLightBase(float w, float h);
@@ -110,7 +110,7 @@ protected:
 
 class ISurfaceShader;
 // the manager of light source objects
-class KRT_API LightScheme
+class LightScheme
 {
 public:
 	LightScheme();

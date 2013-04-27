@@ -10,7 +10,7 @@
 float Rand_0_1();
 float Rand_1_1();
 
-class KRT_API KTimer
+class KTimer
 {
 public:
 	KTimer(bool bStartImm);

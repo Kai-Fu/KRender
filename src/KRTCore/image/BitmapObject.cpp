@@ -18,39 +18,32 @@ BitmapObject::~BitmapObject(void)
 		delete[] mpData;
 }
 
-void BitmapObject::SetBitmapData(void* pData, 
-	UINT32 bpp, UINT32 pitch,
-	UINT32 channel_cnt,
-	UINT32 w, UINT32 h,
-	bool auto_free_mem)
+void BitmapObject::SetBitmapData(void* pData, PixelFormat format, UINT32 w, UINT32 h, bool auto_free_mem)
 {
 	mpData = (unsigned char*)pData;
-	mBpp = bpp;
-	mPitch = pitch;
-
+	
+	mFormat = format;
 	mWidth = w;
 	mHeight = h;
+	mPitch = mWidth * GetBPPByFormat(mFormat);
 
-	mChannelCnt = channel_cnt;
-	mBitsPerChannel = mBpp / channel_cnt * 8;
-	mIsFixedPoint = (mBitsPerChannel == 32) ? false : true;
 	mAutoFreeMem = auto_free_mem;
 }
 
 void BitmapObject::SetPixel(void* pPixel, UINT32 x, UINT32 y)
 {
-	unsigned char* pDstPixel = mpData + y * mPitch + x * mBpp;
-	memcpy(pDstPixel, pPixel, mBpp);
+	unsigned char* pDstPixel = mpData + y * mPitch + x * GetBPPByFormat(mFormat);
+	memcpy(pDstPixel, pPixel, GetBPPByFormat(mFormat));
 }
 
 void* BitmapObject::GetPixel(UINT32 x, UINT32 y)
 {
-	return mpData + y * mPitch + x * mBpp;
+	return mpData + y * mPitch + x * GetBPPByFormat(mFormat);
 }
 
 const void* BitmapObject::GetPixel(UINT32 x, UINT32 y) const
 {
-	return mpData + y * mPitch + x * mBpp;
+	return mpData + y * mPitch + x * GetBPPByFormat(mFormat);
 }
 
 void BitmapObject::CopyFrom(const BitmapObject& src, 
@@ -58,16 +51,16 @@ void BitmapObject::CopyFrom(const BitmapObject& src,
 		UINT32 srcX, UINT32 srcY,
 		UINT32 w, UINT32 h)
 {
-	if (mBpp != src.mBpp ||
+	if (mFormat != src.mFormat ||
 		dstX >= mWidth || dstY >= mHeight ||
 		srcX >= src.mWidth || srcY >= src.mHeight)
 		return; // bad parameters, kick out.
 	w = (dstX + w) > mWidth ? (mWidth - dstX) : w;
 	for (UINT32 y = dstY; y < dstY + h && y < mHeight; ++y) {
-
-		memcpy(&mpData[y*mPitch + dstX*mBpp], 
+		UINT32 bpp = GetBPPByFormat(mFormat);
+		memcpy(&mpData[y*mPitch + dstX*bpp], 
 			src.GetPixel(srcX, srcY + y -dstY), 
-			w*mBpp);
+			w*bpp);
 	}
 }
 
@@ -85,7 +78,7 @@ void BitmapObject::CopyFromRGB32F(const BitmapObject& src,
 
 		for (UINT32 x = dstX; x < dstX + w; ++x) {
 			KColor* pColor = (KColor*)src.GetPixel(srcX + x - dstX, srcY + y -dstY);
-			pColor->ConvertToDWORD(*(DWORD*)&mpData[y*mPitch + x*mBpp]);
+			pColor->ConvertToDWORD(*(DWORD*)&mpData[y*mPitch + x*GetBPPByFormat(mFormat)]);
 		}
 	}
 }
@@ -116,33 +109,27 @@ BitmapObject* BitmapObject::CreateBitmap(UINT32 w, UINT32 h, PixelFormat format)
 	BitmapObject* pBmp = new BitmapObject;
 	pBmp->mFormat = format;
 
-	UINT32 bpp = 0;
-	UINT32 channel_cnt = 0;
+	BYTE* data = new BYTE[w * h * GetBPPByFormat(pBmp->mFormat)];
+	pBmp->SetBitmapData(data, format, w, h, true);
+	return pBmp;
+}
+
+UINT32 BitmapObject::GetBPPByFormat(PixelFormat format)
+{
 	switch (format) {
 	case eRGBA8:
-		bpp = 4;
-		channel_cnt = 4;
-		break;
+		return 4;
 	case eRGB8:
-		bpp = 3;
-		channel_cnt = 3;
-		break;
+		return 3;
 	case eRGB32F:
-		bpp = 4 * 3;
-		channel_cnt = 3;
-		break;
+		return 12;
 	case eRGBA32F:
-		bpp = 4 * 4;
-		channel_cnt = 4;
-		break;
+		return 16;
 	case eR32F:
-		channel_cnt = 1;
-		bpp = 4;
-		break;
+		return 4;
+	default:
+		return 0;
 	}
-	BYTE* data = new BYTE[w * h * bpp];
-	pBmp->SetBitmapData(data, bpp, w * bpp, channel_cnt, w, h, true);
-	return pBmp;
 }
 
 bool BitmapObject::Save(const char* filename)
@@ -159,7 +146,7 @@ bool BitmapObject::Save(const char* filename)
 	if((fif != FIF_UNKNOWN) && FreeImage_FIFSupportsReading(fif)) {
 		FIBITMAP *dib = NULL;
 
-		dib = FreeImage_AllocateT(FIT_BITMAP, mWidth, mHeight, mBpp);
+		dib = FreeImage_AllocateT(FIT_BITMAP, mWidth, mHeight, GetBPPByFormat(mFormat));
 		if (dib && FreeImage_Save(fif, dib, filename))
 			result = true;
 		FreeImage_Unload(dib);
@@ -187,16 +174,13 @@ bool BitmapObject::Load(const char* filename, std::vector<BitmapObject*>* mipmap
 		dib = FreeImage_ConvertTo32Bits(dib);
 		if (!dib) return false;
 
+		mFormat = BitmapObject::eRGBA8;
 		BYTE* bits = FreeImage_GetBits(dib);
 		mWidth = FreeImage_GetWidth(dib);
 		mHeight = FreeImage_GetHeight(dib);
 		mPitch = FreeImage_GetPitch(dib);
-		mBpp = FreeImage_GetBPP(dib);
-		assert(mBpp == 4);
 
-		mChannelCnt = 4;
-		mBitsPerChannel = 8;
-		size_t dataSize = mWidth * mHeight * mBpp;
+		size_t dataSize = mWidth * mHeight * GetBPPByFormat(mFormat);
 		mpData = new BYTE[dataSize];
 		memcpy(mpData, bits, dataSize);
 
@@ -216,10 +200,11 @@ bool BitmapObject::Load(const char* filename, std::vector<BitmapObject*>* mipmap
 				FreeImage_Unload(oldDib);
 				if (!dib) return false;
 
-				BYTE* data = new BYTE[ww * hh * mBpp];
+				UINT32 bpp = GetBPPByFormat(mFormat);
+				BYTE* data = new BYTE[ww * hh * bpp];
 				bits = FreeImage_GetBits(dib);
-				memcpy(data, bits, mBpp*ww*hh);
-				pLevel->SetBitmapData(data, mBpp, ww * mBpp, mChannelCnt, ww, hh, true);
+				memcpy(data, bits, bpp*ww*hh);
+				pLevel->SetBitmapData(data, mFormat, ww, hh, true);
 				mipmap_list->push_back(pLevel);
 
 				w >>= 1;

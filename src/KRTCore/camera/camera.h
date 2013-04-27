@@ -17,7 +17,7 @@ class TracingInstance;
 // also handles DOF and motion blur. It provides the EvalContext to assist
 // the adaptive sampling algorithm of DOF running on thread's local storage.
 /************************************************************************/
-class KRT_API KCamera
+class KCamera
 {
 public:
 	KCamera();

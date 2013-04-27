@@ -2,21 +2,9 @@
 #include "../base/geometry.h"
 #include "../scene/KKDTreeScene.h"
 #include "../animation/animated_transform.h"
+#include "../api/KRT_API.h"
 
-struct SceneStatistic
-{
-	DWORD kd_build_time;
-	DWORD gen_accel_geom_time;
-	DWORD kd_finialize_time;
-	UINT64 actual_triangle_count;
-	UINT64 leaf_triangle_count;
-	UINT64 kd_leaf_count;
-	UINT64 kd_node_count;
-	UINT32 bbox_leaf_count;
-	UINT32 bbox_node_count;
-};
-
-class KRT_API KKDBBoxScene
+class KKDBBoxScene
 {
 public:
 	KKDBBoxScene();
@@ -48,7 +36,7 @@ public:
 
 	bool IntersectRay_KDTree(const KRay& ray, IntersectContext& ctx, float t) const;
 
-	void GetKDBuildTimeStatistics(SceneStatistic& sceneStat) const;
+	void GetKDBuildTimeStatistics(KRT_SceneStatistic& sceneStat) const;
 
 	// Save/load the scene and tracking camera data
 	bool SaveToFile(FILE* pFile);

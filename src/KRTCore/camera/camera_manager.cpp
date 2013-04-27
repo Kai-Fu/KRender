@@ -37,6 +37,7 @@ KCamera* CameraManager::OpenCamera(const char* name, bool forceCreate)
 
 		pCamera = new KCamera();
 		mCameras[newName] = pCamera;
+		BuildCameraIndices();
 		return pCamera;
 	}
 	else {
@@ -72,20 +73,30 @@ KCamera* CameraManager::GetCameraByName(const char* name)
 		return NULL;
 }
 
-void CameraManager::ResetIter()
+KCamera* CameraManager::GetCameraByIndex(UINT32 idx)
 {
-	mCameraIter = mCameras.begin();
-}
-
-const char* CameraManager::GetNextCamera()
-{
-	if (mCameraIter != mCameras.end()) {
-		const char* name = mCameraIter->first.c_str();
-		++mCameraIter;
-		return name;
-	}
+	if (idx < mCameraArray.size())
+		return mCameraArray[idx];
 	else
 		return NULL;
+}
+
+const char* CameraManager::GetCameraNameByIndex(UINT32 idx)
+{
+	if (idx < mCamNameArray.size())
+		return mCamNameArray[idx].c_str();
+	else
+		return NULL;
+}
+
+void CameraManager::BuildCameraIndices()
+{
+	mCameraArray.clear();
+	CAMERA_NAME_TO_PTR::const_iterator it = mCameras.begin();
+	for (; it != mCameras.end(); ++it) {
+		mCameraArray.push_back(it->second);
+		mCamNameArray.push_back(it->first);
+	}
 }
 
 CameraManager* CameraManager::GetInstance()
@@ -154,6 +165,8 @@ bool CameraManager::Load(FILE* pFile)
 
 		mCameras[camera_name] = pCamera;
 	}
+
+	BuildCameraIndices();
 	return true;
 }
 
@@ -164,7 +177,6 @@ void CameraManager::Clear()
 		delete it->second;
 	}
 	mCameras.clear();
-	mCameraIter = mCameras.end();
 	mActiveCameraName = "";
 }
 

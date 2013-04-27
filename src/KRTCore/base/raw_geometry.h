@@ -14,7 +14,7 @@ namespace Geom {
 
 
 
-	struct KRT_API RawMesh {
+	struct RawMesh {
 		std::vector<FaceVertIndex> mFacePosIdx;
 		std::vector<KVec3> mPosData;
 
@@ -33,5 +33,5 @@ namespace Geom {
 		
 	};
 
-	void KRT_API CompileOptimizedMesh(const RawMesh& raw_mesh, KTriMesh& out_mesh);
+	void CompileOptimizedMesh(const RawMesh& raw_mesh, KTriMesh& out_mesh);
 }

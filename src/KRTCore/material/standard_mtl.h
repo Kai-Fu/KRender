@@ -7,7 +7,7 @@
 #define DIAGNOSTIC	"diagnostic"
 #define SHADER_SURFACE "shader_surface"
 
-class KRT_API PhongSurface : public ISurfaceShader
+class PhongSurface : public ISurfaceShader
 {
 public:
 
@@ -35,7 +35,7 @@ public:
 
 };
 
-class KRT_API MirrorSurface : public ISurfaceShader
+class MirrorSurface : public ISurfaceShader
 {
 public:
 	MirrorSurface(const char* name);
@@ -54,7 +54,7 @@ public:
 	virtual bool Load(FILE* pFile);
 };
 
-class KRT_API AttributeDiagnoseSurface : public ISurfaceShader
+class AttributeDiagnoseSurface : public ISurfaceShader
 {
 public:
 	AttributeDiagnoseSurface(const char* name);

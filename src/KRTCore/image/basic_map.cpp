@@ -23,6 +23,8 @@ public:
 	int mVirtualSize;
 	int mLevelCnt;
 	int mBitmapObjCnt;
+	bool mIsFixPointPixel;
+	UINT32 mChannelCnt;
 	std::vector<BitmapObject*> mMipmap;
 
 public:
@@ -45,6 +47,24 @@ public:
 			mLevelCnt = (int)mMipmap.size();
 		}
 	
+		if (pTop->mFormat == BitmapObject::eRGB8 || pTop->mFormat == BitmapObject::eRGBA8)
+			mIsFixPointPixel = true;
+		else
+			mIsFixPointPixel = false;
+
+		switch (pTop->mFormat) {
+		case BitmapObject::eRGB8:
+		case BitmapObject::eRGB32F:
+			mChannelCnt = 3;
+			break;
+		case BitmapObject::eRGBA8:
+		case BitmapObject::eRGBA32F:
+			mChannelCnt = 3;
+			break;
+		case BitmapObject::eR32F:
+			mChannelCnt = 1;
+			break;
+		}
 	}
 
 	~BitmapData()
@@ -81,11 +101,11 @@ public:
 
 		BYTE* pPixel = (BYTE*)pLevel->GetPixel(cu, cv);
 		Spectrum ret;
-		if (pLevel->mIsFixedPoint) {
+		if (mIsFixPointPixel) {
 
 			UINT32 dataSrc = *(UINT32*)pPixel;
 			float* dataDst = (float*)&ret;
-			for (UINT32 i = 0; i < pLevel->mChannelCnt; ++i) {
+			for (UINT32 i = 0; i < mChannelCnt; ++i) {
 				dataDst[i] = (float(dataSrc & 0x0000ff) / 255.0f);
 				dataSrc >>= 8;
 			}
@@ -94,7 +114,7 @@ public:
 
 			float* dataSrc = (float*)pPixel;
 			float* dataDst = (float*)&ret;
-			memcpy(dataDst, dataSrc, sizeof(float)*pLevel->mChannelCnt);
+			memcpy(dataDst, dataSrc, sizeof(float)*mChannelCnt);
 		}
 
 		return ret;

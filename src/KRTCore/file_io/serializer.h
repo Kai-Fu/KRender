@@ -2,7 +2,7 @@
 #include "../base/BaseHeader.h"
 #include <string>
 
-class KRT_API KSerializerBase
+class KSerializerBase
 {
 
 public:
@@ -16,7 +16,7 @@ public:
 };
 
 
-class KRT_API KDiskFileSerializer : public KSerializerBase
+class KDiskFileSerializer : public KSerializerBase
 {
 public:
 	KDiskFileSerializer();

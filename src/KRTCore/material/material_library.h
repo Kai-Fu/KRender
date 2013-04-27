@@ -7,7 +7,7 @@
 
 
 
-class KRT_API Material_Library
+class Material_Library
 {
 public:
 	Material_Library();

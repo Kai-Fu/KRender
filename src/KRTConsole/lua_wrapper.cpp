@@ -1,13 +1,12 @@
 #include "lua_wrapper.h"
-#include <KRTCore/entry/Entry.h>
+#include <KRTCore/api/KRT_API.h>
 #include <stdexcept>
 extern "C" {
-	#include "lua5.1/lua.h"
-	#include "lua5.1/lualib.h"
-	#include "lua5.1/lauxlib.h"
+	#include <lua.h>
+	#include <lualib.h>
+	#include <lauxlib.h>
 }
 
-extern KRayTracer::KRayTracer_Root* gRoot;
 
 static int LuaWrapper_LoadScene(lua_State *L)
 {
@@ -19,24 +18,21 @@ static int LuaWrapper_LoadScene(lua_State *L)
 
 	size_t str_len;
 	const char* filename = lua_tolstring(L, 1, &str_len);
-	
-	int success = gRoot->LoadScene(filename) ? 1 : 0;
+	KRT_SceneStatistic statistic;
+	int success = KRT_LoadScene(filename, statistic) ? 1 : 0;
 	lua_pushnumber(L, success);
 	
 	if (success) {
-		SceneStatistic status;
-		gRoot->mpSceneLoader->mpScene->GetKDBuildTimeStatistics(status);
+		
+			printf("Scene info: T0 %d, T1, %d, L %d, T_B: %d\n",
+				statistic.actual_triangle_count,
+				statistic.leaf_triangle_count,
+				statistic.kd_leaf_count,
+				statistic.kd_build_time + statistic.kd_finialize_time);
 
-		printf("Scene info: T0 %d, T1, %d, L %d, T_L %d, T_B: %d\n",
-			(UINT32)status.actual_triangle_count,
-			(UINT32)status.leaf_triangle_count,
-			(UINT32)status.kd_leaf_count,
-			gRoot->mpSceneLoader->mFileLoadingTime,
-			status.kd_build_time + status.kd_finialize_time);
-
-		lua_pushnumber(L, (float)status.kd_build_time / 1000.0f);
-		lua_pushnumber(L, (UINT32)status.actual_triangle_count);
-		lua_pushnumber(L, (UINT32)status.leaf_triangle_count);
+		lua_pushnumber(L, (float)statistic.kd_build_time / 1000.0f);
+		lua_pushnumber(L, (lua_Number)statistic.actual_triangle_count);
+		lua_pushnumber(L, (lua_Number)statistic.leaf_triangle_count);
 	}
 	else {
 		lua_pushnumber(L, 0);
@@ -58,7 +54,7 @@ static int LuaWrapper_UpdateScene(lua_State *L)
 	size_t str_len;
 	const char* filename = lua_tolstring(L, 1, &str_len);
 
-	int success = gRoot->LoadUpdateFile(filename) ? 1 : 0;
+	int success = KRT_LoadUpdate(filename) ? 1 : 0;
 	lua_pushnumber(L, success);
 
 	if (success)
@@ -79,7 +75,7 @@ static int LuaWrapper_SaveScene(lua_State *L)
 	size_t str_len;
 	const char* filename = lua_tolstring(L, 1, &str_len);
 
-	int success = gRoot->SaveScene(filename) ? 1 : 0;
+	int success = KRT_SaveScene(filename) ? 1 : 0;
 	lua_pushnumber(L, success);
 
 	return 1;
@@ -93,7 +89,7 @@ static int LuaWrapper_CloseScene(lua_State *L)
 		return 0;
 	}
 	
-	gRoot->CloseScene();
+	KRT_CloseScene();
 
 	return 0;
 }
@@ -107,16 +103,16 @@ static int LuaWrapper_Render(lua_State *L)
 	}
 
 	size_t str_len;
-	UINT32 w = (UINT32)lua_tointeger(L, 1);
-	UINT32 h = (UINT32)lua_tointeger(L, 2);
+	unsigned w = (unsigned)lua_tointeger(L, 1);
+	unsigned h = (unsigned)lua_tointeger(L, 2);
 	const char* filename = lua_tolstring(L, 3, &str_len);
-	double render_time, output_time;
-	int success = gRoot->Render(w, h, filename, render_time, output_time) ? 1 : 0;
+	KRT_RenderStatistic stat;
+	int success = KRT_RenderToImage(w, h, kRGB_8, filename, stat) ? 1 : 0;
 	if (success)
-		printf("Render time : %f | Output time : %f\n", render_time, output_time);
+		printf("Render time : %f\n", stat.render_time);
 
 	lua_pushnumber(L, success);
-	lua_pushnumber(L, render_time);
+	lua_pushnumber(L, stat.render_time);
 
 	return 2;
 }
@@ -133,7 +129,7 @@ static int LuaWrapper_SetConstant(lua_State *L)
 	const char* name = lua_tolstring(L, 1, &str_len);
 	const char* value = lua_tolstring(L, 2, &str_len);
 
-	int success = gRoot->SetConstant(name, value) ? 1 : 0;
+	int success = KRT_SetConstant(name, value) ? 1 : 0;
 	lua_pushnumber(L, success);
 
 	return 1;
@@ -147,15 +143,9 @@ static int LuaWrapper_SetActiveCamera(lua_State *L)
 		return 0;
 	}
 
-	CameraManager* pManager = CameraManager::GetInstance();
-	if (!pManager) {
-		printf("No scene is loaded.\n");
-		return 0;
-	}
-
 	size_t str_len;
 	const char* camera_name = lua_tolstring(L, 1, &str_len);
-	if (!pManager->SetActiveCamera(camera_name)) {
+	if (!KRT_SetActiveCamera(camera_name)) {
 		printf("Invalid camera name.\n");
 	}
 
@@ -164,15 +154,11 @@ static int LuaWrapper_SetActiveCamera(lua_State *L)
 
 static int LuaWrapper_ListCamera(lua_State *L)
 {
-	CameraManager* pManager = CameraManager::GetInstance();
-	if (!pManager) {
-		printf("No scene is loaded.\n");
-		return 0;
-	}
-	pManager->ResetIter();
 	int cnt = 0;
 	const char* camera_name = NULL;
-	while (camera_name = pManager->GetNextCamera()) {
+	unsigned camCnt = KRT_GetCameraCount();
+	for (unsigned i = 0; i < camCnt; ++i) {
+		camera_name = KRT_GetCameraName(i);
 		lua_pushlstring(L, camera_name, strlen(camera_name));
 		++cnt;
 	}
@@ -192,7 +178,7 @@ static int LuaWrapper_SetRenderOptions(lua_State *L)
 	const char* name = lua_tolstring(L, 1, &str_len);
 	const char* value = lua_tolstring(L, 2, &str_len);
 
-	int success = SetRenderOptions(name, value) ? 1 : 0;
+	int success = KRT_SetRenderOption(name, value) ? 1 : 0;
 	lua_pushnumber(L, success);
 
 	return 1;
@@ -261,7 +247,7 @@ static int LuaWrapper_SetCamera(lua_State *L)
 	if (1 != sscanf_s(xfov, "%f", &cxfov))
 		goto ERROR_IN_SetCamera;
 	
-	gRoot->SetCamera(name, cpos, clookat, cup, cxfov);
+	KRT_SetCamera(name, cpos, clookat, cup, cxfov);
 	return 0;
 ERROR_IN_SetCamera:
 	printf("SetCamera : Invalid input parameters.\n");
@@ -270,66 +256,26 @@ ERROR_IN_SetCamera:
 
 static int LuaWrapper_AddLight(lua_State *L)
 {
-	if (!gRoot->mpSceneLoader.get()) {
-		printf("ERROR: Cannot add light with empty scene.\n");
-		return 0;
-	}
-	// intensity, lightpos, <lightrot, lightsize>
+	// lightpos, <lightrot>
 	int num_param = lua_gettop(L);
-	if (num_param != 4 && num_param != 2) {
+	if (num_param != 2 && num_param != 1) {
 		printf("AddLight : Invalid input parameters.\n");
 		return 0;
 	}
 
-	KColor intensiy;
-	KVec3 pos;
+	float pos[3];
 	float xyz_rot[3];
-	KVec2 size;
 
-	const char* xfov = NULL;
-	if (3 != GetFloatArrayFromTable(L, 1, (float*)&intensiy, 3))
-		goto ERROR_IN_AddLight;
-	if (3 != GetFloatArrayFromTable(L, 2, (float*)&pos, 3))
+	if (3 != GetFloatArrayFromTable(L, 1, (float*)&pos, 3))
 		goto ERROR_IN_AddLight;
 
-	pos += gRoot->mpSceneLoader->mImportSceneOffset;
-	pos *= gRoot->mpSceneLoader->mImportSceneScale;
-	
-
-	if (num_param == 4) {
-		if (3 != GetFloatArrayFromTable(L, 3, xyz_rot, 3))
+	if (num_param == 2) {
+		if (3 != GetFloatArrayFromTable(L, 2, xyz_rot, 3))
 			goto ERROR_IN_AddLight;
-		if (2 != GetFloatArrayFromTable(L, 4, (float*)&size, 2))
-			goto ERROR_IN_AddLight;
-		size[0] *= gRoot->mpSceneLoader->mImportSceneScale;
-		size[1] *= gRoot->mpSceneLoader->mImportSceneScale;
 	}
 
-	{
-		KMatrix4 mat;
-		ILightObject* pLight = NULL;
-		if (num_param == 2) {
-			pLight = LightScheme::GetInstance()->CreateLightSource(POINT_LIGHT_TYPE);
-			nvmath::setTransMat(mat, pos);
-			pLight->SetLightSpaceMatrix(mat);
-		}
-		else {
-			pLight = LightScheme::GetInstance()->CreateLightSource(RECT_LIGHT_TYPE);
-			nvmath::setTransMat(mat, pos);
-			 
-			nvmath::Quatf mat_rotX( KVec3(1,0,0), xyz_rot[0]/180.0f*nvmath::PI);
-			nvmath::Quatf mat_rotY( KVec3(1,0,0), xyz_rot[1]/180.0f*nvmath::PI);
-			nvmath::Quatf mat_rotZ( KVec3(1,0,0), xyz_rot[2]/180.0f*nvmath::PI);
-			nvmath::Quatf rot = mat_rotX * mat_rotY * mat_rotZ;
-			KMatrix4 mat_rot(rot);
-			pLight->SetLightSpaceMatrix(mat_rot * mat);
-			pLight->SetParam("size_x", &size[0]);
-			pLight->SetParam("size_y", &size[1]);
-		}
-
-		pLight->SetParam("intensity", &intensiy);
-	}
-	
+	int idx = (int)KRT_AddLightSource(pos, xyz_rot);
+	lua_pushnumber(L, idx);
 	return 0;
 
 ERROR_IN_AddLight:
@@ -339,18 +285,14 @@ ERROR_IN_AddLight:
 
 static int LuaWrapper_ClearLights(lua_State *L)
 {
-	if (!gRoot->mpSceneLoader.get()) {
-		printf("ERROR: Cannot clear light with empty scene.\n");
-		return 0;
-	}
-	LightScheme::GetInstance()->ClearLightSource();
+	KRT_DeleteAllLights();
 	return 0;
 }
 
 void BindLuaFunc()
 {
 	/* initialize Lua */
-	L_S = lua_open();
+	L_S = luaL_newstate();
 
 	/* load Lua base libraries */
 	luaL_openlibs(L_S);

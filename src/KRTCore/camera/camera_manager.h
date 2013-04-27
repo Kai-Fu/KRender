@@ -4,7 +4,7 @@
 #include "camera.h"
 
 
-class KRT_API CameraManager
+class CameraManager
 {
 public:
 	CameraManager();
@@ -12,14 +12,13 @@ public:
 
 	UINT32 GetCameraCnt() const;
 	KCamera* OpenCamera(const char* name, bool forceCreate);
+	void Clear();
 
 	const char* GetActiveCamera() const;
 	bool SetActiveCamera(const char* name);
 	KCamera* GetCameraByName(const char* name);
-
-	void ResetIter();
-	const char* GetNextCamera();
-	void Clear();
+	KCamera* GetCameraByIndex(UINT32 idx);
+	const char* GetCameraNameByIndex(UINT32 idx);
 
 	static CameraManager* GetInstance();
 	static void Initialize();
@@ -28,10 +27,14 @@ public:
 	bool Save(FILE* pFile);
 	bool Load(FILE* pFile);
 
+private:
+	void BuildCameraIndices();
+
 protected:
 	typedef STDEXT::hash_map<std::string, KCamera*> CAMERA_NAME_TO_PTR;
 	CAMERA_NAME_TO_PTR mCameras;
-	CAMERA_NAME_TO_PTR::iterator mCameraIter;
+	std::vector<KCamera*> mCameraArray;
+	std::vector<std::string> mCamNameArray;
 	std::string mActiveCameraName;
 
 	static CameraManager* s_pInstance;

@@ -1,13 +1,10 @@
 #include <stdio.h>
-#include <KRTCore/entry/Entry.h>
 #include "lua_wrapper.h"
-
-
-KRayTracer::KRayTracer_Root* gRoot = NULL;
+#include <KRTCore/api/KRT_API.h>
 
 int main(int arg_cnt, const char* args[])
 {
-	gRoot = KRayTracer::InitializeKRayTracer();
+	KRT_Initialize();
 	BindLuaFunc();
 	RunLuaCommandFromFile("startup.lua");
 
@@ -25,8 +22,8 @@ int main(int arg_cnt, const char* args[])
 		}
 	}
 
-	gRoot->CloseScene();
+	KRT_CloseScene();
 	UnbindLuaFunc();
-	KRayTracer::DestroyKRayTracer();
+	KRT_Destory();
 	return 0;
 }

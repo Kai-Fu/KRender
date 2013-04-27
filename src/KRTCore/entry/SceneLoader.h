@@ -5,7 +5,7 @@
 
 namespace KRayTracer {
 
-	class KRT_API SceneLoader 
+	class SceneLoader 
 	{
 	public:
 		SceneLoader();

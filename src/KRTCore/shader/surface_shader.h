@@ -14,12 +14,12 @@
 
 
 // The main entry function to calculate the shading for the specified ray
-bool KRT_API CalcuShadingByRay(TracingInstance* pLocalData, const KRay& ray, KColor& out_clr, IntersectContext* out_ctx = NULL);
-bool KRT_API CalcReflectedRay(TracingInstance* pLocalData, const ShadingContext& shadingCtx, KColor& reflectColor);
-bool KRT_API CalcRefractedRay(TracingInstance* pLocalData, const ShadingContext& shadingCtx, float refractRatio, KColor& refractColor);
+bool CalcuShadingByRay(TracingInstance* pLocalData, const KRay& ray, KColor& out_clr, IntersectContext* out_ctx = NULL);
+bool CalcReflectedRay(TracingInstance* pLocalData, const ShadingContext& shadingCtx, KColor& reflectColor);
+bool CalcRefractedRay(TracingInstance* pLocalData, const ShadingContext& shadingCtx, float refractRatio, KColor& refractColor);
 
 
-class KRT_API ISurfaceShader
+class ISurfaceShader
 {
 protected:
 	std::string mTypeName;

@@ -95,7 +95,7 @@ struct LightIterator
 	KColor intensity;
 };
 
-class KRT_API RenderBuffers
+class RenderBuffers
 {
 private:
 	std::auto_ptr<BitmapObject>		output_image;

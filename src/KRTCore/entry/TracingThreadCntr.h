@@ -7,7 +7,7 @@ namespace KRayTracer {
 
 	
 
-	class KRT_API SamplingThreadContainer
+	class SamplingThreadContainer
 	{
 	public:
 		SamplingThreadContainer();

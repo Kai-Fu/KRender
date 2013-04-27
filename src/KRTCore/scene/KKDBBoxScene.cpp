@@ -328,7 +328,7 @@ UINT32 KKDBBoxScene::SplitBBoxScene(UINT32* pKDSceneIdx, const KBBox* clampBox, 
 	return ret;
 }
 
-void KKDBBoxScene::GetKDBuildTimeStatistics(SceneStatistic& sceneStat) const
+void KKDBBoxScene::GetKDBuildTimeStatistics(KRT_SceneStatistic& sceneStat) const
 {
 	sceneStat.kd_build_time = m_kdBuildTime;
 	sceneStat.gen_accel_geom_time = m_buildAccelTriTime;

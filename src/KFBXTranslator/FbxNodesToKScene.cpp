@@ -1,12 +1,12 @@
 #include "FbxNodesToKScene.h"
 #include <set>
 #include <assert.h>
-#include <KRTCore/material/material_library.h>
+/*#include <KRTCore/material/material_library.h>
 #include <KRTCore/material/standard_mtl.h>
 #include <KRTCore/camera/camera_manager.h>
 #include <KRTCore/shader/light_scheme.h>
 #include <KRTCore/base/raw_geometry.h>
-#include <KRTCore/entry/Entry.h>
+#include <KRTCore/entry/Entry.h>*/
 
 #include <common/math/Matnnt.cpp>
 
