@@ -18,13 +18,15 @@ if( NOT FBX_VS_LIB_PATH )
   message( "There's no FBX SDK for the specified compiler." )
 endif( NOT FBX_VS_LIB_PATH )
 
+set( FBX_SDK_PATH CACHE PATH "Path to FBX SDK." )
+include_directories( "${FBX_SDK_PATH}/include" )
 # Link against FBX SDK
-target_link_libraries( ${KRT_FBX_TRANSLATOR_NAME} debug "$ENV{FBX_DIR}/lib/${FBX_VS_LIB_PATH}/${CPU_TYPE}/fbxsdk-2013.3d.lib" )
-target_link_libraries( ${KRT_FBX_TRANSLATOR_NAME} optimized "$ENV{FBX_DIR}/lib/${FBX_VS_LIB_PATH}/${CPU_TYPE}/fbxsdk-2013.3.lib" )
-include_directories( "$ENV{FBX_DIR}/include" )
+target_link_libraries( ${KRT_FBX_TRANSLATOR_NAME} debug "${FBX_SDK_PATH}/lib/${FBX_VS_LIB_PATH}/${CPU_TYPE}/fbxsdk-2013.3d.lib" )
+target_link_libraries( ${KRT_FBX_TRANSLATOR_NAME} optimized "${FBX_SDK_PATH}/lib/${FBX_VS_LIB_PATH}/${CPU_TYPE}/fbxsdk-2013.3.lib" )
+include_directories( "${FBX_SDK_PATH}/include" )
 # Install the FBX runtime DLL
-install( FILES "$ENV{FBX_DIR}/lib/${FBX_VS_LIB_PATH}/${CPU_TYPE}/fbxsdk-2013.3d.dll" DESTINATION bin/${CPU_TYPE}/Debug CONFIGURATIONS Debug )
-install( FILES "$ENV{FBX_DIR}/lib/${FBX_VS_LIB_PATH}/${CPU_TYPE}/fbxsdk-2013.3.dll" DESTINATION bin/${CPU_TYPE}/Release CONFIGURATIONS Release )
+install( FILES "${FBX_SDK_PATH}/lib/${FBX_VS_LIB_PATH}/${CPU_TYPE}/fbxsdk-2013.3d.dll" DESTINATION bin/${CPU_TYPE}/Debug CONFIGURATIONS Debug )
+install( FILES "${FBX_SDK_PATH}/lib/${FBX_VS_LIB_PATH}/${CPU_TYPE}/fbxsdk-2013.3.dll" DESTINATION bin/${CPU_TYPE}/Release CONFIGURATIONS Release )
   
 foreach( build_type ${KRT_BUILD_TYPE_LIST} )    
   # Install the runtime of KTRConsole

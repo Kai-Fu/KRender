@@ -14,7 +14,7 @@ static FbxLongLong myRBAnimInteropCnt = 8;
 /************************************************************************/
 // Utility function to convert the materials assigned on the node into ISurfaceShader.
 /************************************************************************/
-void GetConvertedMaterials(FbxNode* pFbxNode, std::vector<ISurfaceShader*>& convertedMtls);
+void GetConvertedMaterials(FbxNode* pFbxNode, std::vector<ShaderHandle>& convertedMtls);
 
 
 /************************************************************************/
@@ -430,20 +430,17 @@ bool BuildStaticGeometry(std::list<FbxNode*>& static_nodes, FbxNode* pRootNode, 
 		FbxAMatrix nodeFbxTM = pSceneEvaluator->GetNodeGlobalTransform(*node_it) * rootNodeTM_I;
 		KMatrix4 nodeTM;
 		MatrixConvert(nodeFbxTM, nodeTM);
-		std::vector<ISurfaceShader*> convertedMtls;
+		std::vector<ShaderHandle> convertedMtls;
 		GetConvertedMaterials(*node_it, convertedMtls);
 
 		for (size_t i = 0; i < meshInfo.meshIdx.size(); ++i) {
-			UINT32 nodeIdx = static_scene.AddNode();
-			KNode* pNode = static_scene.GetNode(nodeIdx);
-			pNode->mMesh.push_back((UINT32)meshInfo.meshIdx[i]);
-			if (meshInfo.matIdx[i] < (int)convertedMtls.size())
-				pNode->mpSurfShader = convertedMtls[meshInfo.matIdx[i]];
-			else
-				pNode->mpSurfShader = NULL;
-			pNode->mName = (*node_it)->GetName();
-			static_scene.SetNodeTM(nodeIdx, nodeTM);
 
+			ShaderHandle nodeShader = NULL;
+			if (meshInfo.matIdx[i] < (int)convertedMtls.size())
+				nodeShader = convertedMtls[meshInfo.matIdx[i]];
+			else
+				nodeShader = NULL;
+			KRT_AddNodeToSubScene(static_scene, (*node_it)->GetName(), (UINT32)meshInfo.meshIdx[i], nodeShader, (float*)&nodeTM);
 		}
 
 	}
@@ -451,7 +448,7 @@ bool BuildStaticGeometry(std::list<FbxNode*>& static_nodes, FbxNode* pRootNode, 
 }
 
 
-void GetConvertedMaterials(FbxNode* pFbxNode, std::vector<ISurfaceShader*>& convertedMtls)
+void GetConvertedMaterials(FbxNode* pFbxNode, std::vector<ShaderHandle>& convertedMtls)
 {
 	int matCnt = pFbxNode->GetMaterialCount();
 	// Force it to have at least one default material that is retrieved from node color.
@@ -460,7 +457,6 @@ void GetConvertedMaterials(FbxNode* pFbxNode, std::vector<ISurfaceShader*>& conv
 	for (int m_i = 0; m_i < matCnt; m_i++){
 		FbxSurfacePhong *pMtl = FbxCast<FbxSurfacePhong>(pFbxNode->GetMaterial(m_i));
 
-		Material_Library* mtl_lib = Material_Library::GetInstance();
 		//go through all the possible textures
 		if(pMtl){
 			
@@ -469,7 +465,8 @@ void GetConvertedMaterials(FbxNode* pFbxNode, std::vector<ISurfaceShader*>& conv
 			mtlName += "-";
 			char buffer[65];
 			mtlName += _itoa_s(uID, buffer, 10);
-			ISurfaceShader* pSurfShader = mtl_lib->OpenMaterial(mtlName.c_str());
+
+			ShaderHandle pSurfShader = KRT_GetSurfaceMaterial(mtlName.c_str());
 			if (pSurfShader) {
 				convertedMtls.push_back(pSurfShader);
 				continue;
@@ -477,26 +474,33 @@ void GetConvertedMaterials(FbxNode* pFbxNode, std::vector<ISurfaceShader*>& conv
 
 		}
 		
-		PhongSurface* pPhongSurf = NULL;
+		ShaderHandle pPhongSurf = NULL;
 
 		if (pMtl) {
-			pPhongSurf = dynamic_cast<PhongSurface*>(mtl_lib->CreateMaterial(BASIC_PHONG, pMtl->GetName()));
-			pPhongSurf->mParam.mDiffuse.r = (float)pMtl->Diffuse.Get()[0];
-			pPhongSurf->mParam.mDiffuse.g = (float)pMtl->Diffuse.Get()[1];
-			pPhongSurf->mParam.mDiffuse.b = (float)pMtl->Diffuse.Get()[2];
-			pPhongSurf->mParam.mDiffuse.Scale((float)pMtl->DiffuseFactor.Get());
+			pPhongSurf = KRT_CreateSurfaceMaterial("DummyShader", pMtl->GetName());
+			float tmpClr[3];
+			float tmpScale;
 
-			pPhongSurf->mParam.mSpecular.r = (float)pMtl->Specular.Get()[0];
-			pPhongSurf->mParam.mSpecular.g = (float)pMtl->Specular.Get()[1];
-			pPhongSurf->mParam.mSpecular.b = (float)pMtl->Specular.Get()[2];
-			pPhongSurf->mParam.mSpecular.Scale((float)pMtl->SpecularFactor.Get());
+			tmpScale = (float)pMtl->DiffuseFactor.Get();
+			tmpClr[0] = (float)pMtl->Diffuse.Get()[0] * tmpScale;
+			tmpClr[1] = (float)pMtl->Diffuse.Get()[1] * tmpScale;
+			tmpClr[2] = (float)pMtl->Diffuse.Get()[2] * tmpScale;
+			KRT_SetShaderParameter(pPhongSurf, "diffuse_color", tmpClr, sizeof(tmpClr));
 
-			pPhongSurf->mParam.mOpacity.r = (float)pMtl->TransparentColor.Get()[0];
-			pPhongSurf->mParam.mOpacity.g = (float)pMtl->TransparentColor.Get()[1];
-			pPhongSurf->mParam.mOpacity.b = (float)pMtl->TransparentColor.Get()[2];
-			pPhongSurf->mParam.mOpacity.Scale(1.0f - (float)pMtl->TransparencyFactor.Get());
+			tmpScale = (float)pMtl->SpecularFactor.Get();
+			tmpClr[0] = (float)pMtl->Specular.Get()[0] * tmpScale;
+			tmpClr[1] = (float)pMtl->Specular.Get()[1] * tmpScale;
+			tmpClr[2] = (float)pMtl->Specular.Get()[2] * tmpScale;
+			KRT_SetShaderParameter(pPhongSurf, "specular_color", tmpClr, sizeof(tmpClr));
 
-			pPhongSurf->mParam.mPower = (float)pMtl->Shininess.Get();
+			tmpScale = (float)pMtl->TransparencyFactor.Get();
+			tmpClr[0] = (float)pMtl->TransparentColor.Get()[0] * tmpScale;
+			tmpClr[1] = (float)pMtl->TransparentColor.Get()[1] * tmpScale;
+			tmpClr[2] = (float)pMtl->TransparentColor.Get()[2] * tmpScale;
+			KRT_SetShaderParameter(pPhongSurf, "opacity", tmpClr, sizeof(tmpClr));
+
+			tmpScale = (float)pMtl->Shininess.Get();
+			KRT_SetShaderParameter(pPhongSurf, "power", &tmpScale, sizeof(float));
 			//Diffuse Textures
 			FbxProperty lProperty = pMtl->FindProperty(FbxSurfaceMaterial::sDiffuse);
 			if(lProperty.IsValid())
@@ -509,7 +513,7 @@ void GetConvertedMaterials(FbxNode* pFbxNode, std::vector<ISurfaceShader*>& conv
 					FbxFileTexture* lTexture = FbxCast <FbxFileTexture> (lProperty.GetSrcObject<FbxTexture>(j));
 					if(lTexture)
 					{
-						pPhongSurf->mDiffuseMapFileName = lTexture->GetFileName();
+						KRT_SetShaderParameter(pPhongSurf, "diffuse_map", (void*)lTexture->GetFileName(), 0);
 					}
 				}
 			}
@@ -517,15 +521,16 @@ void GetConvertedMaterials(FbxNode* pFbxNode, std::vector<ISurfaceShader*>& conv
 		else {
 			std::string wire_color_mtl_name = "__wire_color_";
 			wire_color_mtl_name += pFbxNode->GetName();
-			pPhongSurf = dynamic_cast<PhongSurface*>(mtl_lib->CreateMaterial(BASIC_PHONG, wire_color_mtl_name.c_str()));
-			FbxNodeAttribute* lNodeAttribute = pFbxNode->GetNodeAttribute();
-			pPhongSurf->mParam.mDiffuse.r = (float)lNodeAttribute->Color.Get()[0];
-			pPhongSurf->mParam.mDiffuse.g = (float)lNodeAttribute->Color.Get()[1];
-			pPhongSurf->mParam.mDiffuse.b = (float)lNodeAttribute->Color.Get()[2];
+			pPhongSurf = KRT_CreateSurfaceMaterial("DummyShader", wire_color_mtl_name.c_str());
 
-			pPhongSurf->mParam.mSpecular.r = (float)lNodeAttribute->Color.Get()[0];
-			pPhongSurf->mParam.mSpecular.g = (float)lNodeAttribute->Color.Get()[1];
-			pPhongSurf->mParam.mSpecular.b = (float)lNodeAttribute->Color.Get()[2];
+			FbxNodeAttribute* lNodeAttribute = pFbxNode->GetNodeAttribute();
+			float tmpClr[3];
+
+			tmpClr[0] = (float)lNodeAttribute->Color.Get()[0];
+			tmpClr[1] = (float)lNodeAttribute->Color.Get()[1];
+			tmpClr[2] = (float)lNodeAttribute->Color.Get()[2];
+			KRT_SetShaderParameter(pPhongSurf, "diffuse_color", tmpClr, sizeof(tmpClr));
+			KRT_SetShaderParameter(pPhongSurf, "specular_color", tmpClr, sizeof(tmpClr));
 		}
 
 		convertedMtls.push_back(pPhongSurf);
@@ -540,19 +545,17 @@ void BuildLights(const std::list<FbxNode*>& light_nodes)
 	for (; it != light_nodes.end(); ++it) {
 		FbxLight* pFbxLight = FbxCast<FbxLight>((*it)->GetNodeAttribute());
 		if (pFbxLight) {
-			LightScheme* pLightScheme = LightScheme::GetInstance();
-			PointLightBase* pLight = dynamic_cast<PointLightBase*>(pLightScheme->CreateLightSource(POINT_LIGHT_TYPE));
 			FbxAMatrix& pNodeDefaultGlobalTransform = pSceneEvaluator->GetNodeGlobalTransform(*it);
 			KMatrix4 nodeTM;
 			MatrixConvert(pNodeDefaultGlobalTransform, nodeTM);
-			pLight->SetLightSpaceMatrix(nodeTM);
 
-			KColor intensity;
-			intensity.r = float(pFbxLight->Color.Get()[0]);
-			intensity.g = float(pFbxLight->Color.Get()[1]);
-			intensity.b = float(pFbxLight->Color.Get()[2]);
-			intensity.Scale((float)pFbxLight->Intensity.Get() / 100.0f);
-			pLight->SetIntensity(intensity);
+			float intensity[3];
+			float intenScale = (float)pFbxLight->Intensity.Get() / 100.0f;
+			intensity[0] = float(pFbxLight->Color.Get()[0]) * intenScale;
+			intensity[1] = float(pFbxLight->Color.Get()[1]) * intenScale;
+			intensity[2] = float(pFbxLight->Color.Get()[2]) * intenScale;
+
+			KRT_AddLightSource("DummyLightShader", (float*)&nodeTM, intensity);
 		}
 	}
 }
@@ -564,13 +567,11 @@ void BuildCameras(const std::list<FbxNode*>& camera_nodes)
 {
 	std::list<FbxNode*>::const_iterator it = camera_nodes.begin();
 	FbxAnimEvaluator* pSceneEvaluator = myScene->GetEvaluator();
-	CameraManager* pManager = CameraManager::GetInstance();
 
 	for (; it != camera_nodes.end(); ++it) {
 		FbxCamera* pFbxCamera = FbxCast<FbxCamera>((*it)->GetNodeAttribute());
 
 		if (pFbxCamera) {
-			KCamera* pCamera = pManager->OpenCamera((*it)->GetName(), true);
 			FbxAMatrix& pNodeDefaultGlobalTransform = pSceneEvaluator->GetNodeGlobalTransform(*it);
 
 			KVec3 pos_trans;
@@ -613,18 +614,7 @@ void BuildCameras(const std::list<FbxNode*>& camera_nodes)
 			up_trans[2] = (float)upVec[2];	
 			up_trans.normalize();
 
-			KCamera::MotionState ms;
-			ms.pos = pos_trans;
-			ms.lookat = lookat_trans;
-			ms.up = up_trans;
-			
-			ms.xfov = (float)pFbxCamera->FieldOfViewX.Get();
-			ms.focal = 40;//(float)pFbxCamera->FocalLength.Get();
-
-			// TODO: 3ds Max doesn't export aperture and len settings, I just hard-coded it here.
-			pCamera->SetApertureSize(0.3f, 0.3f);
-
-			pCamera->SetupStillCamera(ms);
+			KRT_SetCamera((*it)->GetName(), (float*)&pos_trans, (float*)&lookat_trans, (float*)&up_trans, (float)pFbxCamera->FieldOfViewX.Get());
 		}
 	}
 }
@@ -633,17 +623,15 @@ void BuildCameras(const std::list<FbxNode*>& camera_nodes)
 /************************************************************************/
 // Compile the FBX scene into KKDBBoxScene
 /************************************************************************/
-void CompileNodeIntoScene(FbxNode* node, KKDBBoxScene& bbox_scene, std::list<FbxNode*>& out_anim_nodes) 
+void CompileNodeIntoScene(FbxNode* node, TopSceneHandle bbox_scene, std::list<FbxNode*>& out_anim_nodes) 
 {
 	Filtered_Nodes filtered_nodes;
 	FilterNodes(filtered_nodes, node, INSTANCED_GEOM_LIMIT);
 
-	UINT32 newSceneIdx;
-	KKDTreeScene* static_scene = bbox_scene.AddKDScene(newSceneIdx);
-	UINT32 nodeIdx = bbox_scene.SceneNode_Create(newSceneIdx);
-	bbox_scene.SceneNodeTM_ResetFrame(nodeIdx);
-	bbox_scene.SceneNodeTM_AddFrame(nodeIdx, nvmath::cIdentity44f);
-	BuildStaticGeometry(filtered_nodes.static_nodes, NULL, *static_scene);
+	UINT32 newSceneIdx = KRT_AddSubScene(bbox_scene);
+	SubSceneHandle static_scene = KRT_GetSubSceneByIndex(bbox_scene, newSceneIdx);
+	KRT_AddNodeToScene(bbox_scene, newSceneIdx, (float*)&nvmath::cIdentity44f);
+	BuildStaticGeometry(filtered_nodes.static_nodes, NULL, static_scene);
 	BuildStaticInstanceGeometry(filtered_nodes.instanced_static_nodes, bbox_scene);
 	BuildLights(filtered_nodes.light_nodes);
 	BuildCameras(filtered_nodes.camera_nodes);
@@ -652,7 +640,7 @@ void CompileNodeIntoScene(FbxNode* node, KKDBBoxScene& bbox_scene, std::list<Fbx
 }
 
 
-bool BuildStaticInstanceGeometry(std::list<FbxNode*>& instanced_nodes, KKDBBoxScene& bbox_scene)
+bool BuildStaticInstanceGeometry(std::list<FbxNode*>& instanced_nodes, TopSceneHandle bbox_scene)
 {
 	return true;
 }
@@ -677,7 +665,7 @@ bool GatherAnimatedGeometry(FbxNode* animated_root, std::list<FbxNode*>& out_loc
 	return !out_animated_nodes_next_pass.empty();
 }
 
-bool ProccessAnimatedGeometry(std::list<FbxNode*>& animated_nodes, KKDBBoxScene& bbox_scene, INDEX_TO_FBXNODE& out_scnIdx_To_fbxNode)
+bool ProccessAnimatedGeometry(std::list<FbxNode*>& animated_nodes, TopSceneHandle bbox_scene, INDEX_TO_FBXNODE& out_scnIdx_To_fbxNode)
 {
 	std::list<FbxNode*> out_local_static_nodes = animated_nodes;
 	std::list<FbxNode*> animated_nodes_cur_pass = animated_nodes;
@@ -695,16 +683,14 @@ bool ProccessAnimatedGeometry(std::list<FbxNode*>& animated_nodes, KKDBBoxScene&
 
 			if (!out_local_static_nodes.empty()) {
 				// Now compile the nodes in to scene
-				UINT32 newSceneIdx;
-				KKDTreeScene* static_scene = bbox_scene.AddKDScene(newSceneIdx);
+				UINT32 newSceneIdx = KRT_AddSubScene(bbox_scene);
+				SubSceneHandle static_scene = KRT_GetSubSceneByIndex(bbox_scene, newSceneIdx);
 				FbxAnimEvaluator* pSceneEvaluator = myScene->GetEvaluator();
 				FbxAMatrix rootNodeTM = pSceneEvaluator->GetNodeGlobalTransform(*it);
 				KMatrix4 nodeTM;
 				MatrixConvert(rootNodeTM, nodeTM);
-				UINT32 nodeIdx = bbox_scene.SceneNode_Create(newSceneIdx);
-				bbox_scene.SceneNodeTM_ResetFrame(nodeIdx);
-				bbox_scene.SceneNodeTM_AddFrame(nodeIdx, nodeTM);
-				BuildStaticGeometry(out_local_static_nodes, *it, *static_scene);
+				UINT32 nodeIdx = KRT_AddNodeToScene(bbox_scene, newSceneIdx, (float*)&nodeTM);
+				BuildStaticGeometry(out_local_static_nodes, *it, static_scene);
 				out_scnIdx_To_fbxNode[nodeIdx] = *it;
 			}
 		}
@@ -722,7 +708,7 @@ int ProccessAnimatedNodes(const INDEX_TO_FBXNODE& camera_nodes, const INDEX_TO_F
 	double fps = FbxTime::GetFrameRate(time_mode);
 	FbxTime time_one_frame = FbxTime::GetOneFrameValue(time_mode);
 	FbxAnimEvaluator* pSceneEvaluator = myScene->GetEvaluator();
-	KKDBBoxScene* pBBoxScene = gRoot->mpSceneLoader->mpScene;
+	TopSceneHandle pBBoxScene = KRT_GetScene();
 	std::vector<UINT32> modified_cameras;
 	std::vector<UINT32> modified_lights;
 	std::vector<UINT32> modified_morph_nodes;
@@ -763,12 +749,12 @@ int ProccessAnimatedNodes(const INDEX_TO_FBXNODE& camera_nodes, const INDEX_TO_F
 		for (INDEX_TO_FBXNODE::const_iterator it = animated_nodes.begin(); it != animated_nodes.end(); ++it) {
 			UINT32 idx = it->first;
 			FbxNode* node = it->second;
-			pBBoxScene->SceneNodeTM_ResetFrame(idx);
+			KRT_ResetSubSceneNodeTransform(pBBoxScene, idx);
 			for (int i = 0; i < myRBAnimInteropCnt; ++i) {
 				FbxAMatrix animNodeTM = pSceneEvaluator->GetNodeGlobalTransform(node, cur_time + time_step * i);
 				KMatrix4 nodeTM;
 				MatrixConvert(animNodeTM, nodeTM);
-				pBBoxScene->SceneNodeTM_AddFrame(idx, nodeTM);
+				KRT_AddSubSceneNodeFrame(pBBoxScene, idx, (float*)&nodeTM);
 			}
 			modified_RBA_nodes.push_back(idx);
 		}
@@ -780,7 +766,7 @@ int ProccessAnimatedNodes(const INDEX_TO_FBXNODE& camera_nodes, const INDEX_TO_F
 		std::string file_name = output_file_base;
 		file_name += frame_str;
 
-		gRoot->mpSceneLoader->SaveUpdatingFile(file_name.c_str(), 
+		KRT_SaveUpdate(file_name.c_str(), 
 				modified_cameras,
 				modified_lights,
 				modified_morph_nodes,
@@ -798,14 +784,14 @@ int ProccessFBXFile(const char* output_file)
 	// First of all, triangulate the geometry meshes
 	TriangulateScene();
 	
-	KKDBBoxScene* pBBoxScene = gRoot->mpSceneLoader->mpScene;
+	TopSceneHandle pBBoxScene = KRT_GetScene();
 	std::list<FbxNode*> anim_node_list;
 	// Do the first pass of node filtering so that I know which part of the scene is animated.
-	CompileNodeIntoScene(myScene->GetRootNode(), *pBBoxScene, anim_node_list);
+	CompileNodeIntoScene(myScene->GetRootNode(), pBBoxScene, anim_node_list);
 
 	// For the animated part, use the incremental updating mechanism
 	INDEX_TO_FBXNODE rigid_body_anim_nodes;
-	ProccessAnimatedGeometry(anim_node_list, *pBBoxScene, rigid_body_anim_nodes);
+	ProccessAnimatedGeometry(anim_node_list, pBBoxScene, rigid_body_anim_nodes);
 	
 
 	// TODO: handle these kinds of animated nodes
@@ -813,7 +799,7 @@ int ProccessFBXFile(const char* output_file)
 	INDEX_TO_FBXNODE animated_cameras;
 
 	// Now save the result of FBX processing
-	if (!gRoot->SaveScene(output_file))
+	if (!KRT_SaveScene(output_file))
 		return -1;
 
 	// Handle and save the animation data

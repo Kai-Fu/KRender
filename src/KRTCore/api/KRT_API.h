@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 
 #ifdef _WIN32
 	// Windows platform
@@ -52,10 +53,17 @@ struct KRT_RenderStatistic
 
 typedef void* SubSceneHandle;
 typedef void* TopSceneHandle;
+typedef void* ShaderHandle;
 
 namespace Geom {
 	struct RawMesh;
 }
+
+KRT_API bool KRT_SaveUpdate(const char* file_name, 
+			const std::vector<unsigned>& modified_cameras,
+			const std::vector<unsigned>& modified_lights,
+			const std::vector<unsigned>& modified_morph_nodes, 
+			const std::vector<unsigned>& modified_RBA_nodes);
 
 extern "C" {
 
@@ -78,9 +86,24 @@ extern "C" {
 	KRT_API unsigned KRT_GetCameraCount();
 	KRT_API const char* KRT_GetCameraName(unsigned idx);
 
-	KRT_API unsigned KRT_AddLightSource(float pos[3], float xyz_rot[3]);
+	KRT_API unsigned KRT_AddLightSource(const char* shaderName, float matrix[16], float intensity[3]);
 	KRT_API void KRT_DeleteAllLights();
 
 	KRT_API unsigned KRT_AddMeshToSubScene(Geom::RawMesh* pMesh, SubSceneHandle subScene);
+	KRT_API void KRT_AddNodeToSubScene(SubSceneHandle subScene, const char* nodeName, unsigned meshIdx, ShaderHandle hShader, float* matrix);
+
+	KRT_API unsigned KRT_AddSubScene(TopSceneHandle scene);
+	KRT_API SubSceneHandle KRT_GetSubSceneByIndex(TopSceneHandle scene, unsigned idx);
+	KRT_API unsigned KRT_AddNodeToScene(TopSceneHandle scene, unsigned sceneIdx, float* matrix);
+	KRT_API void KRT_ResetSubSceneNodeTransform(TopSceneHandle scene, unsigned nodeIdx);
+	KRT_API void KRT_AddSubSceneNodeFrame(TopSceneHandle scene, unsigned nodeIdx, float* matrix);
+
+	KRT_API TopSceneHandle KRT_GetScene();
+
+	KRT_API ShaderHandle KRT_CreateSurfaceMaterial(const char* shaderName, const char* mtlName);
+	KRT_API ShaderHandle KRT_GetSurfaceMaterial(const char* mtlName);
+	KRT_API bool KRT_SetShaderParameter(ShaderHandle hShader, const char* paramName, void* valueData, unsigned dataSize);
+
+
 
 }

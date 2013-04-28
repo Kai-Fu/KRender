@@ -1,9 +1,6 @@
 #include <stdio.h>
 #include "FbxNodesToKScene.h"
-#include <KRTCore/entry/Entry.h>
 
-
-KRayTracer::KRayTracer_Root* gRoot = NULL;
 
 int main(int arg_cnt, const char* args[])
 {
@@ -27,7 +24,7 @@ int main(int arg_cnt, const char* args[])
 		output_file = args[2];
 
 	// Initialize the KRTCore
-	gRoot = KRayTracer::InitializeKRayTracer();
+	KRT_Initialize();
 
 	int ret = -1;
 	{
@@ -48,6 +45,6 @@ int main(int arg_cnt, const char* args[])
 
 	DestroyFbxSDK();
 	// The KTRCore can be closed now
-	KRayTracer::DestroyKRayTracer();
+	KRT_Destory();
 	return ret;
 }

@@ -1,5 +1,7 @@
 #include "lua_wrapper.h"
 #include <KRTCore/api/KRT_API.h>
+#include <common/defines/typedefs.h>
+
 #include <stdexcept>
 extern "C" {
 	#include <lua.h>
@@ -274,9 +276,20 @@ static int LuaWrapper_AddLight(lua_State *L)
 			goto ERROR_IN_AddLight;
 	}
 
-	int idx = (int)KRT_AddLightSource(pos, xyz_rot);
-	lua_pushnumber(L, idx);
-	return 0;
+	{
+		KMatrix4 mat;
+		nvmath::setTransMat(mat, KVec3(pos[0], pos[1], pos[2]));
+		nvmath::Quatf mat_rotX( KVec3(1,0,0), xyz_rot[0]/180.0f*nvmath::PI);
+		nvmath::Quatf mat_rotY( KVec3(1,0,0), xyz_rot[1]/180.0f*nvmath::PI);
+		nvmath::Quatf mat_rotZ( KVec3(1,0,0), xyz_rot[2]/180.0f*nvmath::PI);
+		nvmath::Quatf rot = mat_rotX * mat_rotY * mat_rotZ;
+		KMatrix4 mat_rot(rot);
+		KMatrix4 lightMat = mat_rot * mat;
+		float instensity[3] = {1.0f, 1.0f, 1.0f};
+		int idx = (int)KRT_AddLightSource("", (float*)&lightMat, instensity);
+		lua_pushnumber(L, idx);
+		return 0;
+	}
 
 ERROR_IN_AddLight:
 	printf("AddLight : Invalid input parameters.\n");

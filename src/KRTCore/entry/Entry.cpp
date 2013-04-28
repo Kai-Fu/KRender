@@ -4,6 +4,7 @@
 #include "../camera/camera_manager.h"
 #include "../material/material_library.h"
 #include "../base/raw_geometry.h"
+#include "../material/standard_mtl.h"
 #include "../api/KRT_API.h"
 
 #include <FreeImage.h>
@@ -146,7 +147,9 @@ void KRayTracer_Root::SetCamera(const char* name, float pos[3], float lookat[3],
 		ms.lookat = clookat;
 		ms.up = cup;
 		ms.xfov = xfov;
+		ms.focal = 40; // TODO: avoid hard-coded value
 		pCamera->SetupStillCamera(ms);
+		pCamera->SetApertureSize(0.3f, 0.3f); // TODO: avoid hard-coded value
 	}
 }
 
@@ -282,20 +285,14 @@ const char* KRT_GetCameraName(unsigned idx)
 	return pManager->GetCameraNameByIndex(idx);
 }
 
-unsigned KRT_AddLightSource(float pos[3], float xyz_rot[3])
+unsigned KRT_AddLightSource(const char* shaderName, float matrix[16], float intensity[3])
 {
-	ILightObject* pLight = LightScheme::GetInstance()->CreateLightSource(POINT_LIGHT_TYPE);
-	KMatrix4 mat;
-	nvmath::setTransMat(mat, KVec3(pos[0], pos[1], pos[2]));
+	PointLightBase* pLight = dynamic_cast<PointLightBase*>(LightScheme::GetInstance()->CreateLightSource(POINT_LIGHT_TYPE));
+	KMatrix4& mat = *(KMatrix4*)matrix;
 	pLight->SetLightSpaceMatrix(mat);
 
-	nvmath::Quatf mat_rotX( KVec3(1,0,0), xyz_rot[0]/180.0f*nvmath::PI);
-	nvmath::Quatf mat_rotY( KVec3(1,0,0), xyz_rot[1]/180.0f*nvmath::PI);
-	nvmath::Quatf mat_rotZ( KVec3(1,0,0), xyz_rot[2]/180.0f*nvmath::PI);
-	nvmath::Quatf rot = mat_rotX * mat_rotY * mat_rotZ;
-	KMatrix4 mat_rot(rot);
-	pLight->SetLightSpaceMatrix(mat_rot * mat);
-
+	pLight->SetLightSpaceMatrix(mat);
+	pLight->SetIntensity(intensity);
 	return true;
 }
 
@@ -311,4 +308,91 @@ unsigned KRT_AddMeshToSubScene(Geom::RawMesh* pMesh, SubSceneHandle subScene)
 	Geom::CompileOptimizedMesh(*pMesh, *pScene->GetMesh(meshIdx));
 
 	return meshIdx;
+}
+
+ShaderHandle KRT_CreateSurfaceMaterial(const char* shaderName, const char* mtlName)
+{
+	Material_Library* mtl_lib = Material_Library::GetInstance();
+	PhongSurface* pPhongSurf = dynamic_cast<PhongSurface*>(mtl_lib->CreateMaterial(BASIC_PHONG, mtlName));
+	return (ISurfaceShader*)pPhongSurf;
+}
+
+bool KRT_SetShaderParameter(ShaderHandle hShader, const char* paramName, void* valueData, unsigned dataSize)
+{
+	ISurfaceShader* pPhongSurf = (ISurfaceShader*)hShader;
+	pPhongSurf->SetParam(paramName, valueData, dataSize);
+	return true;
+}
+
+ShaderHandle KRT_GetSurfaceMaterial(const char* mtlName)
+{
+	Material_Library* mtl_lib = Material_Library::GetInstance();
+	ISurfaceShader* pSurfShader = mtl_lib->OpenMaterial(mtlName);
+	return pSurfShader;
+}
+
+void KRT_AddNodeToSubScene(SubSceneHandle subScene, const char* nodeName, unsigned meshIdx, ShaderHandle hShader, float* matrix)
+{
+	KScene* pScene = (KScene*)subScene;
+	UINT32 nodeIdx = pScene->AddNode();
+	KNode* pNode = pScene->GetNode(nodeIdx);
+	pNode->mMesh.push_back((UINT32)meshIdx);
+	pNode->mpSurfShader = (ISurfaceShader*)hShader;
+	pNode->mName = nodeName;
+	KMatrix4& nodeTM = *(KMatrix4*)matrix;
+	pScene->SetNodeTM(nodeIdx, nodeTM);
+}
+
+unsigned KRT_AddSubScene(TopSceneHandle scene)
+{
+	KKDBBoxScene* pScene = (KKDBBoxScene*)scene;
+	UINT32 newSceneIdx = 0;
+	KKDTreeScene* pSubScene = pScene->AddKDScene(newSceneIdx);
+	return newSceneIdx;
+}
+
+unsigned KRT_AddNodeToScene(TopSceneHandle scene, unsigned sceneIdx, float* matrix)
+{
+	KKDBBoxScene* pScene = (KKDBBoxScene*)scene;
+	UINT32 nodeIdx = pScene->SceneNode_Create(sceneIdx);
+	pScene->SceneNodeTM_ResetFrame(sceneIdx);
+	pScene->SceneNodeTM_AddFrame(sceneIdx, *(KMatrix4*)matrix);
+	return nodeIdx;
+}
+
+SubSceneHandle KRT_GetSubSceneByIndex(TopSceneHandle scene, unsigned idx)
+{
+	KKDBBoxScene* pScene = (KKDBBoxScene*)scene;
+	return pScene->GetKDScene(idx);
+}
+
+void KRT_AddSubSceneNodeFrame(TopSceneHandle scene, unsigned nodeIdx, float* matrix)
+{
+	KKDBBoxScene* pScene = (KKDBBoxScene*)scene;
+	pScene->SceneNodeTM_AddFrame(nodeIdx, *(KMatrix4*)matrix);
+}
+
+void KRT_ResetSubSceneNodeTransform(TopSceneHandle scene, unsigned nodeIdx)
+{
+	KKDBBoxScene* pScene = (KKDBBoxScene*)scene;
+	pScene->SceneNodeTM_ResetFrame(nodeIdx);
+}
+
+TopSceneHandle KRT_GetScene()
+{
+	return KRayTracer::g_pRoot->mpSceneLoader->mpScene;
+}
+
+bool KRT_SaveUpdate(const char* file_name, 
+			const std::vector<UINT32>& modified_cameras,
+			const std::vector<UINT32>& modified_lights,
+			const std::vector<UINT32>& modified_morph_nodes, 
+			const std::vector<UINT32>& modified_RBA_nodes)
+{
+
+	return KRayTracer::g_pRoot->mpSceneLoader->SaveUpdatingFile(file_name, 
+				modified_cameras,
+				modified_lights,
+				modified_morph_nodes,
+				modified_RBA_nodes);
 }
