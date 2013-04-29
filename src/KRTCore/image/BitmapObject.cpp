@@ -25,7 +25,6 @@ void BitmapObject::SetBitmapData(void* pData, PixelFormat format, UINT32 w, UINT
 	mFormat = format;
 	mWidth = w;
 	mHeight = h;
-	mPitch = mWidth * GetBPPByFormat(mFormat);
 
 	mAutoFreeMem = auto_free_mem;
 }
@@ -74,11 +73,12 @@ void BitmapObject::CopyFromRGB32F(const BitmapObject& src,
 		return; // bad parameters, kick out.
 
 	w = (dstX + w) > mWidth ? (mWidth - dstX) : w;
+	UINT32 bpp = GetBPPByFormat(mFormat);
 	for (UINT32 y = dstY; y < dstY + h && y < mHeight; ++y) {
 
 		for (UINT32 x = dstX; x < dstX + w; ++x) {
 			KColor* pColor = (KColor*)src.GetPixel(srcX + x - dstX, srcY + y -dstY);
-			pColor->ConvertToDWORD(*(DWORD*)&mpData[y*mPitch + x*GetBPPByFormat(mFormat)]);
+			pColor->ConvertToDWORD(*(DWORD*)&mpData[y*mPitch + x*bpp]);
 		}
 	}
 }
@@ -111,6 +111,7 @@ BitmapObject* BitmapObject::CreateBitmap(UINT32 w, UINT32 h, PixelFormat format)
 
 	BYTE* data = new BYTE[w * h * GetBPPByFormat(pBmp->mFormat)];
 	pBmp->SetBitmapData(data, format, w, h, true);
+	pBmp->mPitch = w * GetBPPByFormat(pBmp->mFormat);
 	return pBmp;
 }
 
@@ -138,15 +139,25 @@ bool BitmapObject::Save(const char* filename)
 		return false;
 
 	FREE_IMAGE_FORMAT fif = FIF_UNKNOWN;
-	fif = FreeImage_GetFileType(filename);
-	bool result = false;
-	if(fif == FIF_UNKNOWN)
-		fif  =  FreeImage_GetFIFFromFilename(filename);
 
-	if((fif != FIF_UNKNOWN) && FreeImage_FIFSupportsReading(fif)) {
+	std::string pathname(filename);
+	size_t dot_pos = pathname.rfind('.');
+	const char* ext = NULL;
+	if (dot_pos != std::string::npos) {
+		ext = &pathname.c_str()[dot_pos + 1];
+		fif = FreeImage_GetFIFFromFormat(ext);
+	}
+	else
+		fif = FIF_PNG;
+
+	
+	bool result = false;
+
+	if((fif != FIF_UNKNOWN) && FreeImage_FIFSupportsWriting(fif)) {
 		FIBITMAP *dib = NULL;
 
-		dib = FreeImage_AllocateT(FIT_BITMAP, mWidth, mHeight, GetBPPByFormat(mFormat));
+		UINT32 bpp = GetBPPByFormat(mFormat);
+		dib = FreeImage_ConvertFromRawBits(mpData, mWidth, mHeight, mWidth * bpp, bpp * 8, 0x000000ff, 0x0000ff00, 0x00ff0000);
 		if (dib && FreeImage_Save(fif, dib, filename))
 			result = true;
 		FreeImage_Unload(dib);

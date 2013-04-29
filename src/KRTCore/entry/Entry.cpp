@@ -247,9 +247,9 @@ bool KRT_RenderToImage(unsigned w, unsigned h, KRT_ImageFormat format, const cha
 	bmpOrg.mWidth = w;
 	bmpOrg.mHeight = h;
 	bmpOrg.mpData = (BYTE*)renderData;
+	bmpOrg.mPitch = w * BitmapObject::GetBPPByFormat(bmpOrg.mFormat);
 
-
-	std::auto_ptr<BitmapObject> bmpDest(BitmapObject::CreateBitmap(w, h, BitmapObject::eRGB8));
+	std::auto_ptr<BitmapObject> bmpDest(BitmapObject::CreateBitmap(w, h, BitmapObject::eRGBA8));
 
 	bmpDest->CopyFromRGB32F(bmpOrg, 0, 0, 0, 0, w, h);
 	bmpDest->Save(fileName);
