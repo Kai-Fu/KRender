@@ -1,4 +1,4 @@
-add_definitions( -DBUILD_KRT_CORE_DLL -DFREEIMAGE_LIB )
+add_definitions( -DBUILD_KRT_CORE_DLL )
 
 file( GLOB_RECURSE KRT_CORE_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cpp *.c *.h )
 add_library( ${KRT_CORE_MODULE_NAME} SHARED ${KRT_CORE_SRC} )
