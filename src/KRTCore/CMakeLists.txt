@@ -10,8 +10,10 @@ set( FREEIMAGE_SDK_PATH CACHE PATH "Path to FreeImage SDK." )
 # Include the header file of FreeImage
 include_directories( "${FREEIMAGE_SDK_PATH}" )
 # Link to the library of FreeImage
-target_link_libraries( ${KRT_CORE_MODULE_NAME} debug "${FREEIMAGE_SDK_PATH}/FreeImage.lib" )
+target_link_libraries( ${KRT_CORE_MODULE_NAME} debug "${FREEIMAGE_SDK_PATH}/FreeImaged.lib" )
 target_link_libraries( ${KRT_CORE_MODULE_NAME} optimized "${FREEIMAGE_SDK_PATH}/FreeImage.lib" )
+install( FILES "${FREEIMAGE_SDK_PATH}/FreeImaged.dll" DESTINATION bin/${CPU_TYPE}/Debug CONFIGURATIONS Debug )
+install( FILES "${FREEIMAGE_SDK_PATH}/FreeImage.dll" DESTINATION bin/${CPU_TYPE}/Release CONFIGURATIONS Release )
 
 # Specify the dependencies of library
 target_link_libraries( ${KRT_CORE_MODULE_NAME} "${PTHREAD_SDK_PATH}/lib/pthread_${CPU_TYPE}.lib" )
