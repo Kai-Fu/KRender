@@ -94,16 +94,19 @@ bool ImageSampler::SampleTile()
 
 		if (isEdgeSampling) {
 			DoPixelSampling(curX, curY, mpRenderParam->sample_cnt_edge, res);
-			AccumCurrentPixel(curX, curY, mpRenderParam->sample_cnt_edge, res.average);
+			//AccumCurrentPixel(curX, curY, mpRenderParam->sample_cnt_edge, res.average);
+			mpInputData->pRenderBuffers->AddSamples(curX, curY, mpRenderParam->sample_cnt_edge, res.average, res.alpha);
 		}
 		else {
 			DoPixelSampling(curX, curY, mpRenderParam->sample_cnt_eval, res);
-			AccumCurrentPixel(curX, curY, mpRenderParam->sample_cnt_eval, res.average);
+			//AccumCurrentPixel(curX, curY, mpRenderParam->sample_cnt_eval, res.average);
+			mpInputData->pRenderBuffers->AddSamples(curX, curY, mpRenderParam->sample_cnt_eval, res.average, res.alpha);
 
 			if (mpRenderParam->sample_cnt_eval > 1 && res.variance > COLOR_DIFF_THRESH_HOLD) {
 				// Only do the extra sampling when the evaluation sample count is > 1 AND the previous sampling variance is above the threshold
 				DoPixelSampling(curX, curY, mpRenderParam->sample_cnt_more, res);
-				AccumCurrentPixel(curX, curY, mpRenderParam->sample_cnt_more, res.average);
+				//AccumCurrentPixel(curX, curY, mpRenderParam->sample_cnt_more, res.average);
+				mpInputData->pRenderBuffers->AddSamples(curX, curY, mpRenderParam->sample_cnt_more, res.average, res.alpha);
 			}
 		}
 
@@ -117,22 +120,6 @@ bool ImageSampler::SampleTile()
 		return false;
 
 	return true;
-}
-
-void ImageSampler::AccumCurrentPixel(UINT32 x, UINT32 y, UINT32 sample_count, const KColor& clr)
-{
-	KColor* pCurPixel = mpInputData->pRenderBuffers->GetPixelPtr(x, y);
-	UINT32 sampled_count = mpInputData->pRenderBuffers->GetSampledCount(x, y);
-	float fSampledCnt = (float)sampled_count - sample_count;
-	float fSampleCnt = (float)sample_count;
-	// Write the result to output image
-	KColor tempClr0 = *pCurPixel;
-	tempClr0.Scale(fSampledCnt);
-	KColor tempClr1(clr);
-	tempClr1.Scale(fSampleCnt);
-	tempClr0.Add(tempClr1);
-	tempClr0.Scale(1.0f / (fSampledCnt + fSampleCnt));
-	*pCurPixel = tempClr0;
 }
 
 void ImageSampler::Execute()

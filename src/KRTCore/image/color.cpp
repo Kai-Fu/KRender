@@ -2,7 +2,7 @@
 
 
 
-void KColor::ConvertToDWORD(DWORD& clr) const
+void KColor::ConvertToBYTE3(BYTE clr[3]) const
 {
 	BYTE br = BYTE(r * 255.5f);
 	BYTE bg = BYTE(g * 255.5f);
@@ -19,7 +19,16 @@ void KColor::ConvertToDWORD(DWORD& clr) const
 		bb = 0;
 	else if (b > 1.0f)
 		bb = 255;
-	clr = (br << 16) | (bg << 8) | bb | 0xff000000;
+	clr[0] = bb;
+	clr[1] = bg;
+	clr[2] = br;
+}
+
+void KColor::ConvertFromBYTE3(BYTE clr[3])
+{
+	b = (float)clr[0] / 255.0f;
+	g = (float)clr[1] / 255.0f;
+	r = (float)clr[2] / 255.0f;
 }
 
 float KColor::DiffRatio(const KColor& dst) const

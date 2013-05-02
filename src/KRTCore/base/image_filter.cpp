@@ -40,11 +40,6 @@ bool KImageFilterBase::RunFilter(ThreadModel::ThreadBucket* pThreadBucket)
 
 KRBG32F_EdgeDetecter::KRBG32F_EdgeDetecter(const BitmapObject* bitmap, UINT32 threadCnt) : KImageFilterBase(bitmap, threadCnt)
 {
-	if (bitmap->mFormat == BitmapObject::eRGB32F)
-		mValidFormat = true;
-	else
-		mValidFormat = false;
-
 	mWritingLocker = 0;
 	mResult.Resize(bitmap->mWidth * bitmap->mHeight);
 	mResult.ClearAll();
@@ -52,17 +47,12 @@ KRBG32F_EdgeDetecter::KRBG32F_EdgeDetecter(const BitmapObject* bitmap, UINT32 th
 
 void KRBG32F_EdgeDetecter::DoFilter(UINT32 sx, UINT32 sy, UINT32 w, UINT32 h)
 {
-	assert(mValidFormat);
 	for (UINT32 xx = 0; xx < w-1; ++xx) {
 		for (UINT32 yy = 0; yy < h-1; ++yy) {
-			float* pixel_data0 = (float*)mpBitmapObj->GetPixel(sx + xx, sy + yy);
-			float* pixel_data1 = (float*)mpBitmapObj->GetPixel(sx + xx + 1, sy + yy);
-			float* pixel_data2 = (float*)mpBitmapObj->GetPixel(sx + xx, sy + yy + 1);
-			float* pixel_data3 = (float*)mpBitmapObj->GetPixel(sx + xx + 1, sy + yy + 1);
-			KColor clr0(pixel_data0);
-			KColor clr1(pixel_data1);
-			KColor clr2(pixel_data2);
-			KColor clr3(pixel_data3);
+			KColor clr0 = mpBitmapObj->GetPixel(sx + xx, sy + yy).color;
+			KColor clr1 = mpBitmapObj->GetPixel(sx + xx + 1, sy + yy).color;
+			KColor clr2 = mpBitmapObj->GetPixel(sx + xx, sy + yy + 1).color;
+			KColor clr3 = mpBitmapObj->GetPixel(sx + xx + 1, sy + yy + 1).color;
 			KColor sum;
 			sum = clr0;
 			sum.Add(clr1);

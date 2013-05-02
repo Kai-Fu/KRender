@@ -10,7 +10,6 @@ using namespace std;
 KObjFileLoader::KObjFileLoader(void)
 {
 	mUseTexMap = true;
-	mAdjustObjCenter = true;
 }
 
 KObjFileLoader::~KObjFileLoader(void)
@@ -19,7 +18,7 @@ KObjFileLoader::~KObjFileLoader(void)
 }
 
 
-bool KObjFileLoader::LoadObjFile(const char* filename, KScene& scene, KVec3& scene_offset, float& scene_scale)
+bool KObjFileLoader::LoadObjFile(const char* filename, KScene& scene)
 {
 	GLMmodel* model = glmReadOBJ(filename);
 	if (!model)	return false;
@@ -37,24 +36,6 @@ bool KObjFileLoader::LoadObjFile(const char* filename, KScene& scene, KVec3& sce
 	KBBox bbox;
 	for (UINT32 i = 0; i < model->numvertices; ++i) {
 		bbox.ContainVert(KVec3(pImportVertex[i*3], pImportVertex[i*3+1], pImportVertex[i*3+2]));
-	}
-	if (mAdjustObjCenter) {
-		// Adjust the scale of the imported model
-		KVec3 c = bbox.Center();
-		scene_offset = -c;
-		float scale = 10.0f / nvmath::length(bbox.mMax - bbox.mMin);
-		scene_scale = scale;
-		for (UINT32 i = 0; i < model->numvertices; ++i) {
-			pImportVertex[i*3] += scene_offset[0];
-			pImportVertex[i*3+1] += scene_offset[1];
-			pImportVertex[i*3+2] += scene_offset[2];
-			
-			pImportVertex[i*3] *= scale;
-			pImportVertex[i*3+1] *= scale;
-			pImportVertex[i*3+2] *= scale;
-		}
-		bbox.mMin = KVec3(-5.0f, -5.0f, -5.0f);
-		bbox.mMax = KVec3(5.0f, 5.0f, 5.0f);
 	}
 	mObjBBox = bbox;
 

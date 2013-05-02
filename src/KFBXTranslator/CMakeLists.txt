@@ -1,6 +1,5 @@
-add_definitions( -DFBXSDK_SHARED )
-
 file(GLOB_RECURSE KRT_FBX_TRANSLATOR_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cpp *.c *.h )
+add_definitions( -DFBXSDK_SHARED )
 add_executable( ${KRT_FBX_TRANSLATOR_NAME} ${KRT_FBX_TRANSLATOR_SRC} )
 
 # Link against KRTCore

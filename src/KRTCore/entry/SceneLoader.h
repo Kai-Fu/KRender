@@ -28,8 +28,6 @@ namespace KRayTracer {
 		KKDBBoxScene* mpScene;
 		double mLoadingTime;
 		UINT32 mFileLoadingTime;
-		KVec3 mImportSceneOffset;
-		float mImportSceneScale;
 	};
 
 } // namespace KRayTracer

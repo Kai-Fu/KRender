@@ -128,7 +128,7 @@ bool SceneLoader::LoadFromFile(const char* file_name)
 		KKDTreeScene* pKDScene = mpScene->AddKDScene(kd_idx);
 		mpScene->SceneNode_Create(kd_idx);
 
-		if (OBJLoader.LoadObjFile(file_name, *pKDScene, mImportSceneOffset, mImportSceneScale)) {
+		if (OBJLoader.LoadObjFile(file_name, *pKDScene)) {
 			ret = true;
 		}
 		else {

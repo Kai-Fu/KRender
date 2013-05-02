@@ -16,7 +16,14 @@ struct KColor
 	void Lerp(const KColor& ref, const KColor& value);
 	void Scale(float s) {r *= s; g *= s; b *= s;}
 	void Clear() {r = g = b = 0;}
-	void ConvertToDWORD(DWORD& clr) const;
-	float DiffRatio(const KColor& dst) const;
+	void ConvertToBYTE3(BYTE clr[3]) const;
+	void ConvertFromBYTE3(BYTE clr[3]);
 
+	float DiffRatio(const KColor& dst) const;
+};
+
+struct KPixel
+{
+	KColor color;
+	float alpha;
 };

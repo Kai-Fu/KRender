@@ -9,9 +9,25 @@
 #define RAND_SEQUENCE_LEN 1023
 extern UINT32 AREA_LIGHT_SAMP_CNT;
 
-void RenderBuffers::SetImageSize(UINT32 w, UINT32 h)
+void RenderBuffers::SetImageSize(UINT32 w, UINT32 h, KRT_ImageFormat pixelFormat, void* pUserBuf)
 {
-	output_image.reset(BitmapObject::CreateBitmap(w, h, BitmapObject::eRGB32F));
+	switch (pixelFormat) {
+	case kRGB_8:
+		output_image.reset(BitmapObject::CreateBitmap(w, h, BitmapObject::eRGB8, pUserBuf));
+		break;
+	case kRGBA_8:
+		output_image.reset(BitmapObject::CreateBitmap(w, h, BitmapObject::eRGBA8, pUserBuf));
+		break;
+	case kRGBA_32F:
+		output_image.reset(BitmapObject::CreateBitmap(w, h, BitmapObject::eRGBA32F, pUserBuf));
+		break;
+	case kRGB_32F:
+		output_image.reset(BitmapObject::CreateBitmap(w, h, BitmapObject::eRGB32F, pUserBuf));
+		break;
+	case kR_32F:
+		output_image.reset(BitmapObject::CreateBitmap(w, h, BitmapObject::eR32F, pUserBuf));
+		break;
+	}
 	sampled_count_pp.resize(w * h);
 	random_seed_pp.resize(w * h);
 	for (UINT32 i = 0; i < random_seed_pp.size(); ++i) {
@@ -20,10 +36,8 @@ void RenderBuffers::SetImageSize(UINT32 w, UINT32 h)
 	}
 
 	for (UINT32 y = 0; y < h; ++y) {
-		for (UINT32 x = 0; x < w; ++x) {
-			KColor* pClr = (KColor*)output_image->GetPixel(x, y);
-			pClr->Clear();
-		}
+		void *pPixel = output_image->GetPixelPtr(0, y);
+		memset(pPixel, 0, output_image->mPitch);
 	}
 
 	random_sequence.resize(RAND_SEQUENCE_LEN);
@@ -31,9 +45,24 @@ void RenderBuffers::SetImageSize(UINT32 w, UINT32 h)
 		random_sequence[i] = Rand_0_1();
 }
 
-KColor* RenderBuffers::GetPixelPtr(UINT32 x, UINT32 y)
+void RenderBuffers::AddSamples(UINT32 x, UINT32 y, UINT32 sampleCnt, const KColor& avgClr, float alpha)
 {
-	return (KColor*)output_image->GetPixel(x, y);
+	KPixel curPixel = output_image->GetPixel(x, y);
+	UINT32 sampled_count = GetSampledCount(x, y);
+	float fSampledCnt = (float)sampled_count - sampleCnt;
+	float fSampleCnt = (float)sampleCnt;
+
+	KColor tempClr0 = curPixel.color;
+	tempClr0.Scale(fSampledCnt);
+	KColor tempClr1(avgClr);
+	tempClr1.Scale(fSampleCnt);
+	tempClr0.Add(tempClr1);
+	tempClr0.Scale(1.0f / (fSampledCnt + fSampleCnt));
+	curPixel.color = tempClr0;
+
+	float newAlpha = (alpha*fSampleCnt  + curPixel.alpha*fSampledCnt) / (fSampledCnt + fSampleCnt);
+	curPixel.alpha = newAlpha;
+	output_image->SetPixel(x, y, curPixel);
 }
 
 UINT32 RenderBuffers::GetSampledCount(UINT32 x, UINT32 y) const

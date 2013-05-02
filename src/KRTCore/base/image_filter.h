@@ -40,5 +40,4 @@ public:
 private:
 	SPIN_LOCK_FLAG mWritingLocker;
 	KBitArray mResult;
-	bool mValidFormat;
 };

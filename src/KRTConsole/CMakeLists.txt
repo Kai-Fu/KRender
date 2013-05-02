@@ -1,4 +1,5 @@
 file(GLOB_RECURSE KRT_CONSOLE_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} *.cpp *.c *.h )
+add_definitions( "/wd4996" )
 add_executable( ${KRT_CONSOLE_MODULE_NAME} ${KRT_CONSOLE_SRC} )
 
 # Link against KRTCore

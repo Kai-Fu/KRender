@@ -88,7 +88,7 @@ void KRayTracer_Root::CloseScene()
 	mpSceneLoader.reset(NULL);
 }
 
-const void* KRayTracer_Root::Render(UINT32 w, UINT32 h, double& render_time)
+const BitmapObject* KRayTracer_Root::Render(UINT32 w, UINT32 h, KRT_ImageFormat destFormat, void* pUserBuf, double& render_time)
 {
 	if (mpTracingEntry.get() == NULL)
 		mpTracingEntry.reset(new SamplingThreadContainer);
@@ -105,52 +105,40 @@ const void* KRayTracer_Root::Render(UINT32 w, UINT32 h, double& render_time)
 
 	param.image_width = w;
 	param.image_height = h;
+	param.user_buffer = pUserBuf;
+	param.pixel_format = destFormat;
 
 	KTimer stop_watch(true);
 		
 	bool res = mpTracingEntry->Render(param, &mEventCB, NULL, mpSceneLoader.get());
 	render_time = stop_watch.Stop();
 
-	const void* ret = NULL;
 	if (res) 
-		ret = mpTracingEntry->mRenderBuffers.GetOutputImagePtr()->GetPixel(0, 0);
-	
-	return ret;
-
-	//stop_watch.Start();
-	//std::auto_ptr<BitmapObject> bmp(BitmapObject::CreateBitmap(w, h, BitmapObject::eRGBA8));
-	//bmp->CopyFromRGB32F(*mpTracingEntry->mRenderBuffers.GetOutputImagePtr(), 0, 0, 0, 0, w, h);
-	//bmp->Save(output_file);
-	//output_time = stop_watch.Stop();
-	//return res;
+		return mpTracingEntry->mRenderBuffers.GetOutputImagePtr();
+	else
+		return NULL;
 }
 
 void KRayTracer_Root::SetCamera(const char* name, float pos[3], float lookat[3], float up_vec[3], float xfov)
 {
-	if (mpTracingEntry.get()) {
-		KCamera* pCamera = CameraManager::GetInstance()->GetCameraByName(name);
-		if (!pCamera) {
-			pCamera = CameraManager::GetInstance()->OpenCamera(name, true);
-		}
-		
-		KVec3 cpos(pos[0], pos[1], pos[2]);
-		cpos += mpSceneLoader->mImportSceneOffset;
-		cpos *= mpSceneLoader->mImportSceneScale;
-		
-		KVec3 clookat(lookat[0],lookat[1], lookat[2]);
-		clookat += mpSceneLoader->mImportSceneOffset;
-		clookat *= mpSceneLoader->mImportSceneScale;
-		
-		KVec3 cup(up_vec[0], up_vec[1], up_vec[2]);
-		KCamera::MotionState ms;
-		ms.pos = cpos;
-		ms.lookat = clookat;
-		ms.up = cup;
-		ms.xfov = xfov;
-		ms.focal = 40; // TODO: avoid hard-coded value
-		pCamera->SetupStillCamera(ms);
-		pCamera->SetApertureSize(0.3f, 0.3f); // TODO: avoid hard-coded value
+	KCamera* pCamera = CameraManager::GetInstance()->GetCameraByName(name);
+	if (!pCamera) {
+		pCamera = CameraManager::GetInstance()->OpenCamera(name, true);
 	}
+		
+	KVec3 cpos(pos[0], pos[1], pos[2]);
+		
+	KVec3 clookat(lookat[0],lookat[1], lookat[2]);
+		
+	KVec3 cup(up_vec[0], up_vec[1], up_vec[2]);
+	KCamera::MotionState ms;
+	ms.pos = cpos;
+	ms.lookat = clookat;
+	ms.up = cup;
+	ms.xfov = xfov;
+	ms.focal = 40; // TODO: avoid hard-coded value
+	pCamera->SetupStillCamera(ms);
+	pCamera->SetApertureSize(0.3f, 0.3f); // TODO: avoid hard-coded value
 }
 
 void KRayTracer_Root::EventNotifier::OnTileFinished(UINT32 sx, UINT32 sy, UINT32 w, UINT32 h)
@@ -213,7 +201,7 @@ bool KRT_SetRenderOption(const char* name, const char* value)
 
 bool KRT_RenderToMemory(unsigned w, unsigned h, KRT_ImageFormat format, void* pOutData, KRT_RenderStatistic& outStatistic)
 {
-	const void* renderData = KRayTracer::g_pRoot->Render(w, h, outStatistic.render_time);
+	const void* renderData = KRayTracer::g_pRoot->Render(w, h, format, pOutData, outStatistic.render_time);
 	BitmapObject bmpOrg;
 	bmpOrg.mAutoFreeMem = false;
 	bmpOrg.mFormat = BitmapObject::eRGB32F;
@@ -240,20 +228,14 @@ bool KRT_RenderToMemory(unsigned w, unsigned h, KRT_ImageFormat format, void* pO
 
 bool KRT_RenderToImage(unsigned w, unsigned h, KRT_ImageFormat format, const char* fileName, KRT_RenderStatistic& outStatistic)
 {
-	const void* renderData = KRayTracer::g_pRoot->Render(w, h, outStatistic.render_time);
-	BitmapObject bmpOrg;
-	bmpOrg.mAutoFreeMem = false;
-	bmpOrg.mFormat = BitmapObject::eRGB32F;
-	bmpOrg.mWidth = w;
-	bmpOrg.mHeight = h;
-	bmpOrg.mpData = (BYTE*)renderData;
-	bmpOrg.mPitch = w * BitmapObject::GetBPPByFormat(bmpOrg.mFormat);
+	const BitmapObject* outBitmap = KRayTracer::g_pRoot->Render(w, h, kRGB_8, NULL, outStatistic.render_time);
 
-	std::auto_ptr<BitmapObject> bmpDest(BitmapObject::CreateBitmap(w, h, BitmapObject::eRGBA8));
-
-	bmpDest->CopyFromRGB32F(bmpOrg, 0, 0, 0, 0, w, h);
-	bmpDest->Save(fileName);
-	return false;
+	if (outBitmap) {
+		outBitmap->Save(fileName);
+		return true;
+	}
+	else
+		return false;
 }
 
 bool KRT_SetCamera(const char* cameraName, float pos[3], float lookat[3], float up_vec[3], float xfov)

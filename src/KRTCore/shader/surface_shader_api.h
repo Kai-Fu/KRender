@@ -6,7 +6,7 @@
 #include <common/defines/typedefs.h>
 #include "../image/Color.h"
 #include "../image/BitmapObject.h"
-
+#include "../api/KRT_API.h"
 
 
 struct IntersectInfo
@@ -106,8 +106,8 @@ private:
 	// random float value(between 0 and 1) sequence
 	std::vector<float>		random_sequence;
 public:
-	void SetImageSize(UINT32 w, UINT32 h);
-	KColor* GetPixelPtr(UINT32 x, UINT32 y);
+	void SetImageSize(UINT32 w, UINT32 h, KRT_ImageFormat pixelFormat, void* pUserBuf);
+	void AddSamples(UINT32 w, UINT32 h, UINT32 sampleCnt, const KColor& avgClr, float alpha);
 	UINT32 GetSampledCount(UINT32 x, UINT32 y) const;
 	void IncreaseSampledCount(UINT32 x, UINT32 y, UINT32 sampleCnt);
 	UINT32 GetRandomSeed(UINT32 x, UINT32 y) const;
@@ -133,6 +133,8 @@ struct RenderParam {
 
 	UINT32 image_width;
 	UINT32 image_height;
+	void* user_buffer;
+	KRT_ImageFormat pixel_format; 
 };
 
 #endif

@@ -40,7 +40,7 @@ bool SamplingThreadContainer::Render(
 	mRenderInputData.bgColor = KColor(0,0,0);
 
 	// allocate the internal buffers for rendering
-	mRenderBuffers.SetImageSize(param.image_width, param.image_height);
+	mRenderBuffers.SetImageSize(param.image_width, param.image_height, param.pixel_format, param.user_buffer);
 	mTile2D.Reset(param.image_width, param.image_height, 32);
 	mRenderInputData.pRenderBuffers = &mRenderBuffers;
 	mRenderInputData.pImageTile2D = &mTile2D;

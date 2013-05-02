@@ -99,7 +99,7 @@ public:
 		if (cu >= pLevel->mWidth) cu = pLevel->mWidth - 1;
 		if (cv >= pLevel->mHeight) cv = pLevel->mHeight - 1;
 
-		BYTE* pPixel = (BYTE*)pLevel->GetPixel(cu, cv);
+		BYTE* pPixel = (BYTE*)pLevel->GetPixelPtr(cu, cv);
 		Spectrum ret;
 		if (mIsFixPointPixel) {
 

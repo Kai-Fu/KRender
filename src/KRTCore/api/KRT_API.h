@@ -29,7 +29,8 @@ enum KRT_ImageFormat
 	kRGB_8,
 	kRGBA_8,
 	kRGB_32F,
-	kRGBA_32F
+	kRGBA_32F,
+	kR_32F
 };
 
 struct KRT_SceneStatistic

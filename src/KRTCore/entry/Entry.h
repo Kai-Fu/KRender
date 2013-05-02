@@ -21,7 +21,7 @@ namespace KRayTracer {
 		bool LoadUpdateFile(const char* filename);
 		void CloseScene();
 
-		const void* Render(UINT32 w, UINT32 h, double& render_time);
+		const BitmapObject* Render(UINT32 w, UINT32 h, KRT_ImageFormat destFormat, void* pUserBuf, double& render_time);
 	
 		// Set the basic parameter for a given camera, if the specified camera name doesn't exist, it will be created
 		void SetCamera(const char* name, float pos[3], float lookat[3], float up_vec[3], float xfov);

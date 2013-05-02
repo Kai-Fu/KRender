@@ -29,20 +29,68 @@ void BitmapObject::SetBitmapData(void* pData, PixelFormat format, UINT32 w, UINT
 	mAutoFreeMem = auto_free_mem;
 }
 
-void BitmapObject::SetPixel(void* pPixel, UINT32 x, UINT32 y)
+void BitmapObject::SetPixelData(void* pPixel, UINT32 x, UINT32 y)
 {
 	unsigned char* pDstPixel = mpData + y * mPitch + x * GetBPPByFormat(mFormat);
 	memcpy(pDstPixel, pPixel, GetBPPByFormat(mFormat));
 }
 
-void* BitmapObject::GetPixel(UINT32 x, UINT32 y)
+void* BitmapObject::GetPixelPtr(UINT32 x, UINT32 y)
 {
 	return mpData + y * mPitch + x * GetBPPByFormat(mFormat);
 }
 
-const void* BitmapObject::GetPixel(UINT32 x, UINT32 y) const
+const void* BitmapObject::GetPixelPtr(UINT32 x, UINT32 y) const
 {
 	return mpData + y * mPitch + x * GetBPPByFormat(mFormat);
+}
+
+KPixel BitmapObject::GetPixel(UINT32 x, UINT32 y) const
+{
+	KPixel ret;
+	ret.alpha = 1.0f;
+	BYTE* pPixel = (BYTE*)GetPixelPtr(x, y);
+	switch (mFormat) {
+	case eRGBA8:
+		ret.color.ConvertFromBYTE3(pPixel);
+		ret.alpha = (float)pPixel[3] / 255.0f;
+		break;
+	case eRGB8:
+		ret.color.ConvertFromBYTE3(pPixel);
+		break;
+	case eRGB32F:
+	case eRGBA32F:
+		ret.color = KColor((float*)pPixel);
+		break;
+	case eR32F:
+		ret.color.r = *(float*)pPixel;
+		break;
+	}
+	return ret;
+}
+
+void BitmapObject::SetPixel(UINT32 x, UINT32 y, const KPixel& pix)
+{
+	BYTE* pPixel = (BYTE*)GetPixelPtr(x, y);
+	switch (mFormat) {
+	case eRGBA8:
+		pix.color.ConvertToBYTE3(pPixel);
+		pPixel[3] = BYTE(pix.alpha / 255.0f);
+		break;
+	case eRGB8:
+		pix.color.ConvertToBYTE3(pPixel);
+		break;
+	case eRGB32F:
+		*(KColor*)pPixel = pix.color;
+		break;
+	case eRGBA32F:
+		*(KColor*)pPixel = pix.color;
+		((float*)pPixel)[3] = pix.alpha;
+		break;
+	case eR32F:
+		((float*)pPixel)[0] = pix.color.r;
+		break;
+	}
 }
 
 void BitmapObject::CopyFrom(const BitmapObject& src, 
@@ -58,7 +106,7 @@ void BitmapObject::CopyFrom(const BitmapObject& src,
 	for (UINT32 y = dstY; y < dstY + h && y < mHeight; ++y) {
 		UINT32 bpp = GetBPPByFormat(mFormat);
 		memcpy(&mpData[y*mPitch + dstX*bpp], 
-			src.GetPixel(srcX, srcY + y -dstY), 
+			src.GetPixelPtr(srcX, srcY + y -dstY), 
 			w*bpp);
 	}
 }
@@ -77,8 +125,10 @@ void BitmapObject::CopyFromRGB32F(const BitmapObject& src,
 	for (UINT32 y = dstY; y < dstY + h && y < mHeight; ++y) {
 
 		for (UINT32 x = dstX; x < dstX + w; ++x) {
-			KColor* pColor = (KColor*)src.GetPixel(srcX + x - dstX, srcY + y -dstY);
-			pColor->ConvertToDWORD(*(DWORD*)&mpData[y*mPitch + x*bpp]);
+			KColor* pColor = (KColor*)src.GetPixelPtr(srcX + x - dstX, srcY + y -dstY);
+			BYTE* pPixel = &mpData[y*mPitch + x*bpp];
+			pColor->ConvertToBYTE3(pPixel);
+			pPixel[3] = 255;
 		}
 	}
 }
@@ -104,13 +154,13 @@ void BitmapObject::ClearByZero()
 	memset(mpData, 0, mPitch*mHeight);
 }
 
-BitmapObject* BitmapObject::CreateBitmap(UINT32 w, UINT32 h, PixelFormat format)
+BitmapObject* BitmapObject::CreateBitmap(UINT32 w, UINT32 h, PixelFormat format, void* pUserBuf)
 {
 	BitmapObject* pBmp = new BitmapObject;
 	pBmp->mFormat = format;
 
-	BYTE* data = new BYTE[w * h * GetBPPByFormat(pBmp->mFormat)];
-	pBmp->SetBitmapData(data, format, w, h, true);
+	BYTE* data = (pUserBuf == NULL ? new BYTE[w * h * GetBPPByFormat(pBmp->mFormat)] : (BYTE*)pUserBuf);
+	pBmp->SetBitmapData(data, format, w, h, pUserBuf ? false : true);
 	pBmp->mPitch = w * GetBPPByFormat(pBmp->mFormat);
 	return pBmp;
 }
@@ -133,7 +183,7 @@ UINT32 BitmapObject::GetBPPByFormat(PixelFormat format)
 	}
 }
 
-bool BitmapObject::Save(const char* filename)
+bool BitmapObject::Save(const char* filename) const
 {
 	if (!mpData)
 		return false;
