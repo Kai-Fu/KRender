@@ -24,10 +24,7 @@ target_link_libraries( ${KRT_FBX_TRANSLATOR_NAME} debug "${FBX_SDK_PATH}/lib/${F
 target_link_libraries( ${KRT_FBX_TRANSLATOR_NAME} optimized "${FBX_SDK_PATH}/lib/${FBX_VS_LIB_PATH}/${CPU_TYPE}/fbxsdk-2013.3.lib" )
 include_directories( "${FBX_SDK_PATH}/include" )
 # Install the FBX runtime DLL
-install( FILES "${FBX_SDK_PATH}/lib/${FBX_VS_LIB_PATH}/${CPU_TYPE}/fbxsdk-2013.3d.dll" DESTINATION bin/${CPU_TYPE}/Debug CONFIGURATIONS Debug )
-install( FILES "${FBX_SDK_PATH}/lib/${FBX_VS_LIB_PATH}/${CPU_TYPE}/fbxsdk-2013.3.dll" DESTINATION bin/${CPU_TYPE}/Release CONFIGURATIONS Release )
-  
-foreach( build_type ${KRT_BUILD_TYPE_LIST} )    
-  # Install the runtime of KTRConsole
-  install( TARGETS ${KRT_FBX_TRANSLATOR_NAME} RUNTIME DESTINATION bin/${CPU_TYPE}/${build_type} CONFIGURATIONS ${build_type} )
-endforeach()
+install( FILES "${FBX_SDK_PATH}/lib/${FBX_VS_LIB_PATH}/${CPU_TYPE}/fbxsdk-2013.3d.dll" DESTINATION bin CONFIGURATIONS Debug )
+install( FILES "${FBX_SDK_PATH}/lib/${FBX_VS_LIB_PATH}/${CPU_TYPE}/fbxsdk-2013.3.dll" DESTINATION bin CONFIGURATIONS Release )
+
+install( TARGETS ${KRT_FBX_TRANSLATOR_NAME} RUNTIME DESTINATION bin )
