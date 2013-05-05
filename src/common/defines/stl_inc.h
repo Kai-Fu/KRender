@@ -2,7 +2,8 @@
 #ifdef __GNUC__
 	#include <ext/hash_map>
 	#include <ext/hash_set>
-	#define STDEXT __gnu_cxx
+	#define std_hash_map __gnu_cxx::hash_map
+	#define std_hash_set __gnu_cxx::hash_set
 	namespace __gnu_cxx
 	{
 		template<> struct hash< std::string >
@@ -17,6 +18,7 @@
 	
 	#include <hash_set>
 	#include <hash_map>
-	#define STDEXT stdext
+	#define std_hash_map stdext::hash_map
+	#define std_hash_set stdext::hash_set
 	
 #endif

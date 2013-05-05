@@ -1,7 +1,7 @@
 #pragma once
 #include "../shader/surface_shader.h"
 #include "../util/unique_string.h"
-#include "../shader/surface_shader_api.h"
+#include "../shader/shader_api.h"
 #include <common/defines/stl_inc.h>
 #include <string>
 
@@ -26,7 +26,7 @@ public:
 	void Clear();
 
 private:
-	typedef STDEXT::hash_map<std::string, ISurfaceShader*> MTL_MAP;
+	typedef std_hash_map<std::string, ISurfaceShader*> MTL_MAP;
 	MTL_MAP mMaterialInstances;
 	UniqueStringMaker mUniqueStrMaker;
 

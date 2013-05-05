@@ -13,6 +13,8 @@ set( KSC_VERSION_MINOR 0 )
 # module names of KRT
 set( KSC_MODULE_NAME "KShaderCompiler" )
 
+include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/inc" )
+
 include_directories( "src" )
 
 # Add the KSC modules

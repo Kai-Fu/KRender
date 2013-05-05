@@ -1,16 +1,10 @@
 #pragma once
 
 #include "../base/geometry.h"
-#include "surface_shader_api.h"
+#include "shader_api.h"
 
 #include "../image/basic_map.h"
 #include <string>
-
-#define SHADING_FLAG_DIFFUSE_ONLY	0x0001
-#define SHADING_FLAG_NO_TEX_FILTER	0x0002
-#define SHADING_IC_SAMP_RAY					0x0004
-#define SHADING_IC_GATHER						0x0008
-
 
 
 // The main entry function to calculate the shading for the specified ray

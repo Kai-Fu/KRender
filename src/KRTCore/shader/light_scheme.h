@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../base/geometry.h"
-#include "surface_shader_api.h"
+#include "shader_api.h"
 
 #include "../image/color.h"
 #include <assert.h>

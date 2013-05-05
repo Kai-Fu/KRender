@@ -6,6 +6,7 @@
 #include "../base/raw_geometry.h"
 #include "../material/standard_mtl.h"
 #include "../api/KRT_API.h"
+#include <KShaderCompiler/inc/SC_API.h>
 
 #include <FreeImage.h>
 
@@ -157,11 +158,12 @@ void KRayTracer_Root::EventNotifier::OnFrameFinished(bool bIsUserCancel)
 bool KRT_Initialize()
 {
 	KRayTracer::InitializeKRayTracer();
-	return true;
+	return KSC_Initialize();
 }
 
 void KRT_Destory()
 {
+	KSC_Destory();
 	KRayTracer::DestroyKRayTracer();
 }
 

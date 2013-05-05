@@ -1,4 +1,4 @@
-#include "surface_shader_api.h"
+#include "shader_api.h"
 #include "../util/HelperFunc.h"
 #include "../sampling/halton2d.h"
 #include "../animation/animated_transform.h"
@@ -485,4 +485,83 @@ bool TracingInstance::IsPointOccluded(const KRay& ray, float len) const
 	}
 	else
 		return false;
+}
+
+bool KSC_Shader::Load(const char* shaderFile)
+{
+	mpUniformData = NULL;
+	FILE* f = NULL;
+	fopen_s(&f, shaderFile, "r");
+	if (f == NULL)
+		return false;
+	char line[256];
+	// The first line must be "Shader = xxx", where xxx should be the file that contains KSC code.
+	fgets(line, 256, f);
+	char kscFile[256];
+	if (sscanf_s(line, "Shader%*[ ]=%*[ ]%s", kscFile) != 1)
+		return false;
+	std::string shaderPath = "./shader/";
+	shaderPath += kscFile;
+	ModuleHandle shaderModule = KSC_Compile(shaderPath.c_str());
+	if (shaderModule == NULL) {
+		printf("Shader compilation failed with following error:\n");
+		printf(KSC_GetLastErrorMsg());
+		return false;
+	}
+		
+	FunctionHandle shadeFunc = KSC_GetFunctionHandleByName("Shade", shaderModule);
+	if (shadeFunc == NULL) {
+		printf("Shade function does not exist in KSC code.\n");
+		return false;
+	}
+
+	// The Shade function should have three arguments:
+	// arg0 - the reference to structure that contains uniform data
+	// arg1 - shader input data
+	// arg2 - shader output data
+	if (KSC_GetFunctionArgumentCount(shadeFunc) != 3) {
+		printf("Incorrect argument count for Shade function.\n");
+		return false;
+	}
+
+	KSC_TypeInfo arg0TypeInfo = KSC_GetFunctionArgumentType(shadeFunc, 0);
+	if (!arg0TypeInfo.isRef || !arg0TypeInfo.isKSCLayout) {
+		printf("Incorrect type for argument 0.\n");
+		return false;
+	}
+	for (int i = 1; i < 3; ++i) {
+		KSC_TypeInfo typeInfo = KSC_GetFunctionArgumentType(shadeFunc, i);
+		if (!typeInfo.isRef) {
+			printf("Incorrect type for argument %d.\n", i);
+			return false;
+		}
+	}
+
+	// Perform the additional check
+	if (!Validate(shadeFunc)) {
+		printf("Shade function validation failed.\n");
+		return false;
+	}
+
+	while (!feof(f)) {
+		// Parse each line and set the initial uniform values
+		fgets(line, 256, f);
+		
+	}
+	return true;
+}
+
+bool KSC_Shader::Validate(FunctionHandle shadeFunc)
+{
+	return true;
+}
+
+KSC_Shader::~KSC_Shader()
+{
+
+}
+
+void KSC_Shader::Execute(void* inData, void* outData)
+{
+
 }

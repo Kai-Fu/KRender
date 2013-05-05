@@ -31,7 +31,7 @@ private:
 	void BuildCameraIndices();
 
 protected:
-	typedef STDEXT::hash_map<std::string, KCamera*> CAMERA_NAME_TO_PTR;
+	typedef std_hash_map<std::string, KCamera*> CAMERA_NAME_TO_PTR;
 	CAMERA_NAME_TO_PTR mCameras;
 	std::vector<KCamera*> mCameraArray;
 	std::vector<std::string> mCamNameArray;

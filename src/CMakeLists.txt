@@ -11,11 +11,6 @@ set( KRT_CONSOLE_MODULE_NAME "KRTConsole" )
 set( KRT_FBX_TRANSLATOR_NAME "KFBXTranslator" )
 set( KSC_MODULE_NAME "KShaderCompiler" )
 
-# Use the environment variable "KRT_EXTERNAL_LIB_PATH" to define the path where exnternal library is located
-set( EXTERNAL_LIB_PATH $ENV{KRT_EXTERNAL_LIB_PATH} )
-
-message( STATUS "External lib path is ${EXTERNAL_LIB_PATH}" )
-
 # The default CPU type is x86
 set( CPU_TYPE "x86" )
 
@@ -34,7 +29,6 @@ message( "CPU type is ${CPU_TYPE}" )
 
 # Header file of KRT
 include_directories( "${CMAKE_CURRENT_SOURCE_DIR}" )
-
 
 # Shared module KRTCore
 add_subdirectory( KRTCore )

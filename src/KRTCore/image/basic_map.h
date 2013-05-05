@@ -101,7 +101,7 @@ public:
 	static void Shutdown();
 
 private:
-	STDEXT::hash_map<std::string, Tex2D*> mBitmapTextures;
+	std_hash_map<std::string, Tex2D*> mBitmapTextures;
 	std::vector<std::string> mSearchPaths;
 	bool mbUseMipmap;
 

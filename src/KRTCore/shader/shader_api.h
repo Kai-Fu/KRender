@@ -1,5 +1,4 @@
-#ifndef SURFACE_SHADER_API  
-#define SURFACE_SHADER_API
+#pragma once
 
 #include "../camera/camera.h"
 
@@ -7,6 +6,7 @@
 #include "../image/Color.h"
 #include "../image/BitmapObject.h"
 #include "../api/KRT_API.h"
+#include <KShaderCompiler/inc/SC_API.h>
 
 
 struct IntersectInfo
@@ -137,4 +137,17 @@ struct RenderParam {
 	KRT_ImageFormat pixel_format; 
 };
 
-#endif
+// Shader based on KShaderCompiler
+class KSC_Shader
+{
+public:
+	KSC_Shader();
+	~KSC_Shader();
+
+	bool Load(const char* shaderFile);
+	virtual bool Validate(FunctionHandle shadeFunc);
+
+	void Execute(void* inData, void* outData);
+protected:
+	void* mpUniformData;
+};

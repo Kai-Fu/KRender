@@ -361,7 +361,7 @@ TextureManager::TextureManager()
 
 TextureManager::~TextureManager()
 {
-	for (STDEXT::hash_map<std::string, Tex2D*>::iterator it = mBitmapTextures.begin(); it != mBitmapTextures.end(); ++it)
+	for (std_hash_map<std::string, Tex2D*>::iterator it = mBitmapTextures.begin(); it != mBitmapTextures.end(); ++it)
 		delete it->second;
 	mBitmapTextures.clear();
 }
