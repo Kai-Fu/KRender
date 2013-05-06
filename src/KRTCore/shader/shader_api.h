@@ -145,9 +145,12 @@ public:
 	~KSC_Shader();
 
 	bool Load(const char* shaderFile);
-	virtual bool Validate(FunctionHandle shadeFunc);
-
 	void Execute(void* inData, void* outData);
+
+	virtual bool Validate(FunctionHandle shadeFunc);
+	virtual void* CreateExternalData(const char* typeString, const char* valueString);
+
 protected:
 	void* mpUniformData;
+	void* mpFuncPtr;
 };

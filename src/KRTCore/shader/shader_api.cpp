@@ -487,8 +487,17 @@ bool TracingInstance::IsPointOccluded(const KRay& ray, float len) const
 		return false;
 }
 
+
+KSC_Shader::KSC_Shader()
+{
+	mpUniformData = NULL;
+	mpFuncPtr = NULL;
+}
+
 bool KSC_Shader::Load(const char* shaderFile)
 {
+	printf("Loading shader file %s...\n", shaderFile);
+
 	mpUniformData = NULL;
 	FILE* f = NULL;
 	fopen_s(&f, shaderFile, "r");
@@ -498,7 +507,7 @@ bool KSC_Shader::Load(const char* shaderFile)
 	// The first line must be "Shader = xxx", where xxx should be the file that contains KSC code.
 	fgets(line, 256, f);
 	char kscFile[256];
-	if (sscanf_s(line, "Shader%*[ ]=%*[ ]%s", kscFile) != 1)
+	if (sscanf(line, "Shader%*[ ]=%*[ ]%s", kscFile) != 1)
 		return false;
 	std::string shaderPath = "./shader/";
 	shaderPath += kscFile;
@@ -514,6 +523,11 @@ bool KSC_Shader::Load(const char* shaderFile)
 		printf("Shade function does not exist in KSC code.\n");
 		return false;
 	}
+	mpFuncPtr = KSC_GetFunctionPtr(shadeFunc);
+	if (mpFuncPtr == NULL) {
+		printf("Shade function JIT failed.\n");
+		return false;
+	}
 
 	// The Shade function should have three arguments:
 	// arg0 - the reference to structure that contains uniform data
@@ -525,7 +539,7 @@ bool KSC_Shader::Load(const char* shaderFile)
 	}
 
 	KSC_TypeInfo arg0TypeInfo = KSC_GetFunctionArgumentType(shadeFunc, 0);
-	if (!arg0TypeInfo.isRef || !arg0TypeInfo.isKSCLayout) {
+	if (!arg0TypeInfo.isRef || !arg0TypeInfo.isKSCLayout || arg0TypeInfo.hStruct == NULL) {
 		printf("Incorrect type for argument 0.\n");
 		return false;
 	}
@@ -543,10 +557,90 @@ bool KSC_Shader::Load(const char* shaderFile)
 		return false;
 	}
 
+	mpUniformData = KSC_AllocMemForType(arg0TypeInfo, 0);
+
 	while (!feof(f)) {
 		// Parse each line and set the initial uniform values
 		fgets(line, 256, f);
-		
+		char varStr[256];
+		char valueStr[256];
+		{
+			char tempBuf0[256];
+			char tempBuf1[256];
+			if (2 != sscanf(line, "%[^=]=%[^=]", tempBuf0, tempBuf1)) {
+				printf("\tIncorrect line for shader parameter initializer: \"%s\" \n", line);
+				continue;
+			}
+			sscanf(tempBuf0, "%s", varStr);
+			sscanf(tempBuf1, "%s", valueStr);
+		}
+		KSC_TypeInfo memberType = KSC_GetStructMemberType(arg0TypeInfo.hStruct, varStr);
+		if (memberType.hStruct != NULL) {
+			printf("\tShader parameter initializer must be applied to built-in types.\n");
+			continue;
+		}
+
+
+		if (memberType.type == SC::kExternType) {
+			void* extData = CreateExternalData(memberType.typeString, valueStr);
+			if (extData == NULL) 
+				printf("\tExternal data(type %s, value %s) creation failed.\n", memberType.typeString, valueStr);
+			else {
+				KSC_SetStructMemberData(arg0TypeInfo.hStruct, mpUniformData, varStr, &extData);
+			}
+		}
+		else {
+			SC::Int iData[4] = {0,0,0,0};
+			SC::Float fData[4] = {0,0,0,0};
+			SC::Boolean bData = 0;
+			switch (memberType.type) {
+			case SC::kBoolean:
+				sscanf(valueStr, "<%d>", &bData);
+				break;
+			case SC::kInt:			
+				sscanf(valueStr, "<%d>", &iData[0]);
+				break;
+			case SC::kInt2:
+				sscanf(valueStr, "<%d,%d>", &iData[0], &iData[1]);
+				break;
+			case SC::kInt3:
+				sscanf(valueStr, "<%d,%d,%d>", &iData[0], &iData[1], &iData[2]);
+				break;
+			case SC::kInt4:
+				sscanf(valueStr, "<%d,%d,%d,%d>", &iData[0], &iData[1], &iData[2], &iData[3]);
+				break;
+			case SC::kFloat:
+				sscanf(valueStr, "<%d>", &fData[0]);
+				break;
+			case SC::kFloat2:
+				sscanf(valueStr, "<%d,%d>", &fData[0], &fData[1]);
+				break;
+			case SC::kFloat3:
+				sscanf(valueStr, "<%d,%d,%d>", &fData[0], &fData[1], &fData[2]);
+				break;
+			case SC::kFloat4:
+				sscanf(valueStr, "<%d,%d,%d,%d>", &fData[0], &fData[1], &fData[2], &fData[3]);
+				break;
+			}
+
+			switch (memberType.type) {
+			case SC::kBoolean:
+				KSC_SetStructMemberData(arg0TypeInfo.hStruct, mpUniformData, varStr, &bData);
+				break;
+			case SC::kInt:
+			case SC::kInt2:
+			case SC::kInt3:
+			case SC::kInt4:
+				KSC_SetStructMemberData(arg0TypeInfo.hStruct, mpUniformData, varStr, iData);
+				break;
+			case SC::kFloat:
+			case SC::kFloat2:
+			case SC::kFloat3:
+			case SC::kFloat4:
+				KSC_SetStructMemberData(arg0TypeInfo.hStruct, mpUniformData, varStr, fData);
+				break;
+			}
+		}
 	}
 	return true;
 }
@@ -556,6 +650,11 @@ bool KSC_Shader::Validate(FunctionHandle shadeFunc)
 	return true;
 }
 
+void* KSC_Shader::CreateExternalData(const char* typeString, const char* valueString)
+{
+	return NULL;
+}
+
 KSC_Shader::~KSC_Shader()
 {
 
@@ -563,5 +662,7 @@ KSC_Shader::~KSC_Shader()
 
 void KSC_Shader::Execute(void* inData, void* outData)
 {
-
+	typedef void (*PFN_invoke)(void*, void*, void*);
+	PFN_invoke funcPtr = (PFN_invoke)mpFuncPtr;
+	funcPtr(mpUniformData, inData, outData);
 }
