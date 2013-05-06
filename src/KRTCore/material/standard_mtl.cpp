@@ -96,7 +96,7 @@ MirrorSurface::~MirrorSurface()
 
 }
 
-void MirrorSurface::CalculateShading(const KColor& in_clr, const KVec3& in_dir, const ShadingContext& shadingCtx, KColor& out_clr) const
+void MirrorSurface::CalculateShading(const SurfaceContext& shadingCtx, KColor& out_clr) const
 {
 	KColor reflectColor;
 	//CalcReflectedRay(pLocalData, shadingCtx, reflectColor);
@@ -151,7 +151,7 @@ AttributeDiagnoseSurface::~AttributeDiagnoseSurface()
 {
 }
 
-void AttributeDiagnoseSurface::CalculateShading(const KColor& in_clr, const KVec3& in_dir, const ShadingContext& shadingCtx, KColor& out_clr) const
+void AttributeDiagnoseSurface::CalculateShading(const SurfaceContext& shadingCtx, KColor& out_clr) const
 {
 	KVec3 temp;
 	switch (mMode) {
@@ -162,17 +162,10 @@ void AttributeDiagnoseSurface::CalculateShading(const KColor& in_clr, const KVec
 		out_clr.b = temp[2];
 		break;
 	case eShowUV:
-		if (shadingCtx.hasUV) {
-			temp = shadingCtx.tangent.tangent * 0.5f + KVec3(0.5f, 0.5f, 0.5f);
-			out_clr.r = temp[0];
-			out_clr.g = temp[1];
-			out_clr.b = temp[2];
-		}
-		else {
-			out_clr.r = 1;
-			out_clr.g = 1;
-			out_clr.b = 1;
-		}
+		temp = shadingCtx.tangent * 0.5f + KVec3(0.5f, 0.5f, 0.5f);
+		out_clr.r = temp[0];
+		out_clr.g = temp[1];
+		out_clr.b = temp[2];
 		break;
 	default:
 		out_clr.r = 1;

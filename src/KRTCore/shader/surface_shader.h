@@ -33,7 +33,7 @@ public:
 
 	virtual void SetParam(const char* paramName, void* pData, UINT32 dataSize) {}
 
-	virtual void CalculateShading(const KColor& in_clr, const KVec3& in_dir, const ShadingContext& shadingCtx, KColor& out_clr) const = 0;
+	virtual void CalculateShading(const SurfaceContext& shadingCtx, KColor& out_clr) const = 0;
 
 	virtual bool Save(FILE* pFile) = 0;
 	virtual bool Load(FILE* pFile) = 0;

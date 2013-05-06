@@ -487,6 +487,17 @@ bool TracingInstance::IsPointOccluded(const KRay& ray, float len) const
 		return false;
 }
 
+void ConvertToSurfaceContext(const ShadingContext& shadingCtx, const LightIterator& lightIt, SurfaceContext& surfaceCtx)
+{
+	surfaceCtx.inLight = lightIt.intensity;
+	surfaceCtx.inVec = lightIt.direction;
+	surfaceCtx.outVec = shadingCtx.out_vec;
+	surfaceCtx.normal = shadingCtx.normal;
+	surfaceCtx.tangent = shadingCtx.tangent.tangent;
+	surfaceCtx.binormal = shadingCtx.tangent.binormal;
+	surfaceCtx.uv = shadingCtx.hasUV ? shadingCtx.uv.uv : KVec2(0,0);
+}
+
 
 KSC_Shader::KSC_Shader()
 {

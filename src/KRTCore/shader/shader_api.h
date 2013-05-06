@@ -34,6 +34,20 @@ struct UV_SAMP_INFO
 
 class ISurfaceShader;
 
+struct SurfaceContext
+{
+	KColor inLight;
+
+	KVec3 inVec;
+	KVec3 outVec;
+
+	KVec3 normal;
+	KVec3 tangent;
+	KVec3 binormal;
+
+	KVec2 uv;
+};
+
 struct ShadingContext
 {
 	KVec3 position;
@@ -52,6 +66,7 @@ struct ShadingContext
 	ISurfaceShader* surface_shader;
 	bool is_primary_ray;
 };
+
 
 class KKDBBoxScene;
 class RenderBuffers;
@@ -136,6 +151,9 @@ struct RenderParam {
 	void* user_buffer;
 	KRT_ImageFormat pixel_format; 
 };
+
+void ConvertToSurfaceContext(const ShadingContext& shadingCtx, const LightIterator& lightIt, SurfaceContext& surfaceCtx);
+
 
 // Shader based on KShaderCompiler
 class KSC_Shader
