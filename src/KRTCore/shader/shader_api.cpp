@@ -3,6 +3,7 @@
 #include "../sampling/halton2d.h"
 #include "../animation/animated_transform.h"
 #include "../scene/KKDBBoxScene.h"
+#include "../image/basic_map.h"
 
 #include <assert.h>
 
@@ -505,13 +506,13 @@ KSC_Shader::KSC_Shader()
 	mpFuncPtr = NULL;
 }
 
-bool KSC_Shader::Load(const char* shaderFile)
+bool KSC_Shader::LoadTemplate(const char* templateFile)
 {
-	printf("Loading shader file %s...\n", shaderFile);
+	printf("Loading shader template %s...\n", templateFile);
 
 	mpUniformData = NULL;
 	FILE* f = NULL;
-	fopen_s(&f, shaderFile, "r");
+	fopen_s(&f, templateFile, "r");
 	if (f == NULL)
 		return false;
 	char line[256];
@@ -671,9 +672,32 @@ KSC_Shader::~KSC_Shader()
 
 }
 
-void KSC_Shader::Execute(void* inData, void* outData)
+void KSC_Shader::Execute(void* inData, void* outData) const
 {
 	typedef void (*PFN_invoke)(void*, void*, void*);
 	PFN_invoke funcPtr = (PFN_invoke)mpFuncPtr;
 	funcPtr(mpUniformData, inData, outData);
+}
+
+KSC_ShaderWithTexture::KSC_ShaderWithTexture()
+{
+
+}
+
+KSC_ShaderWithTexture::~KSC_ShaderWithTexture()
+{
+
+}
+
+void* KSC_ShaderWithTexture::CreateExternalData(const char* typeString, const char* valueString)
+{
+	if (0 == strcmp(typeString, "Texture2D")) {
+		return Texture::TextureManager::GetInstance()->CreateBitmapTexture(valueString);
+	}
+	else if (0 == strcmp(typeString, "Texture3D")) {
+		// TODO:
+		return NULL;
+	}
+	else
+		return KSC_Shader::CreateExternalData(typeString, valueString);
 }

@@ -383,7 +383,7 @@ bool KNode::LoadFromFile(FILE* pFile)
 	std::string mtlName;
 	if (!LoadArrayFromFile(mtlName, pFile))
 		return false;
-	mpSurfShader = Material_Library::GetInstance()->OpenMaterial(mtlName.c_str());
+	mpSurfShader = KMaterialLibrary::GetInstance()->OpenMaterial(mtlName.c_str());
 
 	nvmath::Trafo trans_info;
 	trans_info.setMatrix(mObjectTM);

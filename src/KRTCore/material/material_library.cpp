@@ -3,35 +3,36 @@
 #include "../file_io/file_io_template.h"
 #include "../shader/light_scheme.h"
 
-Material_Library* Material_Library::s_pInstance = NULL;
+KMaterialLibrary* KMaterialLibrary::s_pInstance = NULL;
 
-Material_Library::Material_Library()
+KMaterialLibrary::KMaterialLibrary()
 {
 }
 
-Material_Library::~Material_Library()
+KMaterialLibrary::~KMaterialLibrary()
 {
 
 }
 
-ISurfaceShader* Material_Library::CreateMaterial(const char* pMtlType, const char* pMtlName)
+ISurfaceShader* KMaterialLibrary::CreateMaterial(const char* shaderTemplate, const char* pMtlName)
 {
-	if (pMtlType && pMtlName) {
+	if (shaderTemplate && pMtlName) {
 		std::string mtlName;
 		mUniqueStrMaker.MakeUniqueString(mtlName, pMtlName);
 		ISurfaceShader* pRet = NULL;
-		if (0 == strcmp(pMtlType, BASIC_PHONG)) {
+
+		/*if (0 == strcmp(shaderTemplate, BASIC_PHONG)) {
 			pRet = new PhongSurface(mtlName.c_str());
 			mMaterialInstances[mtlName] = pRet;
 		}
-		else if (0 == strcmp(pMtlType, MIRROR)) {
+		else if (0 == strcmp(shaderTemplate, MIRROR)) {
 			pRet = new MirrorSurface(mtlName.c_str());
 			mMaterialInstances[mtlName] = pRet;
 		}
-		else if (0 == strcmp(pMtlType, DIAGNOSTIC)) {
+		else if (0 == strcmp(shaderTemplate, DIAGNOSTIC)) {
 			pRet = new AttributeDiagnoseSurface(mtlName.c_str());
 			mMaterialInstances[mtlName] = pRet;
-		}
+		}*/
 			
 		return pRet;
 	}
@@ -39,7 +40,7 @@ ISurfaceShader* Material_Library::CreateMaterial(const char* pMtlType, const cha
 		return NULL;
 }
 
-ISurfaceShader* Material_Library::OpenMaterial(const char* pMtlName)
+ISurfaceShader* KMaterialLibrary::OpenMaterial(const char* pMtlName)
 {
 	if (pMtlName) {
 		MTL_MAP::iterator it = mMaterialInstances.find(pMtlName);
@@ -52,7 +53,7 @@ ISurfaceShader* Material_Library::OpenMaterial(const char* pMtlName)
 		return NULL;
 }
 
-void Material_Library::Clear()
+void KMaterialLibrary::Clear()
 {
 	MTL_MAP::iterator it = mMaterialInstances.begin();
 	for (; it != mMaterialInstances.end(); ++it) {
@@ -62,7 +63,7 @@ void Material_Library::Clear()
 	mUniqueStrMaker.Clear();
 }
 
-bool Material_Library::Save(FILE* pFile)
+bool KMaterialLibrary::Save(FILE* pFile)
 {
 	std::string typeName = "Material_Library";
 	if (!SaveArrayToFile(typeName, pFile))
@@ -86,7 +87,7 @@ bool Material_Library::Save(FILE* pFile)
 	return true;
 }
 
-bool Material_Library::Load(FILE* pFile)
+bool KMaterialLibrary::Load(FILE* pFile)
 {
 	Clear();
 	std::string srcTypeName;
@@ -118,18 +119,65 @@ bool Material_Library::Load(FILE* pFile)
 	return true;
 }
 
-Material_Library* Material_Library::GetInstance()
+KMaterialLibrary* KMaterialLibrary::GetInstance()
 {
 	return s_pInstance;
 }
 
-void Material_Library::Initialize()
+void KMaterialLibrary::Initialize()
 {
-	s_pInstance = new Material_Library();
+	s_pInstance = new KMaterialLibrary();
 }
 
-void Material_Library::Shutdown()
+void KMaterialLibrary::Shutdown()
 {
 	delete s_pInstance;
 	s_pInstance = NULL;
+}
+
+KSC_SurfaceShader::KSC_SurfaceShader(const char* shaderTemplate, const char* shaderName) :
+	ISurfaceShader(shaderTemplate, shaderName)
+{
+
+}
+
+KSC_SurfaceShader::~KSC_SurfaceShader()
+{
+
+}
+
+bool KSC_SurfaceShader::Validate(FunctionHandle shadeFunc)
+{
+	// Perform the extra check for the second and third arguments
+	if (3 != KSC_GetFunctionArgumentCount(shadeFunc))
+		return false;
+
+	KSC_TypeInfo argType0 = KSC_GetFunctionArgumentType(shadeFunc, 1);
+	if (!argType0.isRef || KSC_GetTypePackedSize(argType0) == sizeof(SurfaceContext)) {
+		printf("Incorrect type for second argument, it must be SurfaceContext&.\n");
+		return false;
+	}
+
+	KSC_TypeInfo argType1 = KSC_GetFunctionArgumentType(shadeFunc, 2);
+	if (!argType1.isRef || argType1.type != SC::kFloat3) {
+		printf("Incorrect type for second argument, it must be float3&.\n");
+		return false;
+	}
+
+	return true;
+}
+
+bool KSC_SurfaceShader::LoadAndCompile()
+{
+	return LoadTemplate(mTypeName.c_str());
+}
+
+void KSC_SurfaceShader::SetParam(const char* paramName, void* pData, UINT32 dataSize)
+{
+
+}
+
+void KSC_SurfaceShader::CalculateShading(const SurfaceContext& shadingCtx, KColor& out_clr) const
+{
+	Execute((void*)&shadingCtx, &out_clr);
 }

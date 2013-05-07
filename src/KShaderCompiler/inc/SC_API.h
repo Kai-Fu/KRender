@@ -198,5 +198,10 @@ extern "C" {
 	*/
 	KSC_API int KSC_GetStructSize(StructHandle hStruct);
 
+	/**
+		This function returns the packed structure size, it should be the same as if it is declared in C++ code(supposing the alignment is one).
+	*/
+	KSC_API int KSC_GetTypePackedSize(const KSC_TypeInfo& typeInfo);
+
 }
 

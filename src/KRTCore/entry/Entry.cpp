@@ -18,7 +18,7 @@ KRayTracer_Root* InitializeKRayTracer()
 {
 	FreeImage_Initialise();
 
-	Material_Library::Initialize();
+	KMaterialLibrary::Initialize();
 	CameraManager::Initialize();
 	LightScheme::Initialize();
 
@@ -30,7 +30,7 @@ void DestroyKRayTracer()
 {
 	LightScheme::Shutdown();
 	CameraManager::Shutdown();
-	Material_Library::Shutdown();
+	KMaterialLibrary::Shutdown();
 
 	if (g_pRoot)
 		delete g_pRoot;
@@ -296,7 +296,7 @@ unsigned KRT_AddMeshToSubScene(Geom::RawMesh* pMesh, SubSceneHandle subScene)
 
 ShaderHandle KRT_CreateSurfaceMaterial(const char* shaderName, const char* mtlName)
 {
-	Material_Library* mtl_lib = Material_Library::GetInstance();
+	KMaterialLibrary* mtl_lib = KMaterialLibrary::GetInstance();
 	PhongSurface* pPhongSurf = dynamic_cast<PhongSurface*>(mtl_lib->CreateMaterial(BASIC_PHONG, mtlName));
 	return (ISurfaceShader*)pPhongSurf;
 }
@@ -310,7 +310,7 @@ bool KRT_SetShaderParameter(ShaderHandle hShader, const char* paramName, void* v
 
 ShaderHandle KRT_GetSurfaceMaterial(const char* mtlName)
 {
-	Material_Library* mtl_lib = Material_Library::GetInstance();
+	KMaterialLibrary* mtl_lib = KMaterialLibrary::GetInstance();
 	ISurfaceShader* pSurfShader = mtl_lib->OpenMaterial(mtlName);
 	return pSurfShader;
 }

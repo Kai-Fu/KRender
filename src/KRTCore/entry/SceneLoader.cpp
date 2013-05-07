@@ -17,7 +17,7 @@ namespace KRayTracer {
 SceneLoader::SceneLoader()
 {
 	LightScheme::Initialize();
-	Material_Library::Initialize();
+	KMaterialLibrary::Initialize();
 	CameraManager::Initialize();
 	Texture::TextureManager::Initialize();
 
@@ -27,7 +27,7 @@ SceneLoader::SceneLoader()
 SceneLoader::~SceneLoader()
 {
 	LightScheme::Shutdown();
-	Material_Library::Shutdown();
+	KMaterialLibrary::Shutdown();
 	CameraManager::Shutdown();
 	Texture::TextureManager::Shutdown();
 
@@ -42,7 +42,7 @@ protected:
 	virtual void ProcessingMaterial(GLMmodel* model, KScene& scene, const stdext::hash_map<UINT32, UINT32>& nodeToMtl)
 	{
 		// Create material
-		Material_Library* pML = Material_Library::GetInstance();
+		KMaterialLibrary* pML = KMaterialLibrary::GetInstance();
 		for (UINT32 mi = 0; mi < model->nummaterials; ++mi) {
 			ISurfaceShader* pSurfShader = pML->CreateMaterial("basic_phong", model->materials[mi].name);
 			pSurfShader->SetParam("diffuse_color", model->materials[mi].diffuse, sizeof(float)*3);
@@ -182,7 +182,7 @@ bool SceneLoader::SaveAsSCN(FILE* pFile) const
 	if (!pFile)
 		return false;
 
-	if (!Material_Library::GetInstance()->Save(pFile))
+	if (!KMaterialLibrary::GetInstance()->Save(pFile))
 		return false;
 
 	if (!CameraManager::GetInstance()->Save(pFile))
@@ -203,7 +203,7 @@ bool SceneLoader::LoadAsSCN(FILE* pFile)
 	if (!pFile)
 		return false;
 
-	if (!Material_Library::GetInstance()->Load(pFile))
+	if (!KMaterialLibrary::GetInstance()->Load(pFile))
 		return false;
 
 	if (!CameraManager::GetInstance()->Load(pFile))

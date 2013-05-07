@@ -1,4 +1,4 @@
-#include "SC_API.h"
+#include "../inc/SC_API.h"
 #include "IR_Gen_Context.h"
 #include "parser_AST_Gen.h"
 #include <string>
@@ -274,4 +274,27 @@ void* KSC_AllocMemForType(const KSC_TypeInfo& typeInfo, int arraySize)
 void KSC_FreeMem(void* pData)
 {
 	_Aligned_Free(pData);
+}
+
+int KSC_GetTypePackedSize(const KSC_TypeInfo& typeInfo)
+{
+	if (typeInfo.hStruct == NULL) {
+		return SC::TypeSize(typeInfo.type);
+	}
+	else {
+		KSC_StructDesc* pStructDesc = (KSC_StructDesc*)typeInfo.hStruct;
+		if (!pStructDesc)
+			return 0;
+		int packedSize = 0;
+		std::vector<KSC_TypeInfo>::iterator it = pStructDesc->begin();
+		for (; it != pStructDesc->end(); ++it) {
+			if (it->hStruct == NULL) {
+				packedSize += SC::TypeSize(it->type);
+			}
+			else {
+				packedSize += KSC_GetTypePackedSize(*it);
+			}
+		}
+		return packedSize;
+	}
 }

@@ -1,6 +1,6 @@
 #pragma once
 #define MAX_TOKEN_LENGTH 100
-#include "SC_API.h"
+#include "../inc/SC_API.h"
 #include <vector>
 #include <hash_map>
 

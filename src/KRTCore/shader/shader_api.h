@@ -162,8 +162,8 @@ public:
 	KSC_Shader();
 	~KSC_Shader();
 
-	bool Load(const char* shaderFile);
-	void Execute(void* inData, void* outData);
+	bool LoadTemplate(const char* templateFile);
+	void Execute(void* inData, void* outData) const;
 
 	virtual bool Validate(FunctionHandle shadeFunc);
 	virtual void* CreateExternalData(const char* typeString, const char* valueString);
@@ -171,4 +171,13 @@ public:
 protected:
 	void* mpUniformData;
 	void* mpFuncPtr;
+};
+
+class KSC_ShaderWithTexture : public KSC_Shader
+{
+public:
+	KSC_ShaderWithTexture();
+	~KSC_ShaderWithTexture();
+
+	virtual void* CreateExternalData(const char* typeString, const char* valueString);
 };

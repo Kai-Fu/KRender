@@ -6,17 +6,16 @@
 #include <string>
 
 
-
-class Material_Library
+class KMaterialLibrary
 {
 public:
-	Material_Library();
-	~Material_Library();
+	KMaterialLibrary();
+	~KMaterialLibrary();
 
-	ISurfaceShader* CreateMaterial(const char* pMtlType, const char* pMtlName);
+	ISurfaceShader* CreateMaterial(const char* shaderTemplate, const char* pMtlName);
 	ISurfaceShader* OpenMaterial(const char* pMtlName);
 	
-	static Material_Library* GetInstance();
+	static KMaterialLibrary* GetInstance();
 	static void Initialize();
 	static void Shutdown();
 
@@ -30,7 +29,21 @@ private:
 	MTL_MAP mMaterialInstances;
 	UniqueStringMaker mUniqueStrMaker;
 
-	static Material_Library* s_pInstance;
+	static KMaterialLibrary* s_pInstance;
 };
 
+class KSC_SurfaceShader : public ISurfaceShader, public KSC_ShaderWithTexture
+{
+public:
+	KSC_SurfaceShader(const char* shaderTemplate, const char* shaderName);
+	~KSC_SurfaceShader();
 
+	bool LoadAndCompile();
+
+	// From KSC_ShaderWithTexture
+	virtual bool Validate(FunctionHandle shadeFunc);
+
+	// From ISurfaceShader
+	virtual void SetParam(const char* paramName, void* pData, UINT32 dataSize);
+	virtual void CalculateShading(const SurfaceContext& shadingCtx, KColor& out_clr) const;
+};

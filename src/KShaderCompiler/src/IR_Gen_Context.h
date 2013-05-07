@@ -1,7 +1,7 @@
 #pragma once
 
 #include "parser_AST_Gen.h"
-#include "SC_API.h"
+#include "../inc/SC_API.h"
 
 #include <llvm/DerivedTypes.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
