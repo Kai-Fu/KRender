@@ -500,10 +500,13 @@ void ConvertToSurfaceContext(const ShadingContext& shadingCtx, const LightIterat
 }
 
 
+std::hash_map<std::string, FunctionHandle> KSC_Shader::sLoadedShadeFunctions;
+
 KSC_Shader::KSC_Shader()
 {
 	mpUniformData = NULL;
 	mpFuncPtr = NULL;
+	mShadeFunction = NULL;
 }
 
 bool KSC_Shader::LoadTemplate(const char* templateFile)
@@ -512,29 +515,68 @@ bool KSC_Shader::LoadTemplate(const char* templateFile)
 
 	mpUniformData = NULL;
 	FILE* f = NULL;
-	fopen_s(&f, templateFile, "r");
+	std::string templatePath = "./asset/";
+	templatePath += templateFile;
+	fopen_s(&f, templatePath.c_str(), "r");
 	if (f == NULL)
 		return false;
 	char line[256];
 	// The first line must be "Shader = xxx", where xxx should be the file that contains KSC code.
 	fgets(line, 256, f);
 	char kscFile[256];
-	if (sscanf(line, "Shader%*[ ]=%*[ ]%s", kscFile) != 1)
-		return false;
-	std::string shaderPath = "./shader/";
-	shaderPath += kscFile;
-	ModuleHandle shaderModule = KSC_Compile(shaderPath.c_str());
-	if (shaderModule == NULL) {
-		printf("Shader compilation failed with following error:\n");
-		printf(KSC_GetLastErrorMsg());
-		return false;
+	{
+		char tempBuf0[256];
+		if (1 != sscanf(line, "%*[^=]=%[^=]", tempBuf0)) {
+			printf("\tIncorrect line for shader assignment: \"%s\" \n", line);
+			return false;
+		}
+		sscanf(tempBuf0, "%s", kscFile);
 	}
+
+	FunctionHandle shadeFunc = NULL;
+	if (sLoadedShadeFunctions.find(kscFile) == sLoadedShadeFunctions.end()) {
+
+		std::string shaderPath = "./asset/shader/";
+		std::string shaderContent;
+		shaderPath += kscFile;
+		{
+			FILE* fShadeFile = NULL;
+			// Load the content of the shader file
+			fopen_s(&fShadeFile, shaderPath.c_str(), "r");
+			if (fShadeFile == NULL)
+				return false;
+			fseek(fShadeFile, 0, SEEK_END);
+			long len = ftell(fShadeFile);
+			fseek(fShadeFile, 0, SEEK_SET);
+
+			shaderContent.resize(len + 1);
+			char* line = &shaderContent[0];
+
+			while (fgets(line, len, fShadeFile) != NULL) {
+				size_t lineLen = strlen(line);
+				line += lineLen;
+			}
+			fclose(fShadeFile);
+		}
+
+		ModuleHandle shaderModule = KSC_Compile(shaderContent.c_str());
+		if (shaderModule == NULL) {
+			printf("Shader compilation failed with following error:\n");
+			printf(KSC_GetLastErrorMsg());
+			return false;
+		}
 		
-	FunctionHandle shadeFunc = KSC_GetFunctionHandleByName("Shade", shaderModule);
-	if (shadeFunc == NULL) {
-		printf("Shade function does not exist in KSC code.\n");
-		return false;
+		shadeFunc = KSC_GetFunctionHandleByName("Shade", shaderModule);
+		if (shadeFunc == NULL) {
+			printf("Shade function does not exist in KSC code.\n");
+			return false;
+		}
+		sLoadedShadeFunctions[kscFile] = shadeFunc;
 	}
+	else {
+		shadeFunc = sLoadedShadeFunctions[kscFile];
+	}
+
 	mpFuncPtr = KSC_GetFunctionPtr(shadeFunc);
 	if (mpFuncPtr == NULL) {
 		printf("Shade function JIT failed.\n");
@@ -569,6 +611,8 @@ bool KSC_Shader::LoadTemplate(const char* templateFile)
 		return false;
 	}
 
+	mShadeFunction = shadeFunc;
+
 	mpUniformData = KSC_AllocMemForType(arg0TypeInfo, 0);
 
 	while (!feof(f)) {
@@ -584,7 +628,7 @@ bool KSC_Shader::LoadTemplate(const char* templateFile)
 				continue;
 			}
 			sscanf(tempBuf0, "%s", varStr);
-			sscanf(tempBuf1, "%s", valueStr);
+			sscanf(tempBuf1 + strspn(tempBuf1, " \t"), "%[^ ]", valueStr);
 		}
 		KSC_TypeInfo memberType = KSC_GetStructMemberType(arg0TypeInfo.hStruct, varStr);
 		if (memberType.hStruct != NULL) {
@@ -622,16 +666,16 @@ bool KSC_Shader::LoadTemplate(const char* templateFile)
 				sscanf(valueStr, "<%d,%d,%d,%d>", &iData[0], &iData[1], &iData[2], &iData[3]);
 				break;
 			case SC::kFloat:
-				sscanf(valueStr, "<%d>", &fData[0]);
+				sscanf(valueStr, "<%f>", &fData[0]);
 				break;
 			case SC::kFloat2:
-				sscanf(valueStr, "<%d,%d>", &fData[0], &fData[1]);
+				sscanf(valueStr, "<%f,%f>", &fData[0], &fData[1]);
 				break;
 			case SC::kFloat3:
-				sscanf(valueStr, "<%d,%d,%d>", &fData[0], &fData[1], &fData[2]);
+				sscanf(valueStr, "<%f,%f,%f>", &fData[0], &fData[1], &fData[2]);
 				break;
 			case SC::kFloat4:
-				sscanf(valueStr, "<%d,%d,%d,%d>", &fData[0], &fData[1], &fData[2], &fData[3]);
+				sscanf(valueStr, "<%f,%f,%f,%f>", &fData[0], &fData[1], &fData[2], &fData[3]);
 				break;
 			}
 
@@ -654,6 +698,8 @@ bool KSC_Shader::LoadTemplate(const char* templateFile)
 			}
 		}
 	}
+
+	fclose(f);
 	return true;
 }
 
@@ -677,6 +723,42 @@ void KSC_Shader::Execute(void* inData, void* outData) const
 	typedef void (*PFN_invoke)(void*, void*, void*);
 	PFN_invoke funcPtr = (PFN_invoke)mpFuncPtr;
 	funcPtr(mpUniformData, inData, outData);
+}
+
+bool KSC_Shader::SetUniformParam(const char* name, void* data, int dataSize)
+{
+	KSC_TypeInfo uniformArgType = KSC_GetFunctionArgumentType(mShadeFunction, 0);
+	if (uniformArgType.hStruct == NULL)
+		return false;
+	KSC_TypeInfo memberType = KSC_GetStructMemberType(uniformArgType.hStruct, name);
+	if (memberType.type == SC::kInvalid)
+		return false;
+	if (memberType.type == SC::kStructure)
+		return false;
+
+	if (memberType.type == SC::kExternType) {
+		void* pExtData = CreateExternalData(memberType.typeString, (const char*)data);
+		if (pExtData) {
+			if (KSC_SetStructMemberData(uniformArgType.hStruct, mpUniformData, name, &pExtData)) {
+				std::vector<BYTE>& storedData = mModifiedData[name];
+				storedData.resize(strlen((const char*)data) + 1);
+				memcpy(&storedData[0], data, storedData.size());
+				return true;
+			}
+		}
+	}
+	else {
+		if (dataSize == KSC_GetTypePackedSize(memberType)) {
+			if (KSC_SetStructMemberData(uniformArgType.hStruct, mpUniformData, name, data)) {
+				// Store the successfully modified data
+				std::vector<BYTE>& storedData = mModifiedData[name];
+				storedData.resize(dataSize);
+				memcpy(&storedData[0], data, dataSize);
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 KSC_ShaderWithTexture::KSC_ShaderWithTexture()

@@ -1,0 +1,25 @@
+
+struct PhongParam
+{
+	float3 diffuse_color;
+	float3 specular_color;
+};
+
+float dot(float3 a, float3 b)
+{
+	float3 temp = a * b;
+	return temp.x + temp.y + temp.z;
+}
+
+void Shade(PhongParam% uniforms, SurfaceContext& ctx, float3& outClr)
+{
+	outClr = float3(0,0,0);
+	float do = dot(ctx.outVec, ctx.normal);
+	if (do < 0)
+		return;
+	float di = dot(ctx.inVec, ctx.normal);
+	if (di < 0)
+		di = 0;
+	outClr = float3(di, di, di) * uniforms.diffuse_color;
+	//outClr = ctx.normal * float3(0.5,0.5,0.5) + float3(0.5,0.5,0.5);
+}

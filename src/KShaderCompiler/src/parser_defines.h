@@ -47,6 +47,7 @@ public:
 	llvm::Function* F;
 	std::vector<int> needJITPacked;
 
+	void* pJIT_Func;
 };
 
 class KSC_ModuleDesc

@@ -92,6 +92,7 @@ bool LightScheme::GetLightIter(TracingInstance* pLocalData, const KVec2& sampleP
 						shading_context.out_vec = -shading_context.out_vec;
 						SurfaceContext surfaceCtx;
 						LightIterator lightIt = {-lightDir, transmission};
+						lightIt.direction.normalize();
 						ConvertToSurfaceContext(shading_context, lightIt, surfaceCtx);
 						shadingCtx->surface_shader->CalculateShading(surfaceCtx, temp_trans);
 						transmission = temp_trans;

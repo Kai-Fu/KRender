@@ -477,7 +477,7 @@ void GetConvertedMaterials(FbxNode* pFbxNode, std::vector<ShaderHandle>& convert
 		ShaderHandle pPhongSurf = NULL;
 
 		if (pMtl) {
-			pPhongSurf = KRT_CreateSurfaceMaterial("DummyShader", pMtl->GetName());
+			pPhongSurf = KRT_CreateSurfaceMaterial("simple_phone_mtl_0.template", pMtl->GetName());
 			float tmpClr[3];
 			float tmpScale;
 
@@ -521,7 +521,7 @@ void GetConvertedMaterials(FbxNode* pFbxNode, std::vector<ShaderHandle>& convert
 		else {
 			std::string wire_color_mtl_name = "__wire_color_";
 			wire_color_mtl_name += pFbxNode->GetName();
-			pPhongSurf = KRT_CreateSurfaceMaterial("DummyShader", wire_color_mtl_name.c_str());
+			pPhongSurf = KRT_CreateSurfaceMaterial("simple_phone_mtl_0.template", wire_color_mtl_name.c_str());
 
 			FbxNodeAttribute* lNodeAttribute = pFbxNode->GetNodeAttribute();
 			float tmpClr[3];

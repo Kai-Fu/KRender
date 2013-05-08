@@ -1615,9 +1615,14 @@ Exp_ValueEval* CompilingContext::ParseSimpleExpression(CodeDomain* curDomain)
 	return result.release();
 }
 
-Exp_ValueEval* CompilingContext::ParseComplexExpression(CodeDomain* curDomain, const char* pEndToken0, const char* pEndToken1)
+Exp_ValueEval* CompilingContext::ParseComplexExpression(CodeDomain* curDomain, const char* pEndToken0, const char* pEndToken1, Exp_ValueEval* pValueExp0, Token tOp0)
 {
-	std::auto_ptr<Exp_ValueEval> simpleExp0(ParseSimpleExpression(curDomain));
+	std::auto_ptr<Exp_ValueEval> simpleExp0;
+	if (pValueExp0) 
+		simpleExp0.reset(pValueExp0);
+	else 
+		simpleExp0.reset(ParseSimpleExpression(curDomain));
+
 	if (!simpleExp0.get()) {
 		// Must have some error message if it failed to parse a simple expression
 		assert(!mErrorMessages.empty()); 
@@ -1625,7 +1630,7 @@ Exp_ValueEval* CompilingContext::ParseComplexExpression(CodeDomain* curDomain, c
 	}
 
 	Exp_ValueEval* ret = NULL;
-	Token curT = PeekNextToken(0);
+	Token curT = pValueExp0 ? tOp0 : PeekNextToken(0);
 	if (curT.IsEqual(pEndToken0) || curT.IsEqual(pEndToken1)) {
 		ret = simpleExp0.release();
 	}
@@ -1634,10 +1639,13 @@ Exp_ValueEval* CompilingContext::ParseComplexExpression(CodeDomain* curDomain, c
 			AddErrorMessage(curT, "Expect a binary operator.");
 			return NULL;
 		}
-		GetNextToken(); // Eat the binary operator
+
+		if (pValueExp0 == NULL)
+			GetNextToken(); // Eat the binary operator
 
 		int op0_level = curT.GetBinaryOpLevel();
 		std::string op0_str = curT.ToStdString();
+		tOp0 = curT;
 
 		std::auto_ptr<Exp_ValueEval> simpleExp1(ParseSimpleExpression(curDomain));
 		if (!simpleExp1.get()) {
@@ -1660,20 +1668,16 @@ Exp_ValueEval* CompilingContext::ParseComplexExpression(CodeDomain* curDomain, c
 			std::string op1_str = nextT.ToStdString();
 
 			if (op1_level > op0_level) {
-				Exp_ValueEval* simpleExp2 = ParseComplexExpression(curDomain, pEndToken0, pEndToken1);
-				if (simpleExp2) {
-					Exp_BinaryOp* pBinaryOp1 = new Exp_BinaryOp(op1_str, simpleExp1.release(), simpleExp2);
-					Exp_BinaryOp* pBinaryOp0 = new Exp_BinaryOp(op0_str, simpleExp0.release(), pBinaryOp1);
-					ret = pBinaryOp0;
+				Exp_ValueEval* simpleExpRight = ParseComplexExpression(curDomain, pEndToken0, pEndToken1, simpleExp1.release(), nextT);
+				if (simpleExpRight) {
+					Exp_BinaryOp* pBinaryOp = new Exp_BinaryOp(op0_str, simpleExp0.release(), simpleExpRight);
+					ret = pBinaryOp;
 				}
 			}
 			else {
-				Exp_ValueEval* simpleExp2 = ParseComplexExpression(curDomain, pEndToken0, pEndToken1);
-				if (simpleExp2) {
-					Exp_BinaryOp* pBinaryOp0 = new Exp_BinaryOp(op0_str, simpleExp0.release(), simpleExp1.release());
-					Exp_BinaryOp* pBinaryOp1 = new Exp_BinaryOp(op1_str, pBinaryOp0, simpleExp2);
-					ret = pBinaryOp1;
-				}
+				Exp_BinaryOp* pBinaryOpLeft = new Exp_BinaryOp(op0_str, simpleExp0.release(), simpleExp1.release());
+				Exp_ValueEval* simpleExpRet = ParseComplexExpression(curDomain, pEndToken0, pEndToken1, pBinaryOpLeft, nextT);
+				return simpleExpRet;
 			}
 		}
 	}

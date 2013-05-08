@@ -561,7 +561,7 @@ namespace SC {
 		Exp_ValueEval* ParseSimpleExpression(CodeDomain* curDomain);
 		// Complex expression means it contains any simple expression and binary operation.
 		//
-		Exp_ValueEval* ParseComplexExpression(CodeDomain* curDomain, const char* pEndToken0, const char* pEndToken1 = NULL);
+		Exp_ValueEval* ParseComplexExpression(CodeDomain* curDomain, const char* pEndToken0, const char* pEndToken1 = NULL, Exp_ValueEval* pValueExp0 = NULL, Token tOp0 = Token::sInvalid);
 
 	};
 

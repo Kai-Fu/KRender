@@ -23,5 +23,4 @@ install( FILES "${PTHREAD_SDK_PATH}/bin/pthread_${CPU_TYPE}.dll" DESTINATION bin
 # Install the KRTCore runtime
 install( TARGETS ${KRT_CORE_MODULE_NAME} RUNTIME DESTINATION bin )
 
-
-
+install( DIRECTORY "asset" DESTINATION bin )

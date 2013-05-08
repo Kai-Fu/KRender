@@ -158,7 +158,22 @@ void KRayTracer_Root::EventNotifier::OnFrameFinished(bool bIsUserCancel)
 bool KRT_Initialize()
 {
 	KRayTracer::InitializeKRayTracer();
-	return KSC_Initialize();
+	char* predefines = 
+"struct SurfaceContext\n"
+"{\n"
+"	float3 inLight;\n"
+
+"	float3 inVec;\n"
+"	float3 outVec;\n"
+
+"	float3 normal;\n"
+"	float3 tangent;\n"
+"	float3 binormal;\n"
+
+"	float2 uv;\n"
+"	};\n"
+;
+	return KSC_Initialize(predefines);
 }
 
 void KRT_Destory()
@@ -297,14 +312,14 @@ unsigned KRT_AddMeshToSubScene(Geom::RawMesh* pMesh, SubSceneHandle subScene)
 ShaderHandle KRT_CreateSurfaceMaterial(const char* shaderName, const char* mtlName)
 {
 	KMaterialLibrary* mtl_lib = KMaterialLibrary::GetInstance();
-	PhongSurface* pPhongSurf = dynamic_cast<PhongSurface*>(mtl_lib->CreateMaterial(BASIC_PHONG, mtlName));
-	return (ISurfaceShader*)pPhongSurf;
+	ISurfaceShader* pSS = mtl_lib->CreateMaterial(shaderName, mtlName);
+	return pSS;
 }
 
 bool KRT_SetShaderParameter(ShaderHandle hShader, const char* paramName, void* valueData, unsigned dataSize)
 {
-	ISurfaceShader* pPhongSurf = (ISurfaceShader*)hShader;
-	pPhongSurf->SetParam(paramName, valueData, dataSize);
+	ISurfaceShader* pSS = (ISurfaceShader*)hShader;
+	pSS->SetParam(paramName, valueData, dataSize);
 	return true;
 }
 

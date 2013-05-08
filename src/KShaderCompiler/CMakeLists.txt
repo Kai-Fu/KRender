@@ -18,6 +18,7 @@ include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/inc" )
 include_directories( "src" )
 
 # Add the KSC modules
+add_subdirectory( inc )
 add_subdirectory( src )
 add_subdirectory( test/external_function )
 add_subdirectory( test/recursive_call )

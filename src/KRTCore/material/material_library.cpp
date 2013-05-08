@@ -19,7 +19,9 @@ ISurfaceShader* KMaterialLibrary::CreateMaterial(const char* shaderTemplate, con
 	if (shaderTemplate && pMtlName) {
 		std::string mtlName;
 		mUniqueStrMaker.MakeUniqueString(mtlName, pMtlName);
-		ISurfaceShader* pRet = NULL;
+		KSC_SurfaceShader* pShader = new KSC_SurfaceShader(shaderTemplate, mtlName.c_str());;
+		pShader->LoadAndCompile();
+		ISurfaceShader* pRet = pShader;
 
 		/*if (0 == strcmp(shaderTemplate, BASIC_PHONG)) {
 			pRet = new PhongSurface(mtlName.c_str());
@@ -33,7 +35,7 @@ ISurfaceShader* KMaterialLibrary::CreateMaterial(const char* shaderTemplate, con
 			pRet = new AttributeDiagnoseSurface(mtlName.c_str());
 			mMaterialInstances[mtlName] = pRet;
 		}*/
-			
+		mMaterialInstances[mtlName] = pRet;
 		return pRet;
 	}
 	else
@@ -153,7 +155,7 @@ bool KSC_SurfaceShader::Validate(FunctionHandle shadeFunc)
 		return false;
 
 	KSC_TypeInfo argType0 = KSC_GetFunctionArgumentType(shadeFunc, 1);
-	if (!argType0.isRef || KSC_GetTypePackedSize(argType0) == sizeof(SurfaceContext)) {
+	if (!argType0.isRef || KSC_GetTypePackedSize(argType0) != sizeof(SurfaceContext)) {
 		printf("Incorrect type for second argument, it must be SurfaceContext&.\n");
 		return false;
 	}
@@ -174,10 +176,20 @@ bool KSC_SurfaceShader::LoadAndCompile()
 
 void KSC_SurfaceShader::SetParam(const char* paramName, void* pData, UINT32 dataSize)
 {
-
+	SetUniformParam(paramName, pData, dataSize);
 }
 
 void KSC_SurfaceShader::CalculateShading(const SurfaceContext& shadingCtx, KColor& out_clr) const
 {
 	Execute((void*)&shadingCtx, &out_clr);
+}
+
+bool KSC_SurfaceShader::Save(FILE* pFile)
+{
+	return true;
+}
+
+bool KSC_SurfaceShader::Load(FILE* pFile)
+{
+	return true;
 }

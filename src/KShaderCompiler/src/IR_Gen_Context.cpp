@@ -479,6 +479,7 @@ bool RootDomain::CompileToIR(CG_Context* pPredefine, KSC_ModuleDesc& mouduleDesc
 		if (pFuncDecl && pFuncDecl->HasBody()) {
 			llvm::Function* funcValue = llvm::dyn_cast_or_null<llvm::Function>(value);
 			KSC_FunctionDesc* pFuncDesc = new KSC_FunctionDesc;
+			pFuncDesc->pJIT_Func = NULL;
 			pFuncDesc->F = funcValue;
 			for (int ai = 0; ai < pFuncDecl->GetArgumentCnt(); ++ai)
 				pFuncDesc->needJITPacked.push_back(pFuncDecl->GetArgumentDesc(ai)->needJITPacked ? 1 : 0);

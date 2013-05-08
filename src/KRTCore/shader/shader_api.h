@@ -7,6 +7,7 @@
 #include "../image/BitmapObject.h"
 #include "../api/KRT_API.h"
 #include <KShaderCompiler/inc/SC_API.h>
+#include <hash_map>
 
 
 struct IntersectInfo
@@ -164,6 +165,7 @@ public:
 
 	bool LoadTemplate(const char* templateFile);
 	void Execute(void* inData, void* outData) const;
+	bool SetUniformParam(const char* name, void* data, int dataSize);
 
 	virtual bool Validate(FunctionHandle shadeFunc);
 	virtual void* CreateExternalData(const char* typeString, const char* valueString);
@@ -171,6 +173,11 @@ public:
 protected:
 	void* mpUniformData;
 	void* mpFuncPtr;
+	FunctionHandle mShadeFunction;
+	std::hash_map<std::string, std::vector<BYTE> > mModifiedData;
+
+private:
+	static std::hash_map<std::string, FunctionHandle> sLoadedShadeFunctions;
 };
 
 class KSC_ShaderWithTexture : public KSC_Shader

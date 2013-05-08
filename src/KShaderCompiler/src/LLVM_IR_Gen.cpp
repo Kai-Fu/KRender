@@ -70,8 +70,12 @@ llvm::Value* Exp_UnaryOp::GenerateCode(CG_Context* context) const
 {
 	if (mOpType == "!")
 		return CG_Context::sBuilder.CreateNot(mpExpr->GenerateCode(context));
-	else if (mOpType == "-")
-		return CG_Context::sBuilder.CreateNeg(mpExpr->GenerateCode(context));
+	else if (mOpType == "-") {
+		if (SC::IsFloatType(mCachedTypeInfo.type))
+			return CG_Context::sBuilder.CreateFNeg(mpExpr->GenerateCode(context));
+		else
+			return CG_Context::sBuilder.CreateNeg(mpExpr->GenerateCode(context));
+	}
 	else {
 		assert(0);
 		return NULL;
@@ -239,6 +243,8 @@ llvm::Value* Exp_FuncRet::GenerateCode(CG_Context* context) const
 		assert(retVal);
 		return CG_Context::sBuilder.CreateStore(retVal, context->GetRetValuePtr());
 	}
+
+	CG_Context::sBuilder.CreateBr(context->GetFuncRetBlk());
 	return NULL;
 }
 

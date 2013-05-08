@@ -12,9 +12,22 @@ SC::RootDomain*				s_predefineDomain = NULL;
 SC::CG_Context				s_predefineCtx;
 std::list<KSC_ModuleDesc*>	s_modules;
 
-int __int_pow(int base, int p)
+static int __int_pow(int base, int p)
 {
 	return _Pow_int(base, p);
+}
+
+static void SplitStringByDot(const char* inStr, std::vector<std::string>& outStrings)
+{
+	const char* pCur = inStr;
+	outStrings.push_back("");
+	while (*pCur != '\0') {
+		if (*pCur != '.')
+			outStrings.back().push_back(*pCur);
+		else
+			outStrings.push_back("");
+		++pCur;
+	}
 }
 
 bool KSC_Initialize(const char* sharedCode)
@@ -119,6 +132,9 @@ void* KSC_GetFunctionPtr(FunctionHandle hFunc)
 	if (!pFuncDesc || !pFuncDesc->F)
 		return NULL;
 
+	if (pFuncDesc->pJIT_Func)
+		return pFuncDesc->pJIT_Func;
+
 	llvm::Function* wrapperF = SC::CG_Context::CreateFunctionWithPackedArguments(*pFuncDesc);
 
 	// The JIT-ed function should NOT have any optimized alignment, so here force it aligned to 1 byte.
@@ -140,8 +156,11 @@ void* KSC_GetFunctionPtr(FunctionHandle hFunc)
 	wrapperF->setAttributes(attrList);*/
 	wrapperF->dump();
 
-	if (!llvm::verifyFunction(*wrapperF, llvm::PrintMessageAction))
-		return SC::CG_Context::TheExecutionEngine->getPointerToFunction(wrapperF);
+	if (!llvm::verifyFunction(*wrapperF, llvm::PrintMessageAction)) {
+		void* ret = SC::CG_Context::TheExecutionEngine->getPointerToFunction(wrapperF);
+		pFuncDesc->pJIT_Func = ret;
+		return ret;
+	}
 	else
 		return NULL;
 }
@@ -197,12 +216,28 @@ KSC_TypeInfo KSC_GetStructMemberType(StructHandle hStruct, const char* member)
 	KSC_StructDesc* pStructDesc = (KSC_StructDesc*)hStruct;
 	if (!pStructDesc)
 		return ret;
-	std::hash_map<std::string, KSC_StructDesc::MemberInfo>::iterator it = pStructDesc->mMemberIndices.find(member);
-	if (it != pStructDesc->mMemberIndices.end()) {
-		return (*pStructDesc)[it->second.idx];
+	std::vector<std::string> member_list;
+	SplitStringByDot(member, member_list);
+
+	KSC_TypeInfo memberType;
+	size_t i = 0;
+	for (; i < member_list.size(); ++i) {
+		std::hash_map<std::string, KSC_StructDesc::MemberInfo>::iterator it_member = pStructDesc->mMemberIndices.find(member_list[i]);
+		if (it_member != pStructDesc->mMemberIndices.end()) {
+			memberType = (*pStructDesc)[it_member->second.idx];
+			if (memberType.hStruct == NULL) {
+				if (i != member_list.size() - 1)
+					return ret;
+				break;
+			}
+			pStructDesc = (KSC_StructDesc*)memberType.hStruct;
+		}
+		else
+			return ret;
 	}
-	else
-		return ret;
+	if (i == member_list.size()) return ret;
+
+	return memberType;
 }
 
 void* KSC_GetStructMemberPtr(StructHandle hStruct, void* pStructVar, const char* member)
@@ -211,14 +246,29 @@ void* KSC_GetStructMemberPtr(StructHandle hStruct, void* pStructVar, const char*
 	KSC_StructDesc* pStructDesc = (KSC_StructDesc*)hStruct;
 	if (!pStructDesc)
 		return NULL;
-	std::hash_map<std::string, KSC_StructDesc::MemberInfo>::iterator it = pStructDesc->mMemberIndices.find(member);
-	if (it != pStructDesc->mMemberIndices.end()) {
-		offset = it->second.mem_offset;
-	}
-	else
-		return NULL;
 
-	return ((unsigned char*)pStructVar + offset);
+	std::vector<std::string> member_list;
+	SplitStringByDot(member, member_list);
+
+	KSC_TypeInfo memberType;
+	size_t i = 0;
+	for (; i < member_list.size(); ++i) {
+		std::hash_map<std::string, KSC_StructDesc::MemberInfo>::iterator it_member = pStructDesc->mMemberIndices.find(member);
+		if (it_member != pStructDesc->mMemberIndices.end()) {
+			offset += it_member->second.mem_offset;
+			memberType = (*pStructDesc)[it_member->second.idx];
+			if (memberType.hStruct == NULL) {
+				if (i != member_list.size() - 1)
+					return NULL;
+				break;
+			}
+		}
+		else
+			return NULL;
+	}
+	if (i == member_list.size()) return false;
+
+	return ((unsigned char*)pStructVar + NULL);
 }
 
 bool KSC_SetStructMemberData(StructHandle hStruct, void* pStructVar, const char* member, void* data)
@@ -227,14 +277,31 @@ bool KSC_SetStructMemberData(StructHandle hStruct, void* pStructVar, const char*
 	KSC_StructDesc* pStructDesc = (KSC_StructDesc*)hStruct;
 	if (!pStructDesc)
 		return false;
-	std::hash_map<std::string, KSC_StructDesc::MemberInfo>::iterator it = pStructDesc->mMemberIndices.find(member);
-	if (it != pStructDesc->mMemberIndices.end()) {
-		offset = it->second.mem_offset;
-	}
-	else
-		return false;
 
-	memcpy(((unsigned char*)pStructVar + offset), data, it->second.mem_size);
+	std::vector<std::string> member_list;
+	SplitStringByDot(member, member_list);
+
+	int memSize = 0;
+	KSC_TypeInfo memberType;
+	size_t i = 0;
+	for (; i < member_list.size(); ++i) {
+		std::hash_map<std::string, KSC_StructDesc::MemberInfo>::iterator it_member = pStructDesc->mMemberIndices.find(member);
+		if (it_member != pStructDesc->mMemberIndices.end()) {
+			offset += it_member->second.mem_offset;
+			memberType = (*pStructDesc)[it_member->second.idx];
+			if (memberType.hStruct == NULL) {
+				if (i != member_list.size() - 1)
+					return false;
+				memSize = it_member->second.mem_size;
+				break;
+			}
+		}
+		else
+			return false;
+	}
+	if (i == member_list.size()) return false;
+
+	memcpy(((unsigned char*)pStructVar + offset), data, memSize);
 	return true;
 }
 
