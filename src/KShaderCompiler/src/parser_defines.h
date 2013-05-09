@@ -34,6 +34,7 @@ public:
 		std::string type_string;
 	};
 	int mStructSize;
+	int mAlignment;
 	std::hash_map<std::string, MemberInfo> mMemberIndices;
 };
 

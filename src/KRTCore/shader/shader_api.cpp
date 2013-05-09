@@ -191,11 +191,22 @@ TracingInstance::TracingInstance(const KKDBBoxScene* scene, const RenderBuffers*
 	mCurPixel_Y = INVALID_INDEX;
 	mIsPixelSampling = false;
 	mBounceDepth = 0;
+
+	mSurfaceContexts.resize(MAX_REFLECTION_BOUNCE);
+	KSC_TypeInfo surfaceCtxType = KSC_GetStructTypeByName("SurfaceContext", NULL);
+	for (UINT32 i = 0; i < MAX_REFLECTION_BOUNCE; ++i) {
+		mSurfaceContexts[i].Allocate(surfaceCtxType);
+	}
 }
 
 TracingInstance::~TracingInstance()
 {
 
+}
+
+SurfaceContext& TracingInstance::GetCurrentSurfaceCtxStorage()
+{
+	return mSurfaceContexts[mBounceDepth];
 }
 
 const KKDBBoxScene* TracingInstance::GetScenePtr() const
@@ -488,15 +499,51 @@ bool TracingInstance::IsPointOccluded(const KRay& ray, float len) const
 		return false;
 }
 
+SurfaceContext::SurfaceContext()
+{
+	mpData = NULL;
+
+	inLight = NULL;
+	inVec = NULL;
+	outVec = NULL;
+	
+	normal = NULL;
+	tangent = NULL;
+	binormal = NULL;
+	
+	uv = NULL;
+}
+
+SurfaceContext::~SurfaceContext()
+{
+	if (mpData)
+		KSC_FreeMem(mpData);
+}
+
+void SurfaceContext::Allocate(const KSC_TypeInfo& kscType)
+{
+	assert(kscType.hStruct);
+	mpData = KSC_AllocMemForType(kscType, 1);
+	inLight = (KColor*)KSC_GetStructMemberPtr(kscType.hStruct, mpData, "inLight");
+	inVec = (KVec3*)KSC_GetStructMemberPtr(kscType.hStruct, mpData, "inVec");
+	outVec = (KVec3*)KSC_GetStructMemberPtr(kscType.hStruct, mpData, "outVec");
+
+	normal = (KVec3*)KSC_GetStructMemberPtr(kscType.hStruct, mpData, "normal");
+	tangent = (KVec3*)KSC_GetStructMemberPtr(kscType.hStruct, mpData, "tangent");
+	binormal = (KVec3*)KSC_GetStructMemberPtr(kscType.hStruct, mpData, "binormal");
+
+	uv = (KVec2*)KSC_GetStructMemberPtr(kscType.hStruct, mpData, "uv");
+}
+
 void ConvertToSurfaceContext(const ShadingContext& shadingCtx, const LightIterator& lightIt, SurfaceContext& surfaceCtx)
 {
-	surfaceCtx.inLight = lightIt.intensity;
-	surfaceCtx.inVec = lightIt.direction;
-	surfaceCtx.outVec = shadingCtx.out_vec;
-	surfaceCtx.normal = shadingCtx.normal;
-	surfaceCtx.tangent = shadingCtx.tangent.tangent;
-	surfaceCtx.binormal = shadingCtx.tangent.binormal;
-	surfaceCtx.uv = shadingCtx.hasUV ? shadingCtx.uv.uv : KVec2(0,0);
+	*surfaceCtx.inLight = lightIt.intensity;
+	*surfaceCtx.inVec = lightIt.direction;
+	*surfaceCtx.outVec = shadingCtx.out_vec;
+	*surfaceCtx.normal = shadingCtx.normal;
+	*surfaceCtx.tangent = shadingCtx.tangent.tangent;
+	*surfaceCtx.binormal = shadingCtx.tangent.binormal;
+	*surfaceCtx.uv = shadingCtx.hasUV ? shadingCtx.uv.uv : KVec2(0,0);
 }
 
 

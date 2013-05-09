@@ -11,7 +11,7 @@ float dot(float3 a, float3 b)
 	return temp.x + temp.y + temp.z;
 }
 
-void Shade(PhongParam% uniforms, SurfaceContext& ctx, float3& outClr)
+void Shade(PhongParam% uniforms, SurfaceContext% ctx, float3& outClr)
 {
 	outClr = float3(0,0,0);
 	float do = dot(ctx.outVec, ctx.normal);

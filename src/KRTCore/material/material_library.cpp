@@ -155,7 +155,7 @@ bool KSC_SurfaceShader::Validate(FunctionHandle shadeFunc)
 		return false;
 
 	KSC_TypeInfo argType0 = KSC_GetFunctionArgumentType(shadeFunc, 1);
-	if (!argType0.isRef || KSC_GetTypePackedSize(argType0) != sizeof(SurfaceContext)) {
+	if (!argType0.isRef || !argType0.isKSCLayout) {
 		printf("Incorrect type for second argument, it must be SurfaceContext&.\n");
 		return false;
 	}
@@ -181,7 +181,7 @@ void KSC_SurfaceShader::SetParam(const char* paramName, void* pData, UINT32 data
 
 void KSC_SurfaceShader::CalculateShading(const SurfaceContext& shadingCtx, KColor& out_clr) const
 {
-	Execute((void*)&shadingCtx, &out_clr);
+	Execute(shadingCtx.mpData, &out_clr);
 }
 
 bool KSC_SurfaceShader::Save(FILE* pFile)

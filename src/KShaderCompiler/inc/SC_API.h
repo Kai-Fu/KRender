@@ -163,7 +163,7 @@ extern "C" {
 	/**
 		This function returns the structure handle with the name specifed.
 	*/
-	KSC_API StructHandle KSC_GetStructHandleByName(const char* structName, ModuleHandle hModule);
+	KSC_API KSC_TypeInfo KSC_GetStructTypeByName(const char* structName, ModuleHandle hModule);
 
 	/**
 		This function returns the structure member type info with the member name specified. If the member

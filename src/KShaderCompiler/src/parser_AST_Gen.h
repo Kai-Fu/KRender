@@ -489,7 +489,7 @@ namespace SC {
 		RootDomain(CodeDomain* pRefDomain);
 		virtual ~RootDomain();
 
-		bool CompileToIR(CG_Context* pPredefine, KSC_ModuleDesc& mouduleDesc);
+		bool CompileToIR(CG_Context* pPredefine, KSC_ModuleDesc& mouduleDesc, CG_Context* pUseCtx = NULL);
 	};
 
 

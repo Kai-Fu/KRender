@@ -10,6 +10,7 @@
 static std::string			s_lastErrMsg;
 SC::RootDomain*				s_predefineDomain = NULL;
 SC::CG_Context				s_predefineCtx;
+KSC_ModuleDesc*				s_predefineModule = NULL;
 std::list<KSC_ModuleDesc*>	s_modules;
 
 static int __int_pow(int base, int p)
@@ -34,7 +35,7 @@ bool KSC_Initialize(const char* sharedCode)
 {
 	SC::Initialize_AST_Gen();
 	bool ret = SC::InitializeCodeGen();
-	
+
 	printf("KSC running on CPU %s.\n", llvm::sys::getHostCPUName().c_str());
 	if (ret) {
 		SC::CompilingContext preContext(NULL);
@@ -62,10 +63,15 @@ bool KSC_Initialize(const char* sharedCode)
 				return false;
 		}
 
-		for (int i = 0; i < s_predefineDomain->GetExpressionCnt(); ++i)
-			s_predefineDomain->GetExpression(i)->GenerateCode(&s_predefineCtx);
-
-		return true;
+		s_predefineModule = new KSC_ModuleDesc();
+		ret = s_predefineDomain->CompileToIR(NULL, *s_predefineModule, &s_predefineCtx);
+		if (ret)
+			return true;
+		else {
+			delete s_predefineModule;
+			s_predefineModule = NULL;
+			return false;
+		}
 	}
 	else
 		return false;
@@ -78,6 +84,11 @@ void KSC_Destory()
 	for (; it != s_modules.end(); ++it) {
 		delete *it;
 	}
+	if (s_predefineModule) {
+		delete s_predefineModule;
+		s_predefineModule = NULL;
+	}
+
 	SC::DestoryCodeGen();
 	SC::Finish_AST_Gen();
 }
@@ -198,16 +209,27 @@ KSC_TypeInfo KSC_GetFunctionArgumentType(FunctionHandle hFunc, int argIdx)
 }
 
 
-StructHandle KSC_GetStructHandleByName(const char* structName, ModuleHandle hModule)
+KSC_TypeInfo KSC_GetStructTypeByName(const char* structName, ModuleHandle hModule)
 {
-	KSC_ModuleDesc* pModule = (KSC_ModuleDesc*)hModule;
+	KSC_TypeInfo ret = {SC::VarType::kInvalid, 0, 0, 0, NULL, NULL, false, false};
+	KSC_ModuleDesc* pModule = hModule ? (KSC_ModuleDesc*)hModule : s_predefineModule;
 	if (!pModule)
-		return NULL;
+		return ret;
 
-	if (pModule->mGlobalStructures.find(structName) != pModule->mGlobalStructures.end())
-		return pModule->mGlobalStructures[structName];
-	else
-		return NULL;
+	if (pModule->mGlobalStructures.find(structName) != pModule->mGlobalStructures.end()) {
+		KSC_StructDesc* pStructDesc = pModule->mGlobalStructures[structName];
+		ret.type = SC::kStructure;
+		ret.arraySize = 0;
+		ret.sizeOfType = pStructDesc->mStructSize;
+		ret.alignment = pStructDesc->mAlignment;
+		ret.hStruct = pStructDesc;
+		ret.typeString = NULL;
+		ret.isRef = false;
+		ret.isKSCLayout = true;
+
+	}
+
+	return ret;
 }
 
 KSC_TypeInfo KSC_GetStructMemberType(StructHandle hStruct, const char* member)
@@ -268,7 +290,7 @@ void* KSC_GetStructMemberPtr(StructHandle hStruct, void* pStructVar, const char*
 	}
 	if (i == member_list.size()) return false;
 
-	return ((unsigned char*)pStructVar + NULL);
+	return ((unsigned char*)pStructVar + offset);
 }
 
 bool KSC_SetStructMemberData(StructHandle hStruct, void* pStructVar, const char* member, void* data)

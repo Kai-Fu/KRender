@@ -37,16 +37,23 @@ class ISurfaceShader;
 
 struct SurfaceContext
 {
-	KColor inLight;
+	SurfaceContext();
+	~SurfaceContext();
 
-	KVec3 inVec;
-	KVec3 outVec;
+	void Allocate(const KSC_TypeInfo& kscType);
 
-	KVec3 normal;
-	KVec3 tangent;
-	KVec3 binormal;
+	void* mpData;
 
-	KVec2 uv;
+	KColor* inLight;
+
+	KVec3* inVec;
+	KVec3* outVec;
+
+	KVec3* normal;
+	KVec3* tangent;
+	KVec3* binormal;
+
+	KVec2* uv;
 };
 
 struct ShadingContext
@@ -93,11 +100,14 @@ public:
 	bool CastRay(const KRay& ray, IntersectContext& out_ctx) const;
 	bool IsPointOccluded(const KRay& ray, float len) const;
 
+	SurfaceContext& GetCurrentSurfaceCtxStorage();
 public:
 	KCamera::EvalContext mCameraContext;
+
 private:
 	const KKDBBoxScene* mpScene;
 	const RenderBuffers* mpRenderBuffers;
+	std::vector<SurfaceContext> mSurfaceContexts;
 	UINT32 mBounceDepth;
 	UINT32 mCurPixel_X;
 	UINT32 mCurPixel_Y;

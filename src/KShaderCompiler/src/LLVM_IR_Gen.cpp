@@ -582,6 +582,7 @@ void Exp_StructDef::ConvertToDescription(KSC_StructDesc& ref, CG_Context& ctx) c
 	ref.mMemberIndices.clear();
 	llvm::Type* structType = ctx.GetStructType(this);
 	ref.mStructSize = CG_Context::TheDataLayout->getTypeAllocSize(structType);
+	ref.mAlignment = CG_Context::TheDataLayout->getPrefTypeAlignment(structType);
 	int structAlignment = CG_Context::TheDataLayout->getPrefTypeAlignment(structType);
 
 	const Exp_StructDef* childStruct;

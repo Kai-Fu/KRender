@@ -47,6 +47,7 @@ namespace KRayTracer {
 		RenderParam*		mpRenderParam;
 		InputData*			mpInputData;
 		std::vector<KVec2>	mAreaLightUnifiedSamples;
+		std::auto_ptr<TracingInstance> mTracingThreadData;
 
 	protected:
 		struct PixelSamplingResult {

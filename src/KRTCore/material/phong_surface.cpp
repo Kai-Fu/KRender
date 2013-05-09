@@ -8,26 +8,26 @@ void PhongSurface::CalculateShading(const SurfaceContext& shadingCtx, KColor& ou
 
 	// Calculate the diffuse & specular for each light
 	LightIterator li_iter;
-	const KVec3& normal = shadingCtx.normal;
+	const KVec3& normal = *shadingCtx.normal;
 	out_clr.Clear();
 
-	float in_side = shadingCtx.normal * shadingCtx.outVec;
-	float out_side = shadingCtx.normal * shadingCtx.inVec;
+	float in_side = *shadingCtx.normal * *shadingCtx.outVec;
+	float out_side = *shadingCtx.normal * *shadingCtx.inVec;
 	if (in_side < 0 || out_side < 0)
 		return;
 
-	float diffuse_scale = normal * shadingCtx.inVec;
+	float diffuse_scale = normal * *shadingCtx.inVec;
 	float specular_scale = 0;
 	if (diffuse_scale < 0)
 		diffuse_scale = std::max(0.0f, diffuse_scale);
 	else {
-		KVec3 reflect = normal * (2*diffuse_scale) - shadingCtx.inVec;
-		float rDoti = reflect * shadingCtx.outVec;
+		KVec3 reflect = normal * (2*diffuse_scale) - *shadingCtx.inVec;
+		float rDoti = reflect * *shadingCtx.outVec;
 		if (rDoti > 0)
 			specular_scale = pow(rDoti, mParam.mPower);
 	}
 
-	KColor diffuseClr(shadingCtx.inLight);
+	KColor diffuseClr(*shadingCtx.inLight);
 	diffuseClr.Modulate(diffuseCoefficient);
 
 	diffuseClr.Scale(diffuse_scale);
@@ -47,7 +47,7 @@ void PhongSurface::CalculateShading(const SurfaceContext& shadingCtx, KColor& ou
 
 	out_clr.Add(diffuseClr);
 
-	KColor specularClr(shadingCtx.inLight);
+	KColor specularClr(*shadingCtx.inLight);
 	specularClr.Scale(specular_scale);
 	specularClr.r *= mParam.mSpecular.r;
 	specularClr.g *= mParam.mSpecular.g;

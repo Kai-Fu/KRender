@@ -469,9 +469,12 @@ llvm::Function* CG_Context::GetFuncDeclByName(const std::string& funcName)
 		return mpParent ? mpParent->GetFuncDeclByName(funcName) : NULL;
 }
 
-bool RootDomain::CompileToIR(CG_Context* pPredefine, KSC_ModuleDesc& mouduleDesc)
+bool RootDomain::CompileToIR(CG_Context* pPredefine, KSC_ModuleDesc& mouduleDesc, CG_Context* pUseCtx)
 {
-	CG_Context* cgCtx = pPredefine->CreateChildContext(pPredefine->GetCurrentFunc(), pPredefine->GetFuncRetBlk(), pPredefine->GetRetValuePtr());
+	CG_Context* cgCtx = pUseCtx ?
+		pUseCtx :
+		pPredefine->CreateChildContext(pPredefine->GetCurrentFunc(), pPredefine->GetFuncRetBlk(), pPredefine->GetRetValuePtr());
+
 	for (int i = 0; i < (int)mExpressions.size(); ++i) {
 		llvm::Value* value = mExpressions[i]->GenerateCode(cgCtx);
 
@@ -494,8 +497,9 @@ bool RootDomain::CompileToIR(CG_Context* pPredefine, KSC_ModuleDesc& mouduleDesc
 			mouduleDesc.mGlobalStructures[pStructDef->GetStructureName()] = pStructDesc;
 		}
 	}
-	delete cgCtx;
-	CG_Context::TheModule->dump();
+
+	if (pUseCtx == NULL)
+		delete cgCtx;
 	return true;
 }
 

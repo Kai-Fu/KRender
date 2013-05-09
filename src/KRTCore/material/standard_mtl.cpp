@@ -156,13 +156,13 @@ void AttributeDiagnoseSurface::CalculateShading(const SurfaceContext& shadingCtx
 	KVec3 temp;
 	switch (mMode) {
 	case eShowNormal:
-		temp = shadingCtx.normal * 0.5f + KVec3(0.5f, 0.5f, 0.5f);
+		temp = *shadingCtx.normal * 0.5f + KVec3(0.5f, 0.5f, 0.5f);
 		out_clr.r = temp[0];
 		out_clr.g = temp[1];
 		out_clr.b = temp[2];
 		break;
 	case eShowUV:
-		temp = shadingCtx.tangent * 0.5f + KVec3(0.5f, 0.5f, 0.5f);
+		temp = *shadingCtx.tangent * 0.5f + KVec3(0.5f, 0.5f, 0.5f);
 		out_clr.r = temp[0];
 		out_clr.g = temp[1];
 		out_clr.b = temp[2];

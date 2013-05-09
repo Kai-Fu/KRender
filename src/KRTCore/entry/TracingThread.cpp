@@ -32,7 +32,7 @@ void ImageSampler::DoPixelSampling(UINT32 x, UINT32 y, UINT32 sample_count, Pixe
 
 	for (UINT32 si = 0; si < sample_count; ++si) {
 
-		TracingInstance tracingInst(mpInputData->pScene->mpScene, mpInputData->pRenderBuffers);
+		TracingInstance& tracingInst = *mTracingThreadData.get();
 		tracingInst.mCameraContext.inScreenPos = pRBufs->RS_Image(x, y);
 		tracingInst.mCameraContext.inMotionTime = ENABLE_MB ? pRBufs->RS_MotionBlur(x, y) : 0;
 		tracingInst.mCameraContext.inAperturePos = ENABLE_DOF ? pRBufs->RS_DOF(x, y, mpInputData->pCurrentCamera->GetApertureSize()) : KVec2(0,0);
