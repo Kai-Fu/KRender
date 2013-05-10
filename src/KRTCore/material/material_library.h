@@ -5,6 +5,7 @@
 #include <common/defines/stl_inc.h>
 #include <string>
 
+class KSC_SurfaceShader;
 
 class KMaterialLibrary
 {
@@ -27,8 +28,9 @@ public:
 private:
 	typedef std_hash_map<std::string, ISurfaceShader*> MTL_MAP;
 	MTL_MAP mMaterialInstances;
-	UniqueStringMaker mUniqueStrMaker;
+	std_hash_map<std::string, KSC_SurfaceShader*> mShaderDefaultInstances;
 
+	UniqueStringMaker mUniqueStrMaker;
 	static KMaterialLibrary* s_pInstance;
 };
 
@@ -36,6 +38,7 @@ class KSC_SurfaceShader : public ISurfaceShader, public KSC_ShaderWithTexture
 {
 public:
 	KSC_SurfaceShader(const char* shaderTemplate, const char* shaderName);
+	KSC_SurfaceShader(const KSC_SurfaceShader& ref);
 	~KSC_SurfaceShader();
 
 	bool LoadAndCompile();

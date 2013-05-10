@@ -556,6 +556,16 @@ KSC_Shader::KSC_Shader()
 	mShadeFunction = NULL;
 }
 
+KSC_Shader::KSC_Shader(const KSC_Shader& ref)
+{
+	mpFuncPtr = ref.mpFuncPtr;
+	mShadeFunction = ref.mShadeFunction;
+	mModifiedData = ref.mModifiedData;
+
+	mUnifomArgType = ref.mUnifomArgType;
+	mpUniformData = KSC_AllocMemForType(ref.mUnifomArgType, 0);
+}
+
 bool KSC_Shader::LoadTemplate(const char* templateFile)
 {
 	printf("Loading shader template %s...\n", templateFile);
@@ -651,6 +661,7 @@ bool KSC_Shader::LoadTemplate(const char* templateFile)
 			return false;
 		}
 	}
+	mUnifomArgType = arg0TypeInfo;
 
 	// Perform the additional check
 	if (!Validate(shadeFunc)) {
@@ -809,6 +820,12 @@ bool KSC_Shader::SetUniformParam(const char* name, void* data, int dataSize)
 }
 
 KSC_ShaderWithTexture::KSC_ShaderWithTexture()
+{
+
+}
+
+KSC_ShaderWithTexture::KSC_ShaderWithTexture(const KSC_ShaderWithTexture& ref) :
+	KSC_Shader(ref)
 {
 
 }

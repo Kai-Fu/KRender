@@ -171,6 +171,7 @@ class KSC_Shader
 {
 public:
 	KSC_Shader();
+	KSC_Shader(const KSC_Shader& ref);
 	~KSC_Shader();
 
 	bool LoadTemplate(const char* templateFile);
@@ -182,8 +183,11 @@ public:
 
 protected:
 	void* mpUniformData;
+	KSC_TypeInfo mUnifomArgType;
+
 	void* mpFuncPtr;
 	FunctionHandle mShadeFunction;
+
 	std::hash_map<std::string, std::vector<BYTE> > mModifiedData;
 
 private:
@@ -194,6 +198,7 @@ class KSC_ShaderWithTexture : public KSC_Shader
 {
 public:
 	KSC_ShaderWithTexture();
+	KSC_ShaderWithTexture(const KSC_ShaderWithTexture& ref);
 	~KSC_ShaderWithTexture();
 
 	virtual void* CreateExternalData(const char* typeString, const char* valueString);

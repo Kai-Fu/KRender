@@ -19,23 +19,25 @@ ISurfaceShader* KMaterialLibrary::CreateMaterial(const char* shaderTemplate, con
 	if (shaderTemplate && pMtlName) {
 		std::string mtlName;
 		mUniqueStrMaker.MakeUniqueString(mtlName, pMtlName);
-		KSC_SurfaceShader* pShader = new KSC_SurfaceShader(shaderTemplate, mtlName.c_str());;
-		pShader->LoadAndCompile();
-		ISurfaceShader* pRet = pShader;
 
-		/*if (0 == strcmp(shaderTemplate, BASIC_PHONG)) {
-			pRet = new PhongSurface(mtlName.c_str());
+		KSC_SurfaceShader* pRet = NULL;
+		if (mShaderDefaultInstances.find(shaderTemplate) == mShaderDefaultInstances.end()) {
+			KSC_SurfaceShader* pShader = new KSC_SurfaceShader(shaderTemplate, mtlName.c_str());
+			if (pShader->LoadAndCompile()) {
+				mShaderDefaultInstances[shaderTemplate] = pShader;
+				pRet = pShader;
+			}
+			else
+				delete pShader;
+		}
+		else
+			pRet = mShaderDefaultInstances[shaderTemplate];
+		
+		if (pRet) {
+			pRet = new KSC_SurfaceShader(*pRet);
 			mMaterialInstances[mtlName] = pRet;
 		}
-		else if (0 == strcmp(shaderTemplate, MIRROR)) {
-			pRet = new MirrorSurface(mtlName.c_str());
-			mMaterialInstances[mtlName] = pRet;
-		}
-		else if (0 == strcmp(shaderTemplate, DIAGNOSTIC)) {
-			pRet = new AttributeDiagnoseSurface(mtlName.c_str());
-			mMaterialInstances[mtlName] = pRet;
-		}*/
-		mMaterialInstances[mtlName] = pRet;
+
 		return pRet;
 	}
 	else
@@ -143,6 +145,12 @@ KSC_SurfaceShader::KSC_SurfaceShader(const char* shaderTemplate, const char* sha
 
 }
 
+KSC_SurfaceShader::KSC_SurfaceShader(const KSC_SurfaceShader& ref) :
+	ISurfaceShader(ref.mTypeName.c_str(), ref.mName.c_str()), KSC_ShaderWithTexture(ref)
+{
+
+}
+
 KSC_SurfaceShader::~KSC_SurfaceShader()
 {
 
@@ -186,10 +194,35 @@ void KSC_SurfaceShader::CalculateShading(const SurfaceContext& shadingCtx, KColo
 
 bool KSC_SurfaceShader::Save(FILE* pFile)
 {
+	UINT64 paramCnt = mModifiedData.size();
+	if (!SaveTypeToFile(paramCnt, pFile))
+		return false;
+
+	std::hash_map<std::string, std::vector<BYTE> >::const_iterator it = mModifiedData.begin();
+	for (; it != mModifiedData.end(); ++it) {
+		if (!SaveArrayToFile(it->first, pFile))
+			return false;
+		if (!SaveArrayToFile(it->second, pFile))
+			return false;
+	}
 	return true;
 }
 
 bool KSC_SurfaceShader::Load(FILE* pFile)
 {
+	UINT64 paramCnt = 0;
+	if (!LoadTypeFromFile(paramCnt, pFile))
+		return false;
+
+	for (size_t i = 0; i < paramCnt; ++i) {
+		std::string paramName;
+		if (!LoadArrayFromFile(paramName, pFile))
+			return false;
+		std::vector<BYTE>& data = mModifiedData[paramName];
+		if (!LoadArrayFromFile(data, pFile))
+			return false;
+
+		SetUniformParam(paramName.c_str(), &data[0], (int)data.size());
+	}
 	return true;
 }
