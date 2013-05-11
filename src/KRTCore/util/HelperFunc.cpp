@@ -33,24 +33,22 @@ double KTimer::Stop()
 void GetPathDir(const char* path, std::string& out_dir)
 {
 	std::string dir;
-	std::string s;
 
 	dir = path;
-
-	const char* lastSlash = strrchr(dir.c_str(), '/');
-	if (lastSlash) s = lastSlash;
-
-	if (!s.empty())
-		s[1] = '\0';
+	size_t tIdx = 0;
+	const char* lastSlash = strrchr(path, '/');
+	if (lastSlash) {
+		tIdx = lastSlash - path;
+	}
 	else {
-		lastSlash = strrchr(dir.c_str(), '\\');
-		if (lastSlash) s = lastSlash;
-		if (!s.empty())
-			s[1] = '\0';
-		else
-			dir[0] = '\0';
+		lastSlash = strrchr(path, '\\');
+		if (lastSlash) 
+			tIdx = lastSlash - path;
 	}
 
+	if (dir.length() > 0)
+		dir[tIdx] = '\0';
+	
 	out_dir = dir;
 
 }

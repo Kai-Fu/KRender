@@ -210,7 +210,7 @@ void KSC_SurfaceShader::SetParam(const char* paramName, void* pData, UINT32 data
 	SetUniformParam(paramName, pData, dataSize);
 }
 
-void KSC_SurfaceShader::CalculateShading(const SurfaceContext& shadingCtx, KColor& out_clr) const
+void KSC_SurfaceShader::Shade(const SurfaceContext& shadingCtx, KColor& out_clr) const
 {
 	Execute(shadingCtx.mpData, &out_clr);
 }

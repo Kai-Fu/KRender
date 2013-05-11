@@ -94,7 +94,7 @@ bool LightScheme::GetLightIter(TracingInstance* pLocalData, const KVec2& sampleP
 						LightIterator lightIt = {-lightDir, transmission};
 						lightIt.direction.normalize();
 						ConvertToSurfaceContext(shading_context, &lightIt, surfaceCtx);
-						shadingCtx->surface_shader->CalculateShading(surfaceCtx, temp_trans);
+						shadingCtx->surface_shader->Shade(surfaceCtx, temp_trans);
 						transmission = temp_trans;
 
 						lum = transmission.Luminance();
@@ -158,7 +158,7 @@ void LightScheme::Shade(TracingInstance* pLocalData,
 						KColor tempClr;
 						SurfaceContext& surfaceCtx = pLocalData->GetCurrentSurfaceCtxStorage();
 						ConvertToSurfaceContext(shadingCtx, &li_it, surfaceCtx);
-						shadingCtx.surface_shader->CalculateShading(surfaceCtx, tempClr);
+						shadingCtx.surface_shader->Shade(surfaceCtx, tempClr);
 						out_color.Add(tempClr);
 					}
 				}
@@ -170,7 +170,7 @@ void LightScheme::Shade(TracingInstance* pLocalData,
 					KColor tempClr;
 					SurfaceContext& surfaceCtx = pLocalData->GetCurrentSurfaceCtxStorage();
 					ConvertToSurfaceContext(shadingCtx, &li_it, surfaceCtx);
-					shadingCtx.surface_shader->CalculateShading(surfaceCtx, tempClr);
+					shadingCtx.surface_shader->Shade(surfaceCtx, tempClr);
 					out_color.Add(tempClr);
 				}
 			}

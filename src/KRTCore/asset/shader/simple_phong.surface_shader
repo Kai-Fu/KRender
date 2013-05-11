@@ -3,6 +3,7 @@ struct PhongParam
 {
 	float3 diffuse_color;
 	float3 specular_color;
+	Texture2D diffuse_map;
 };
 
 float dot(float3 a, float3 b)
@@ -13,8 +14,9 @@ float dot(float3 a, float3 b)
 
 void ShadeEmission(PhongParam% uniforms, SurfaceContext% ctx, float3& outClr)
 {
-	outClr = ctx.normal * float3(0.5,0.5,0.5) + float3(0.5,0.5,0.5);
-	outClr = outClr * float3(0.3, 0.3, 0.3);
+	//outClr = ctx.normal * float3(0.5,0.5,0.5) + float3(0.5,0.5,0.5);
+	//outClr = outClr * float3(0.3, 0.3, 0.3);
+	outClr = outClr * float3(0.1, 0.1, 0.1);
 }
 
 void Shade(PhongParam% uniforms, SurfaceContext% ctx, float3& outClr)

@@ -617,7 +617,7 @@ void Exp_StructDef::ConvertToDescription(KSC_StructDesc& ref, CG_Context& ctx) c
 		memberInfo.mem_size = typeSize;
 
 		ref.mMemberIndices[it->second->GetVarName().ToStdString()] = memberInfo;
-		newElem.typeString = memberInfo.type_string.c_str();
+		newElem.typeString = ref.mMemberIndices[it->second->GetVarName().ToStdString()].type_string.c_str();
 		ref.push_back(newElem);
 
 		curMemOffset += memberInfo.mem_size;

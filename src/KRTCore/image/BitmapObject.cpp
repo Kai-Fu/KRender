@@ -219,7 +219,7 @@ bool BitmapObject::Save(const char* filename) const
 
 bool BitmapObject::Load(const char* filename, std::vector<BitmapObject*>* mipmap_list)
 {
-	if (!mpData)
+	if (mpData)
 		return false;
 
 	FREE_IMAGE_FORMAT fif = FIF_UNKNOWN;

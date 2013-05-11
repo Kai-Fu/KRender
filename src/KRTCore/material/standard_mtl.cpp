@@ -4,7 +4,7 @@
 
 
 PhongSurface::PhongSurface(const char* name) :
-	ISurfaceShader(BASIC_PHONG, name)
+	ISurfaceShader("BASIC_PHONG", name)
 {
 	mParam.mDiffuse = KColor(0.5f, 0.5f, 0.5f);
 	mParam.mSpecular = KColor(0.7f, 0.7f, 0.7f);
@@ -85,7 +85,7 @@ bool PhongSurface::Load(FILE* pFile)
 	return true;
 }
 
-MirrorSurface::MirrorSurface(const char* name) : ISurfaceShader(MIRROR, name)
+MirrorSurface::MirrorSurface(const char* name) : ISurfaceShader("MIRROR", name)
 {
 	mParam.mBaseColor = KVec3(0,0,0);
 	mParam.mReflectGain = 1.0f;
@@ -96,7 +96,7 @@ MirrorSurface::~MirrorSurface()
 
 }
 
-void MirrorSurface::CalculateShading(const SurfaceContext& shadingCtx, KColor& out_clr) const
+void MirrorSurface::Shade(const SurfaceContext& shadingCtx, KColor& out_clr) const
 {
 	KColor reflectColor;
 	//CalcReflectedRay(pLocalData, shadingCtx, reflectColor);
@@ -142,7 +142,7 @@ bool MirrorSurface::Load(FILE* pFile)
 	return true;
 }
 
-AttributeDiagnoseSurface::AttributeDiagnoseSurface(const char* name) : ISurfaceShader(DIAGNOSTIC, name)
+AttributeDiagnoseSurface::AttributeDiagnoseSurface(const char* name) : ISurfaceShader("DIAGNOSTIC", name)
 {
 	mMode = eShowUV;
 }
@@ -151,7 +151,7 @@ AttributeDiagnoseSurface::~AttributeDiagnoseSurface()
 {
 }
 
-void AttributeDiagnoseSurface::CalculateShading(const SurfaceContext& shadingCtx, KColor& out_clr) const
+void AttributeDiagnoseSurface::Shade(const SurfaceContext& shadingCtx, KColor& out_clr) const
 {
 	KVec3 temp;
 	switch (mMode) {

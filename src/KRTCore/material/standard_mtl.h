@@ -2,11 +2,6 @@
 #include "../shader/surface_shader.h"
 #include "../image/basic_map.h"
 
-#define BASIC_PHONG "basic_phong"
-#define MIRROR		"mirror"
-#define DIAGNOSTIC	"diagnostic"
-#define SHADER_SURFACE "shader_surface"
-
 class PhongSurface : public ISurfaceShader
 {
 public:
@@ -27,7 +22,7 @@ public:
 	PhongSurface(const char* name);
 	virtual ~PhongSurface() {}
 
-	virtual void CalculateShading(const SurfaceContext& shadingCtx, KColor& out_clr) const;
+	virtual void Shade(const SurfaceContext& shadingCtx, KColor& out_clr) const;
 	virtual void SetParam(const char* paramName, void* pData, UINT32 dataSize);
 
 	virtual bool Save(FILE* pFile);
@@ -47,7 +42,7 @@ public:
 	};
 	PARAM mParam;
 
-	virtual void CalculateShading(const SurfaceContext& shadingCtx, KColor& out_clr) const;
+	virtual void Shade(const SurfaceContext& shadingCtx, KColor& out_clr) const;
 	virtual void SetParam(const char* paramName, void* pData, UINT32 dataSize);
 
 	virtual bool Save(FILE* pFile);
@@ -63,7 +58,7 @@ public:
 	enum Mode {eShowNormal, eShowUV};
 	Mode mMode;
 
-	virtual void CalculateShading(const SurfaceContext& shadingCtx, KColor& out_clr) const;
+	virtual void Shade(const SurfaceContext& shadingCtx, KColor& out_clr) const;
 	virtual void SetParam(const char* paramName, void* pData, UINT32 dataSize);
 
 	virtual bool Save(FILE* pFile);

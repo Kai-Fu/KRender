@@ -172,6 +172,8 @@ bool KRT_Initialize()
 
 "	float2 uv;\n"
 "	};\n"
+
+"extern Texture2D;"
 ;
 	return KSC_Initialize(predefines);
 }

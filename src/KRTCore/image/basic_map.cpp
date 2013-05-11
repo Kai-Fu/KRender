@@ -356,7 +356,7 @@ TextureManager* TextureManager::s_pInstance = NULL;
 TextureManager::TextureManager()
 {
 	mSearchPaths.push_back("");
-	mbUseMipmap = true;
+	mbUseMipmap = false;
 }
 
 TextureManager::~TextureManager()

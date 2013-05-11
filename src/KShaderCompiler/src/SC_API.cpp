@@ -357,7 +357,7 @@ void _Aligned_Free(void* ptr)
 
 void* KSC_AllocMemForType(const KSC_TypeInfo& typeInfo, int arraySize)
 {
-	return _Aligned_Malloc(typeInfo.sizeOfType * arraySize, typeInfo.alignment);
+	return _Aligned_Malloc(typeInfo.sizeOfType * (arraySize == 0 ? 1 : arraySize), typeInfo.alignment);
 }
 
 void KSC_FreeMem(void* pData)

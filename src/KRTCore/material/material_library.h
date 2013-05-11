@@ -49,7 +49,7 @@ public:
 
 	// From ISurfaceShader
 	virtual void SetParam(const char* paramName, void* pData, UINT32 dataSize);
-	virtual void CalculateShading(const SurfaceContext& shadingCtx, KColor& out_clr) const;
+	virtual void Shade(const SurfaceContext& shadingCtx, KColor& out_clr) const;
 	virtual void ShadeEmission(const SurfaceContext& shadingCtx, KColor& out_clr) const;
 
 	virtual bool Save(FILE* pFile);

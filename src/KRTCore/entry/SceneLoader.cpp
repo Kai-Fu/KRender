@@ -44,7 +44,7 @@ protected:
 		// Create material
 		KMaterialLibrary* pML = KMaterialLibrary::GetInstance();
 		for (UINT32 mi = 0; mi < model->nummaterials; ++mi) {
-			ISurfaceShader* pSurfShader = pML->CreateMaterial("basic_phong", model->materials[mi].name);
+			ISurfaceShader* pSurfShader = pML->CreateMaterial("simple_phong_default.template", model->materials[mi].name);
 			pSurfShader->SetParam("diffuse_color", model->materials[mi].diffuse, sizeof(float)*3);
 			if (model->materials[mi].shininess > 3.0f) {
 				pSurfShader->SetParam("specular_color", model->materials[mi].specular, sizeof(float)*3);

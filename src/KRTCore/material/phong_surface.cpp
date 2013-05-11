@@ -2,7 +2,7 @@
 #include "../shader/light_scheme.h"
 #include "../file_io/file_io_template.h"
 
-void PhongSurface::CalculateShading(const SurfaceContext& shadingCtx, KColor& out_clr) const
+void PhongSurface::Shade(const SurfaceContext& shadingCtx, KColor& out_clr) const
 {
 	KColor diffuseCoefficient(1.0f, 1.0f, 1.0f);
 
