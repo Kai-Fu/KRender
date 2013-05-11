@@ -647,7 +647,7 @@ void Exp_FunctionDecl::ConvertToDescription(KSC_FunctionDesc& desc, CG_Context& 
 			typeAlignment = CG_Context::GetAlignmentOfLLVMType(mArgments[i].typeInfo.type);
 		}
 		desc.mArgTypeStrings[i] = mArgments[i].typeString.ToStdString();
-		kscType.typeString = desc.mArgTypeStrings.back().c_str();
+		kscType.typeString = desc.mArgTypeStrings[i].c_str();
 		kscType.sizeOfType = typeSize;
 		kscType.alignment = typeAlignment;
 		kscType.isRef = mArgments[i].isByRef;

@@ -535,10 +535,16 @@ void SurfaceContext::Allocate(const KSC_TypeInfo& kscType)
 	uv = (KVec2*)KSC_GetStructMemberPtr(kscType.hStruct, mpData, "uv");
 }
 
-void ConvertToSurfaceContext(const ShadingContext& shadingCtx, const LightIterator& lightIt, SurfaceContext& surfaceCtx)
+void ConvertToSurfaceContext(const ShadingContext& shadingCtx, const LightIterator* lightIt, SurfaceContext& surfaceCtx)
 {
-	*surfaceCtx.inLight = lightIt.intensity;
-	*surfaceCtx.inVec = lightIt.direction;
+	if (lightIt) {
+		*surfaceCtx.inLight = lightIt->intensity;
+		*surfaceCtx.inVec = lightIt->direction;
+	}
+	else {
+		surfaceCtx.inLight->Clear();
+		*surfaceCtx.inVec = KVec3(0,0,0);
+	}
 	*surfaceCtx.outVec = shadingCtx.out_vec;
 	*surfaceCtx.normal = shadingCtx.normal;
 	*surfaceCtx.tangent = shadingCtx.tangent.tangent;
@@ -591,6 +597,7 @@ bool KSC_Shader::LoadTemplate(const char* templateFile)
 	}
 
 	FunctionHandle shadeFunc = NULL;
+	ModuleHandle shaderModule = NULL;
 	if (sLoadedShadeFunctions.find(kscFile) == sLoadedShadeFunctions.end()) {
 
 		std::string shaderPath = "./asset/shader/";
@@ -616,13 +623,13 @@ bool KSC_Shader::LoadTemplate(const char* templateFile)
 			fclose(fShadeFile);
 		}
 
-		ModuleHandle shaderModule = KSC_Compile(shaderContent.c_str());
+		shaderModule = KSC_Compile(shaderContent.c_str());
 		if (shaderModule == NULL) {
 			printf("Shader compilation failed with following error:\n");
 			printf(KSC_GetLastErrorMsg());
 			return false;
 		}
-		
+
 		shadeFunc = KSC_GetFunctionHandleByName("Shade", shaderModule);
 		if (shadeFunc == NULL) {
 			printf("Shade function does not exist in KSC code.\n");
@@ -663,6 +670,12 @@ bool KSC_Shader::LoadTemplate(const char* templateFile)
 	}
 	mUnifomArgType = arg0TypeInfo;
 
+	
+	if (!HandleModule(shaderModule)) {
+		printf("Failed to handle the compiled KSC module.\n");
+		return false;
+	}
+
 	// Perform the additional check
 	if (!Validate(shadeFunc)) {
 		printf("Shade function validation failed.\n");
@@ -688,6 +701,10 @@ bool KSC_Shader::LoadTemplate(const char* templateFile)
 			sscanf(tempBuf0, "%s", varStr);
 			sscanf(tempBuf1 + strspn(tempBuf1, " \t"), "%[^ ]", valueStr);
 		}
+
+		if (InitializeUniform(varStr))
+			continue;  // This uniform is initialized by the derived class
+
 		KSC_TypeInfo memberType = KSC_GetStructMemberType(arg0TypeInfo.hStruct, varStr);
 		if (memberType.hStruct != NULL) {
 			printf("\tShader parameter initializer must be applied to built-in types.\n");
@@ -760,6 +777,12 @@ bool KSC_Shader::LoadTemplate(const char* templateFile)
 	fclose(f);
 	return true;
 }
+
+bool KSC_Shader::InitializeUniform(const char* name)
+{
+	return false;
+}
+
 
 bool KSC_Shader::Validate(FunctionHandle shadeFunc)
 {

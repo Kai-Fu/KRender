@@ -142,13 +142,16 @@ void KMaterialLibrary::Shutdown()
 KSC_SurfaceShader::KSC_SurfaceShader(const char* shaderTemplate, const char* shaderName) :
 	ISurfaceShader(shaderTemplate, shaderName)
 {
-
+	mpEmissionFuncPtr = NULL;
 }
 
 KSC_SurfaceShader::KSC_SurfaceShader(const KSC_SurfaceShader& ref) :
 	ISurfaceShader(ref.mTypeName.c_str(), ref.mName.c_str()), KSC_ShaderWithTexture(ref)
 {
-
+	mpEmissionFuncPtr = ref.mpEmissionFuncPtr;
+	mNormalMap = ref.mNormalMap;
+	mHasEmission = ref.mHasEmission;
+	mRecieveLight = ref.mRecieveLight;
 }
 
 KSC_SurfaceShader::~KSC_SurfaceShader()
@@ -163,17 +166,37 @@ bool KSC_SurfaceShader::Validate(FunctionHandle shadeFunc)
 		return false;
 
 	KSC_TypeInfo argType0 = KSC_GetFunctionArgumentType(shadeFunc, 1);
-	if (!argType0.isRef || !argType0.isKSCLayout) {
+	if (!argType0.isRef || !argType0.isKSCLayout || argType0.hStruct == NULL || 
+		0 != strcmp(argType0.typeString, "SurfaceContext") ) {
 		printf("Incorrect type for second argument, it must be SurfaceContext&.\n");
 		return false;
 	}
 
 	KSC_TypeInfo argType1 = KSC_GetFunctionArgumentType(shadeFunc, 2);
-	if (!argType1.isRef || argType1.type != SC::kFloat3) {
+	if (!argType1.isRef || argType1.isKSCLayout || argType1.type != SC::kFloat3) {
 		printf("Incorrect type for second argument, it must be float3&.\n");
 		return false;
 	}
 
+	return true;
+}
+
+bool KSC_SurfaceShader::HandleModule(ModuleHandle kscModule)
+{
+	// Look for the function "ShadeEmission(SurfaceContext% ctx, KColor& outClr)"
+	FunctionHandle shadeFunc = KSC_GetFunctionHandleByName("ShadeEmission", kscModule);
+	if (shadeFunc != NULL && KSC_GetFunctionArgumentCount(shadeFunc) == 3) {
+		KSC_TypeInfo argUniform = KSC_GetFunctionArgumentType(shadeFunc, 0);
+		KSC_TypeInfo arg0TypeInfo = KSC_GetFunctionArgumentType(shadeFunc, 1);
+		KSC_TypeInfo arg1TypeInfo = KSC_GetFunctionArgumentType(shadeFunc, 2);
+		if (0 == strcmp(argUniform.typeString, mUnifomArgType.typeString) &&
+			arg0TypeInfo.isRef && arg0TypeInfo.isKSCLayout && arg0TypeInfo.hStruct != NULL &&
+			arg1TypeInfo.isRef && arg1TypeInfo.type == SC::kFloat3) {
+			mpEmissionFuncPtr = KSC_GetFunctionPtr(shadeFunc);
+			if (mpEmissionFuncPtr)
+				mHasEmission = true;
+		}
+	}
 	return true;
 }
 
@@ -190,6 +213,13 @@ void KSC_SurfaceShader::SetParam(const char* paramName, void* pData, UINT32 data
 void KSC_SurfaceShader::CalculateShading(const SurfaceContext& shadingCtx, KColor& out_clr) const
 {
 	Execute(shadingCtx.mpData, &out_clr);
+}
+
+void KSC_SurfaceShader::ShadeEmission(const SurfaceContext& shadingCtx, KColor& out_clr) const
+{
+	typedef void (*PFN_invoke)(void*, void*, void*);
+	PFN_invoke funcPtr = (PFN_invoke)mpEmissionFuncPtr;
+	funcPtr(mpUniformData, shadingCtx.mpData, &out_clr);
 }
 
 bool KSC_SurfaceShader::Save(FILE* pFile)

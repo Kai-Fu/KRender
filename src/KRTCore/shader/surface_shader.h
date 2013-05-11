@@ -22,17 +22,22 @@ protected:
 public:
 	// The surface shader implementation need to set the normal map
 	Texture::Tex2D* mNormalMap;
+	bool mHasEmission;
+	bool mRecieveLight;
 
 public:
 	ISurfaceShader(const char* typeName, const char* name) : 
 		mTypeName(typeName), 
 		mName(name),
-		mNormalMap(NULL)
+		mNormalMap(NULL),
+		mHasEmission(false),
+		mRecieveLight(true)
 		{}
 	virtual ~ISurfaceShader() {}
 
 	virtual void SetParam(const char* paramName, void* pData, UINT32 dataSize) {}
 
+	virtual void ShadeEmission(const SurfaceContext& shadingCtx, KColor& out_clr) const = 0;
 	virtual void CalculateShading(const SurfaceContext& shadingCtx, KColor& out_clr) const = 0;
 
 	virtual bool Save(FILE* pFile) = 0;

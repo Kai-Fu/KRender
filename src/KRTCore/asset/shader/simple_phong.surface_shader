@@ -11,6 +11,12 @@ float dot(float3 a, float3 b)
 	return temp.x + temp.y + temp.z;
 }
 
+void ShadeEmission(PhongParam% uniforms, SurfaceContext% ctx, float3& outClr)
+{
+	outClr = ctx.normal * float3(0.5,0.5,0.5) + float3(0.5,0.5,0.5);
+	outClr = outClr * float3(0.3, 0.3, 0.3);
+}
+
 void Shade(PhongParam% uniforms, SurfaceContext% ctx, float3& outClr)
 {
 	outClr = float3(0,0,0);
@@ -21,5 +27,4 @@ void Shade(PhongParam% uniforms, SurfaceContext% ctx, float3& outClr)
 	if (di < 0)
 		di = 0;
 	outClr = float3(di, di, di) * uniforms.diffuse_color;
-	//outClr = ctx.normal * float3(0.5,0.5,0.5) + float3(0.5,0.5,0.5);
 }

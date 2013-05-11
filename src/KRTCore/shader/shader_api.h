@@ -163,7 +163,7 @@ struct RenderParam {
 	KRT_ImageFormat pixel_format; 
 };
 
-void ConvertToSurfaceContext(const ShadingContext& shadingCtx, const LightIterator& lightIt, SurfaceContext& surfaceCtx);
+void ConvertToSurfaceContext(const ShadingContext& shadingCtx, const LightIterator* lightIt, SurfaceContext& surfaceCtx);
 
 
 // Shader based on KShaderCompiler
@@ -178,6 +178,8 @@ public:
 	void Execute(void* inData, void* outData) const;
 	bool SetUniformParam(const char* name, void* data, int dataSize);
 
+	virtual bool HandleModule(ModuleHandle kscModule) = 0;
+	virtual bool InitializeUniform(const char* name);
 	virtual bool Validate(FunctionHandle shadeFunc);
 	virtual void* CreateExternalData(const char* typeString, const char* valueString);
 

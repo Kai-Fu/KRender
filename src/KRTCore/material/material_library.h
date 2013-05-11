@@ -45,10 +45,16 @@ public:
 
 	// From KSC_ShaderWithTexture
 	virtual bool Validate(FunctionHandle shadeFunc);
+	virtual bool HandleModule(ModuleHandle kscModule);
 
 	// From ISurfaceShader
 	virtual void SetParam(const char* paramName, void* pData, UINT32 dataSize);
 	virtual void CalculateShading(const SurfaceContext& shadingCtx, KColor& out_clr) const;
+	virtual void ShadeEmission(const SurfaceContext& shadingCtx, KColor& out_clr) const;
+
 	virtual bool Save(FILE* pFile);
 	virtual bool Load(FILE* pFile);
+
+private:
+	void* mpEmissionFuncPtr;
 };
