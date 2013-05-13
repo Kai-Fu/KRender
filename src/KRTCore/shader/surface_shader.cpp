@@ -45,11 +45,11 @@ bool CalcuShadingByRay(TracingInstance* pLocalData, const KRay& ray, KColor& out
 		if (shadingCtx.surface_shader) {
 
 			if (shadingCtx.surface_shader->mNormalMap && shadingCtx.hasUV) {
-				KColor samp_res;
+				KVec4 samp_res;
 				samp_res = shadingCtx.surface_shader->mNormalMap->SampleBilinear(shadingCtx.uv.uv);
-				KVec3 normal = shadingCtx.tangent.tangent * (samp_res.r *2.0f - 1.0f);
-				normal += (shadingCtx.tangent.binormal * (samp_res.g * 2.0f - 1.0f));
-				normal += (shadingCtx.normal * (samp_res.b * 2.0f - 1.0f));
+				KVec3 normal = shadingCtx.tangent.tangent * (samp_res[0] *2.0f - 1.0f);
+				normal += (shadingCtx.tangent.binormal * (samp_res[1] * 2.0f - 1.0f));
+				normal += (shadingCtx.normal * (samp_res[2] * 2.0f - 1.0f));
 				nvmath::normalize(normal);
 
 				float irrad_scale = 1.0f;

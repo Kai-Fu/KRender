@@ -91,7 +91,7 @@ public:
 		return mLevelCnt;
 	}
 
-	Spectrum texel(int u, int v, int lod) const
+	KVec4 texel(int u, int v, int lod) const
 	{
 		BitmapObject* pLevel = mMipmap[mLevelCnt - lod - 1]; 
 		UINT32 cu = FloatToInt(u * mWidthFactor);
@@ -100,7 +100,7 @@ public:
 		if (cv >= pLevel->mHeight) cv = pLevel->mHeight - 1;
 
 		BYTE* pPixel = (BYTE*)pLevel->GetPixelPtr(cu, cv);
-		Spectrum ret;
+		KVec4 ret(0,0,0,1);
 		if (mIsFixPointPixel) {
 
 			UINT32 dataSrc = *(UINT32*)pPixel;
@@ -120,7 +120,7 @@ public:
 		return ret;
 	}
 
-	Spectrum texel(int u, int v) const
+	KVec4 texel(int u, int v) const
 	{
 		return texel(u, v, mLevelCnt - 1);
 	}
@@ -154,36 +154,32 @@ bool Mipmap2D::SetSourceFile(const char* filename)
 		return true;
 }
 
-KColor Mipmap2D::SamplePoint(const KVec2& uv) const
+KVec4 Mipmap2D::SamplePoint(const KVec2& uv) const
 {
 	assert(mpData);
 	TextureFilter filter;
-	Spectrum res = filter.SampleBilinear((BitmapData*)mpData, uv);
-	return KColor(res.r, res.g, res.b);
+	return filter.SampleBilinear((BitmapData*)mpData, uv);
 }
 
-KColor Mipmap2D::SampleBilinear(const KVec2& uv) const
+KVec4 Mipmap2D::SampleBilinear(const KVec2& uv) const
 {
 	assert(mpData);
 	TextureFilter filter;
-	Spectrum res = filter.SampleBilinear((BitmapData*)mpData, uv);
-	return KColor(res.r, res.g, res.b);
+	return filter.SampleBilinear((BitmapData*)mpData, uv);
 }
 
-KColor Mipmap2D::SampleTrilinear(const KVec2& uv, const KVec2& du, const KVec2& dv) const
+KVec4 Mipmap2D::SampleTrilinear(const KVec2& uv, const KVec2& du, const KVec2& dv) const
 {
 	assert(mpData);
 	TextureFilter filter;
-	Spectrum res = filter.SampleTrilinear((BitmapData*)mpData, uv, du, dv);
-	return KColor(res.r, res.g, res.b);
+	return filter.SampleTrilinear((BitmapData*)mpData, uv, du, dv);
 }
 
-KColor Mipmap2D::SampleEWA(const KVec2& uv, const KVec2& du, const KVec2& dv) const
+KVec4 Mipmap2D::SampleEWA(const KVec2& uv, const KVec2& du, const KVec2& dv) const
 {
 	assert(mpData);
 	TextureFilter filter;
-	Spectrum res = filter.SampleEWA((BitmapData*)mpData, uv, du, dv);
-	return KColor(res.r, res.g, res.b);
+	return filter.SampleEWA((BitmapData*)mpData, uv, du, dv);
 }
 
 UINT32 Mipmap2D::GetSupportedSampleMode() const
@@ -242,35 +238,32 @@ bool Image2D::SetSourceFile(const char* filename)
 		return true;
 }
 
-KColor Image2D::SamplePoint(const KVec2& uv) const
+KVec4 Image2D::SamplePoint(const KVec2& uv) const
 {
 	assert(mpData);
 	TextureFilter filter;
-	Spectrum res = filter.SampleBilinear((BitmapData*)mpData, uv);
-	return KColor(res.r, res.g, res.b);
+	return filter.SampleBilinear((BitmapData*)mpData, uv);
 }
 
-KColor Image2D::SampleBilinear(const KVec2& uv) const
+KVec4 Image2D::SampleBilinear(const KVec2& uv) const
 {
 	assert(mpData);
 	TextureFilter filter;
-	Spectrum res = filter.SampleBilinear((BitmapData*)mpData, uv);
-	return KColor(res.r, res.g, res.b);
+	return filter.SampleBilinear((BitmapData*)mpData, uv);
 }
 
-KColor Image2D::SampleTrilinear(const KVec2& uv, const KVec2& du, const KVec2& dv) const
+KVec4 Image2D::SampleTrilinear(const KVec2& uv, const KVec2& du, const KVec2& dv) const
 {
 	// No supported
 	assert(false);
-	return KColor(0,0,0);
+	return KVec4(0,0,0,0);
 }
 
-KColor Image2D::SampleEWA(const KVec2& uv, const KVec2& du, const KVec2& dv) const
+KVec4 Image2D::SampleEWA(const KVec2& uv, const KVec2& du, const KVec2& dv) const
 {
 	assert(mpData);
 	TextureFilter filter;
-	Spectrum res = filter.SampleFinestEWA((BitmapData*)mpData, uv, du, dv);
-	return KColor(res.r, res.g, res.b);
+	return filter.SampleFinestEWA((BitmapData*)mpData, uv, du, dv);
 }
 
 UINT32 Image2D::GetSupportedSampleMode() const
@@ -309,25 +302,25 @@ Procedure2D::~Procedure2D()
 
 }
 
-KColor Procedure2D::SampleBilinear(const KVec2& uv) const
+KVec4 Procedure2D::SampleBilinear(const KVec2& uv) const
 {
 	// No supported
 	assert(false);
-	return KColor(0,0,0);
+	return KVec4(0,0,0,0);
 }
 
-KColor Procedure2D::SampleTrilinear(const KVec2& uv, const KVec2& du, const KVec2& dv) const
+KVec4 Procedure2D::SampleTrilinear(const KVec2& uv, const KVec2& du, const KVec2& dv) const
 {
 	// No supported
 	assert(false);
-	return KColor(0,0,0);
+	return KVec4(0,0,0,0);
 }
 
-KColor Procedure2D::SampleEWA(const KVec2& uv, const KVec2& du, const KVec2& dv) const
+KVec4 Procedure2D::SampleEWA(const KVec2& uv, const KVec2& du, const KVec2& dv) const
 {
 	// No supported
 	assert(false);
-	return KColor(0,0,0);
+	return KVec4(0,0,0,0);
 }
 
 UINT32 Procedure2D::GetSupportedSampleMode() const

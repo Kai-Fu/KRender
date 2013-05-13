@@ -870,3 +870,12 @@ void* KSC_ShaderWithTexture::CreateExternalData(const char* typeString, const ch
 	else
 		return KSC_Shader::CreateExternalData(typeString, valueString);
 }
+
+void KSC_ShaderWithTexture::Sample2D(Texture::Tex2D* tex, KVec2* uv, KVec4* outSample)
+{
+	if (tex) {
+		*outSample = tex->SamplePoint(*uv);
+	}
+	else
+		*outSample = KVec4(0,0,0,0);
+}

@@ -173,9 +173,20 @@ bool KRT_Initialize()
 "	float2 uv;\n"
 "	};\n"
 
-"extern Texture2D;"
+"extern Texture2D;\n"
+"void _Sample2D(Texture2D& tex, float2& uv, float4& outSample);\n"
+
+"float4 Sample2D(Texture2D& tex, float2 uv)\n"
+"{\n"
+"	float4 ret;\n"
+"	_Sample2D(tex, uv, ret);\n"
+"	return ret;\n"
+"}\n"
 ;
-	return KSC_Initialize(predefines);
+	KSC_AddExternalFunction("_Sample2D", KSC_ShaderWithTexture::Sample2D);
+	bool ret = KSC_Initialize(predefines);
+
+	return ret;
 }
 
 void KRT_Destory()

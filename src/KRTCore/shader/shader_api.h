@@ -6,6 +6,7 @@
 #include "../image/Color.h"
 #include "../image/BitmapObject.h"
 #include "../api/KRT_API.h"
+#include "../image/basic_map.h"
 #include <KShaderCompiler/inc/SC_API.h>
 #include <hash_map>
 
@@ -204,4 +205,6 @@ public:
 	~KSC_ShaderWithTexture();
 
 	virtual void* CreateExternalData(const char* typeString, const char* valueString);
+
+	static void Sample2D(Texture::Tex2D* tex, KVec2* uv, KVec4* outSample);
 };

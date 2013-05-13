@@ -30,12 +30,10 @@ clamp(const T &val, const U &min, const V &max)
 	return val;
 }
 
-static inline Spectrum
-lerp(float t, const Spectrum &p1, const Spectrum &p2) 
+static inline KVec4
+lerp(float t, const KVec4 &p1, const KVec4 &p2) 
 {
-    return Spectrum(((1.-t) * p1.r + t * p2.r),
-		    ((1.-t) * p1.g + t * p2.g),
-		    ((1.-t) * p1.b + t * p2.b));
+	return nvmath::lerp(t, p1, p2);
 }
 
 // Like a%b, but does the right thing when one or both is negative.
@@ -106,26 +104,26 @@ TextureFilter::TextureFilter(float lb)
     lodBias = lb;
 }
 
-Spectrum
+KVec4
 TextureFilter::SampleEWA(const TextureMap *map, const KVec2 &tex, 
 		     const KVec2 &du, const KVec2 &dv) const 
 {
 	return ewa(map, tex, du, dv);
 }
 
-Spectrum 
+KVec4 
 TextureFilter::SampleFinestEWA(const TextureMap *map, const KVec2 &pt, 
 		   const KVec2 &du, const KVec2 &dv) const
 {
 	return ewaLod(map, pt, du, dv, 0);
 }
 
-Spectrum TextureFilter::SampleBilinear(const TextureMap *map, const KVec2 &pt) const
+KVec4 TextureFilter::SampleBilinear(const TextureMap *map, const KVec2 &pt) const
 {
 	return bilerpFinest(map, pt);
 }
 
-Spectrum TextureFilter::SampleTrilinear(const TextureMap *map, const KVec2 &pt, const KVec2 &du, const KVec2 &dv) const
+KVec4 TextureFilter::SampleTrilinear(const TextureMap *map, const KVec2 &pt, const KVec2 &du, const KVec2 &dv) const
 {
 	return mipmap(map, pt, du, dv);
 }
@@ -139,7 +137,7 @@ static inline int FloatToInt(float x)
 
 void
 TextureFilter::getFourTexels(const TextureMap *map, const KVec2 &p, 
-			     Spectrum texels[2][2], int lod,
+			     KVec4 texels[2][2], int lod,
 			     int ures, int vres) const
 {
     // Note that here (and elsewhere), we assume that texture maps repeat;
@@ -156,7 +154,7 @@ TextureFilter::getFourTexels(const TextureMap *map, const KVec2 &p,
     texels[1][1] = map->texel(u1, v1, lod);
 }
 
-Spectrum
+KVec4
 TextureFilter::bilerpFinest(const TextureMap *map, const KVec2 &tex) const
 {
     // Just do bilinear interpolation at the finest level of the map.
@@ -180,12 +178,12 @@ static float invLog2 = 1. / log(2.);
 
 #define LOG2(x) (log(x)*invLog2)
 
-Spectrum
+KVec4
 TextureFilter::mipmap(const TextureMap *map, const KVec2 &tex, const KVec2 &duv,
 		      const KVec2 &dvv) const
 {
-    Spectrum l0, l1;
-    Spectrum texels[2][2];
+    KVec4 l0, l1;
+    KVec4 texels[2][2];
 
     // Avoid the sqrts in length_squared() by multiplying the log by .5.
 	float lod = -0.5f * LOG2(max(nvmath::lengthSquared(duv), nvmath::lengthSquared(dvv),
@@ -223,7 +221,7 @@ TextureFilter::mipmap(const TextureMap *map, const KVec2 &tex, const KVec2 &duv,
 
 // Heckbert's elliptical weighted average filtering
 
-Spectrum
+KVec4
 TextureFilter::ewa(const TextureMap *map, const KVec2 &tex, const KVec2 &du,
 		   const KVec2 &dv) const
 {
@@ -275,7 +273,7 @@ TextureFilter::ewa(const TextureMap *map, const KVec2 &tex, const KVec2 &du,
     }
 }
 
-Spectrum
+KVec4
 TextureFilter::ewaLod(const TextureMap *map, const KVec2 &texO, const KVec2 &du,
 		      const KVec2 &dv, int lod) const
 {
@@ -310,7 +308,7 @@ TextureFilter::ewaLod(const TextureMap *map, const KVec2 &texO, const KVec2 &du,
     // and incrementally update the value of Ax^2+Bxy*Cy^2; when this
     // value, q, is less than F, we're inside the ellipse so we filter
     // away..
-    Spectrum num(0., 0., 0.);
+    KVec4 num(0, 0, 0, 0);
     float den = 0;
     float ddq = 2 * A;
     float U = u0 - tex[0];
