@@ -214,6 +214,10 @@ bool SceneLoader::LoadAsSCN(FILE* pFile)
 		
 	// Then load the scene
 	bool ret = mpScene->LoadFromFile(pFile);
+
+	if (ret) 
+		BuildNodeIdMap();
+
 	return ret;
 }
 
@@ -284,6 +288,17 @@ bool SceneLoader::LoadUpdatingFile(const char* file_name)
 	return true;
 }
 
+void SceneLoader::BuildNodeIdMap()
+{
+	UINT32 sceneCnt = mpScene->GetKDSceneCnt();
+	for (UINT32 si = 0; si < sceneCnt; ++si) {
+		KKDTreeScene* subScene = mpScene->GetKDScene(si);
+		for (UINT32 ni = 0; ni < subScene->GetNodeCnt(); ++ni) {
+			NodeId id = {si, ni};
+			mNodeIDs[subScene->GetNode(ni)->mName] = id;
+		}
+	}
+}
 
 
 }

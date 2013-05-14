@@ -2,6 +2,7 @@
 
 #include "../base/BaseHeader.h"
 #include "../scene/KKDBBoxScene.h"
+#include <map>
 
 namespace KRayTracer {
 
@@ -24,10 +25,20 @@ namespace KRayTracer {
 	private:
 		bool SaveAsSCN(FILE* pFile) const;
 		bool LoadAsSCN(FILE* pFile);
+
+		void BuildNodeIdMap();
+
 	public:
 		KKDBBoxScene* mpScene;
 		double mLoadingTime;
 		UINT32 mFileLoadingTime;
+
+		struct NodeId
+		{
+			UINT32 sceneIdx;
+			UINT32 nodeIdx;
+		};
+		std::map<std::string, NodeId> mNodeIDs;
 	};
 
 } // namespace KRayTracer

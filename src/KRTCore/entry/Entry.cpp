@@ -408,3 +408,36 @@ bool KRT_SaveUpdate(const char* file_name,
 				modified_morph_nodes,
 				modified_RBA_nodes);
 }
+
+static KNode* _GetSceneNode(const char* nodeName)
+{
+	if (KRayTracer::g_pRoot->mpSceneLoader.get()) {
+		std::map<std::string, KRayTracer::SceneLoader::NodeId>::iterator it = KRayTracer::g_pRoot->mpSceneLoader->mNodeIDs.find(nodeName);
+		if (it != KRayTracer::g_pRoot->mpSceneLoader->mNodeIDs.end()) {
+			if (it->second.sceneIdx < KRayTracer::g_pRoot->mpSceneLoader->mpScene->GetKDSceneCnt()) {
+				KKDTreeScene* pScene = KRayTracer::g_pRoot->mpSceneLoader->mpScene->GetKDScene(it->second.sceneIdx);
+				if (it->second.nodeIdx < pScene->GetNodeCnt()) {
+					KNode* pNode = pScene->GetNode(it->second.nodeIdx);
+					return pNode;
+				}
+			}
+		}
+	}
+	return NULL;
+}
+
+ShaderHandle KRT_GetNodeSurfaceMaterial(const char* nodeName)
+{
+	KNode* pNode = _GetSceneNode(nodeName);
+	if (pNode)
+		return pNode->mpSurfShader;
+	else
+		return NULL;
+}
+
+void KRT_SetNodeSurfaceMaterial(const char* nodeName, ShaderHandle shader)
+{
+	KNode* pNode = _GetSceneNode(nodeName);
+	if (pNode)
+		pNode->mpSurfShader = (ISurfaceShader*)shader;
+}

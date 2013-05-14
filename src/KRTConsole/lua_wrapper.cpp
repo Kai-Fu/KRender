@@ -268,7 +268,7 @@ static int LuaWrapper_AddLight(lua_State *L)
 	float pos[3];
 	float xyz_rot[3];
 
-	if (3 != GetFloatArrayFromTable(L, 1, (float*)&pos, 3))
+	if (3 != GetFloatArrayFromTable(L, 1, pos, 3))
 		goto ERROR_IN_AddLight;
 
 	if (num_param == 2) {
@@ -302,6 +302,51 @@ static int LuaWrapper_ClearLights(lua_State *L)
 	return 0;
 }
 
+static int LuaWrapper_GetNodeSurfaceMaterial(lua_State *L)
+{
+	int num_param = lua_gettop(L);
+	if (num_param != 1) {
+		printf("GetNodeSurfaceMaterial : Invalid input parameters.\n");
+		return 0;
+	}
+	
+	size_t str_len;
+	const char* nodeName = lua_tolstring(L, 1, &str_len);
+	ShaderHandle hShader = KRT_GetNodeSurfaceMaterial(nodeName);
+	lua_pushinteger(L, (lua_Integer)hShader);
+	return 1;
+}
+
+static int LuaWrapper_SetShaderParameter(lua_State *L)
+{
+	int num_param = lua_gettop(L);
+	if (num_param != 3) {
+		printf("SetShaderParameter : Invalid input parameters.\n");
+		return 0;
+	}
+	
+	size_t str_len;
+	int isNum;
+	ShaderHandle hShader = (ShaderHandle)lua_tointegerx(L, 1, &isNum);
+	const char* paramName = lua_tolstring(L, 2, &str_len);
+
+	if (lua_istable(L, 3)) {
+		float values[4];
+		int elemCnt = GetFloatArrayFromTable(L, 3, (float*)values, 4);
+		KRT_SetShaderParameter(hShader, paramName, (void*)values, sizeof(float)*elemCnt);
+	}
+	else if (lua_isnumber(L, 3)) {
+		float paramValue = (float)lua_tonumber(L, 3);
+		KRT_SetShaderParameter(hShader, paramName, (void*)&paramValue, sizeof(float));
+	}
+	else if (lua_isstring(L, 3)) {
+		const char* paramValue = lua_tolstring(L, 3, &str_len);
+		KRT_SetShaderParameter(hShader, paramName, (void*)paramValue, (int)strlen(paramValue));
+	}
+	
+	return 0;
+}
+
 void BindLuaFunc()
 {
 	/* initialize Lua */
@@ -325,6 +370,8 @@ void BindLuaFunc()
 	lua_register(L_S, "SetRenderOptions", LuaWrapper_SetRenderOptions);
 	lua_register(L_S, "Quit", LuaWrapper_Quit);
 
+	lua_register(L_S, "GetNodeSurfaceMaterial", LuaWrapper_GetNodeSurfaceMaterial);
+	lua_register(L_S, "SetShaderParameter", LuaWrapper_SetShaderParameter);
 }
 
 void UnbindLuaFunc()

@@ -105,6 +105,8 @@ extern "C" {
 	KRT_API ShaderHandle KRT_GetSurfaceMaterial(const char* mtlName);
 	KRT_API bool KRT_SetShaderParameter(ShaderHandle hShader, const char* paramName, void* valueData, unsigned dataSize);
 
+	KRT_API ShaderHandle KRT_GetNodeSurfaceMaterial(const char* nodeName);
+	KRT_API void KRT_SetNodeSurfaceMaterial(const char* nodeName, ShaderHandle shader);
 
 
 }
