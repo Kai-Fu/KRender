@@ -2520,8 +2520,11 @@ bool Exp_If::CheckSemantic(Exp_ValueEval::TypeInfo& outType, std::string& errMsg
 		return false;
 	}
 
-	if (condType.type != VarType::kBoolean) {
-		errMsg = "The condition value of if expression must be boolean.";
+	if (condType.type != VarType::kBoolean && 
+		condType.type != VarType::kFloat && 
+		condType.type != VarType::kInt &&
+		condType.type != VarType::kExternType) {
+		errMsg = "The condition value of if expression must be type of single value.";
 		return false;
 	}
 

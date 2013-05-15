@@ -174,9 +174,9 @@ bool KRT_Initialize()
 "	};\n"
 
 "extern Texture2D;\n"
-"void _Sample2D(Texture2D& tex, float2& uv, float4& outSample);\n"
+"void _Sample2D(Texture2D tex, float2& uv, float4& outSample);\n"
 
-"float4 Sample2D(Texture2D& tex, float2 uv)\n"
+"float4 Sample2D(Texture2D tex, float2 uv)\n"
 "{\n"
 "	float4 ret;\n"
 "	_Sample2D(tex, uv, ret);\n"

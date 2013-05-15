@@ -165,6 +165,7 @@ void* KSC_GetFunctionPtr(FunctionHandle hFunc)
 
 	llvm::AttrListPtr attrList = llvm::AttrListPtr::get(getGlobalContext(), attrWithIdxList);
 	wrapperF->setAttributes(attrList);*/
+	pFuncDesc->F->dump();
 	wrapperF->dump();
 
 	if (!llvm::verifyFunction(*wrapperF, llvm::PrintMessageAction)) {
@@ -293,7 +294,7 @@ void* KSC_GetStructMemberPtr(StructHandle hStruct, void* pStructVar, const char*
 	return ((unsigned char*)pStructVar + offset);
 }
 
-bool KSC_SetStructMemberData(StructHandle hStruct, void* pStructVar, const char* member, void* data)
+bool KSC_SetStructMemberData(StructHandle hStruct, void* pStructVar, const char* member, void* data, int size)
 {
 	int offset = 0;
 	KSC_StructDesc* pStructDesc = (KSC_StructDesc*)hStruct;
@@ -323,7 +324,7 @@ bool KSC_SetStructMemberData(StructHandle hStruct, void* pStructVar, const char*
 	}
 	if (i == member_list.size()) return false;
 
-	memcpy(((unsigned char*)pStructVar + offset), data, memSize);
+	memcpy(((unsigned char*)pStructVar + offset), data, size < memSize ? size : memSize);
 	return true;
 }
 
@@ -338,11 +339,16 @@ int KSC_GetStructSize(StructHandle hStruct)
 
 void* _Aligned_Malloc(size_t size, size_t align)
 {
+	void* ret = NULL;
 #ifdef __GNUC__
-	return posix_memalign(NULL, align, size);
+	ret = posix_memalign(NULL, align, size);
 #else
-	return _aligned_malloc(size, align);
+	ret = _aligned_malloc(size, align);
 #endif
+	if (ret)
+		memset(ret, 0, size);
+
+	return ret;
 }
 
 void _Aligned_Free(void* ptr)

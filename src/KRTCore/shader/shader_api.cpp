@@ -717,7 +717,7 @@ bool KSC_Shader::LoadTemplate(const char* templateFile)
 			if (extData == NULL) 
 				printf("\tExternal data(type %s, value %s) creation failed.\n", memberType.typeString, valueStr);
 			else {
-				KSC_SetStructMemberData(arg0TypeInfo.hStruct, mpUniformData, varStr, &extData);
+				KSC_SetStructMemberData(arg0TypeInfo.hStruct, mpUniformData, varStr, &extData, (int)sizeof(void*));
 			}
 		}
 		else {
@@ -756,19 +756,19 @@ bool KSC_Shader::LoadTemplate(const char* templateFile)
 
 			switch (memberType.type) {
 			case SC::kBoolean:
-				KSC_SetStructMemberData(arg0TypeInfo.hStruct, mpUniformData, varStr, &bData);
+				KSC_SetStructMemberData(arg0TypeInfo.hStruct, mpUniformData, varStr, &bData, (int)sizeof(int));
 				break;
 			case SC::kInt:
 			case SC::kInt2:
 			case SC::kInt3:
 			case SC::kInt4:
-				KSC_SetStructMemberData(arg0TypeInfo.hStruct, mpUniformData, varStr, iData);
+				KSC_SetStructMemberData(arg0TypeInfo.hStruct, mpUniformData, varStr, iData, (int)sizeof(iData));
 				break;
 			case SC::kFloat:
 			case SC::kFloat2:
 			case SC::kFloat3:
 			case SC::kFloat4:
-				KSC_SetStructMemberData(arg0TypeInfo.hStruct, mpUniformData, varStr, fData);
+				KSC_SetStructMemberData(arg0TypeInfo.hStruct, mpUniformData, varStr, fData, (int)sizeof(fData));
 				break;
 			}
 		}
@@ -820,7 +820,7 @@ bool KSC_Shader::SetUniformParam(const char* name, void* data, int dataSize)
 	if (memberType.type == SC::kExternType) {
 		void* pExtData = CreateExternalData(memberType.typeString, (const char*)data);
 		if (pExtData) {
-			if (KSC_SetStructMemberData(uniformArgType.hStruct, mpUniformData, name, &pExtData)) {
+			if (KSC_SetStructMemberData(uniformArgType.hStruct, mpUniformData, name, &pExtData, sizeof(void*))) {
 				std::vector<BYTE>& storedData = mModifiedData[name];
 				storedData.resize(strlen((const char*)data) + 1);
 				memcpy(&storedData[0], data, storedData.size());
@@ -830,7 +830,7 @@ bool KSC_Shader::SetUniformParam(const char* name, void* data, int dataSize)
 	}
 	else {
 		if (dataSize == KSC_GetTypePackedSize(memberType)) {
-			if (KSC_SetStructMemberData(uniformArgType.hStruct, mpUniformData, name, data)) {
+			if (KSC_SetStructMemberData(uniformArgType.hStruct, mpUniformData, name, data, dataSize)) {
 				// Store the successfully modified data
 				std::vector<BYTE>& storedData = mModifiedData[name];
 				storedData.resize(dataSize);

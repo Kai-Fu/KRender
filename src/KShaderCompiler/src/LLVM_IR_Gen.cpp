@@ -449,7 +449,19 @@ llvm::Value* Exp_FunctionCall::GenerateCode(CG_Context* context) const
 llvm::Value* Exp_If::GenerateCode(CG_Context* context) const
 {
 	llvm::Value* condValue = mpCondValue->GenerateCode(context);
-  
+
+	if (mpCondValue->GetCachedTypeInfo().type == VarType::kFloat) {
+		condValue = CG_Context::sBuilder.CreateFCmpONE(condValue, ConstantFP::get(getGlobalContext(), APFloat(0.0f)));
+	}
+	else if (mpCondValue->GetCachedTypeInfo().type == VarType::kInt) {
+		condValue = CG_Context::sBuilder.CreateICmpNE(condValue, Constant::getIntegerValue(SC_INT_TYPE, APInt(sizeof(Int)*8, (uint64_t)0, true)));
+	}
+	else if (mpCondValue->GetCachedTypeInfo().type == VarType::kExternType) {
+		condValue = CG_Context::sBuilder.CreatePtrToInt(condValue, Type::getInt64Ty(getGlobalContext()));
+		llvm::Value* nullPtrValue = Constant::getIntegerValue(SC_INT_TYPE, APInt(64, (uint64_t)0, true));
+		condValue = CG_Context::sBuilder.CreateICmpNE(condValue, nullPtrValue);
+	}
+
 	Function *pCurFunc = context->GetCurrentFunc();
 	assert(pCurFunc);
 

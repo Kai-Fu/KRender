@@ -28,5 +28,10 @@ void Shade(PhongParam% uniforms, SurfaceContext% ctx, float3& outClr)
 	float di = dot(ctx.inVec, ctx.normal);
 	if (di < 0)
 		di = 0;
-	outClr = float3(di, di, di) * uniforms.diffuse_color;
+	float3 diffuseCoefficence;
+	if (uniforms.diffuse_map)
+		diffuseCoefficence = Sample2D(uniforms.diffuse_map, ctx.uv);
+	else
+		diffuseCoefficence = uniforms.diffuse_color;
+	outClr = float3(di, di, di) * diffuseCoefficence;
 }

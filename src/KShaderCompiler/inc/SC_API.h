@@ -191,7 +191,7 @@ extern "C" {
 		This function modifies the member variable with the content pointed by "data".
 		Note the caller must ensure the provided buffer is large enough for the type of the member variable.
 	*/
-	KSC_API bool KSC_SetStructMemberData(StructHandle hStruct, void* pStructVar, const char* member, void* data);
+	KSC_API bool KSC_SetStructMemberData(StructHandle hStruct, void* pStructVar, const char* member, void* data, int size);
 
 	/**
 		This function returns the KSC structure size(not the one of the same declaration in your host C++ code).

@@ -370,14 +370,14 @@ Tex2D* TextureManager::CreateBitmapTexture(const char* filename)
 		if (mbUseMipmap) {
 			Mipmap2D* res = new Mipmap2D();
 			if (res->SetSourceFile(path_name.c_str()))
-				pMap = new Mipmap2D();
+				pMap = res;
 			else
 				delete res;
 		}
 		else {
 			Image2D* res = new Image2D();
 			if (res->SetSourceFile(path_name.c_str()))
-				pMap = new Image2D();
+				pMap = res;
 			else
 				delete res;
 		}
