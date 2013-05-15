@@ -160,22 +160,26 @@ namespace Geom {
 		// Compute the buffer index for each normal that belongs to different smooth group
 		UINT32 base_index = 0;
 		for (UINT32 vi = 0; vi < mFacePosIdx.size(); ++vi) {
-			for (VertexNormalSet::iterator it = vert_normals[vi].begin(); it != vert_normals[vi].end(); ++it) {
-				std::sort(it->normal.begin(), it->normal.end(), CompareKVec3);
+			for (int fi = 0; fi < 3; ++fi) {
+				UINT32 vert_idx = mFacePosIdx[vi].idx[fi];
 
-				KVec3& last_nor = it->normal[0];
-				std::vector<KVec3>::iterator it_nor = it->normal.begin();
-				KVec3 smooth_normal(*it_nor);
-				++it_nor;
-				for (; it_nor != it->normal.end(); ++it_nor) {
-					if (nvmath::lengthSquared(*it_nor - last_nor) < 0.001f)
-						continue;
-					last_nor = *it_nor;
-					smooth_normal += *it_nor;
+				for (VertexNormalSet::iterator it = vert_normals[vert_idx].begin(); it != vert_normals[vert_idx].end(); ++it) {
+					std::sort(it->normal.begin(), it->normal.end(), CompareKVec3);
+
+					KVec3& last_nor = it->normal[0];
+					std::vector<KVec3>::iterator it_nor = it->normal.begin();
+					KVec3 smooth_normal(*it_nor);
+					++it_nor;
+					for (; it_nor != it->normal.end(); ++it_nor) {
+						if (nvmath::lengthSquared(*it_nor - last_nor) < 0.001f)
+							continue;
+						last_nor = *it_nor;
+						smooth_normal += *it_nor;
+					}
+					smooth_normal.normalize();
+					it->normal[0] = smooth_normal;
+					it->buf_idx = base_index++;
 				}
-				smooth_normal.normalize();
-				it->normal[0] = smooth_normal;
-				it->buf_idx = base_index++;
 			}
 		}
 		mNorData.resize(base_index);
