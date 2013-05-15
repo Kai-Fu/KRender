@@ -206,7 +206,7 @@ TracingInstance::~TracingInstance()
 
 SurfaceContext& TracingInstance::GetCurrentSurfaceCtxStorage()
 {
-	return mSurfaceContexts[mBounceDepth];
+	return mSurfaceContexts[mBounceDepth - 1];
 }
 
 const KKDBBoxScene* TracingInstance::GetScenePtr() const
@@ -270,6 +270,7 @@ void TracingInstance::CalcuShadingContext(const KRay& hitRay, const IntersectCon
 	const KNode* pNode = pKDScene->GetNode(node_idx);
 	const UINT32* pn_idx = pMesh->mFaces[tri_idx].pn_idx;
 	
+	out_shading_ctx.tracing_instance = this;
 	out_shading_ctx.excluding_bbox = hit_ctx.bbox_node_idx;
 	out_shading_ctx.excluding_tri = hit_ctx.tri_id;
 	assert(out_shading_ctx.excluding_bbox < NOT_HIT_INDEX);
@@ -531,11 +532,14 @@ void SurfaceContext::Allocate(const KSC_TypeInfo& kscType)
 	normal = (KVec3*)KSC_GetStructMemberPtr(kscType.hStruct, mpData, "normal");
 	tangent = (KVec3*)KSC_GetStructMemberPtr(kscType.hStruct, mpData, "tangent");
 	binormal = (KVec3*)KSC_GetStructMemberPtr(kscType.hStruct, mpData, "binormal");
-
+	
 	uv = (KVec2*)KSC_GetStructMemberPtr(kscType.hStruct, mpData, "uv");
+
+	tracerData = (TracingData**)KSC_GetStructMemberPtr(kscType.hStruct, mpData, "tracerData");
+	*tracerData = &tracerDataLocal;
 }
 
-void ConvertToSurfaceContext(const ShadingContext& shadingCtx, const LightIterator* lightIt, SurfaceContext& surfaceCtx)
+void TracingInstance::ConvertToSurfaceContext(const ShadingContext& shadingCtx, const LightIterator* lightIt, SurfaceContext& surfaceCtx)
 {
 	if (lightIt) {
 		*surfaceCtx.inLight = lightIt->intensity;
@@ -545,6 +549,9 @@ void ConvertToSurfaceContext(const ShadingContext& shadingCtx, const LightIterat
 		surfaceCtx.inLight->Clear();
 		*surfaceCtx.inVec = KVec3(0,0,0);
 	}
+	surfaceCtx.tracerDataLocal.shading_ctx = &shadingCtx;
+	surfaceCtx.tracerDataLocal.tracing_inst = this;
+
 	*surfaceCtx.outVec = shadingCtx.out_vec;
 	*surfaceCtx.normal = shadingCtx.normal;
 	*surfaceCtx.tangent = shadingCtx.tangent.tangent;

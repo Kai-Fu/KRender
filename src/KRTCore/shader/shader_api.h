@@ -34,14 +34,24 @@ struct UV_SAMP_INFO
 	KVec2 dv;
 };
 
+
 class ISurfaceShader;
+class TracingInstance;
 
 struct SurfaceContext
 {
 	SurfaceContext();
 	~SurfaceContext();
 
+	struct TracingData
+	{
+		TracingInstance* tracing_inst;
+		const ShadingContext* shading_ctx;
+	};
+
 	void Allocate(const KSC_TypeInfo& kscType);
+
+	TracingData tracerDataLocal;
 
 	void* mpData;
 
@@ -55,6 +65,9 @@ struct SurfaceContext
 	KVec3* binormal;
 
 	KVec2* uv;
+
+	TracingData** tracerData;
+
 };
 
 struct ShadingContext
@@ -73,12 +86,14 @@ struct ShadingContext
 	UV_SAMP_INFO uv;
 
 	ISurfaceShader* surface_shader;
+	const TracingInstance* tracing_instance;
 	bool is_primary_ray;
 };
 
 
 class KKDBBoxScene;
 class RenderBuffers;
+struct LightIterator;
 
 class TracingInstance
 {
@@ -101,6 +116,7 @@ public:
 	bool CastRay(const KRay& ray, IntersectContext& out_ctx) const;
 	bool IsPointOccluded(const KRay& ray, float len) const;
 
+	void ConvertToSurfaceContext(const ShadingContext& shadingCtx, const LightIterator* lightIt, SurfaceContext& surfaceCtx);
 	SurfaceContext& GetCurrentSurfaceCtxStorage();
 public:
 	KCamera::EvalContext mCameraContext;
@@ -146,6 +162,7 @@ public:
 	KVec2 RS_AreaLight(UINT32 x, UINT32 y, UINT32 lightIdx, UINT32 sampleIdx) const;
 	float RS_MotionBlur(UINT32 x, UINT32 y) const;
 	const BitmapObject* GetOutputImagePtr() const;
+
 };
 
 struct RenderParam {
@@ -164,7 +181,6 @@ struct RenderParam {
 	KRT_ImageFormat pixel_format; 
 };
 
-void ConvertToSurfaceContext(const ShadingContext& shadingCtx, const LightIterator* lightIt, SurfaceContext& surfaceCtx);
 
 
 // Shader based on KShaderCompiler
