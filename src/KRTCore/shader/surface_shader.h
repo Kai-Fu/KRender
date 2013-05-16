@@ -9,6 +9,8 @@
 
 // The main entry function to calculate the shading for the specified ray
 bool CalcuShadingByRay(TracingInstance* pLocalData, const KRay& ray, KColor& out_clr, IntersectContext* out_ctx = NULL);
+bool CalcSecondaryRay(TracingInstance* pLocalData, const ShadingContext& shadingCtx, const KVec3& ray_dir, KColor& out_clr);
+
 bool CalcReflectedRay(TracingInstance* pLocalData, const ShadingContext& shadingCtx, KColor& reflectColor);
 bool CalcRefractedRay(TracingInstance* pLocalData, const ShadingContext& shadingCtx, float refractRatio, KColor& refractColor);
 
@@ -45,5 +47,7 @@ public:
 
 	const char* GetTypeName() const {return mTypeName.c_str();}
 	const char* GetName() const {return mName.c_str();}
+
+	void SetName(const char* name) {mName = name;}
 
 };

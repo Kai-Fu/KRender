@@ -4,6 +4,7 @@ struct PhongParam
 	float3 diffuse_color;
 	float3 specular_color;
 	Texture2D diffuse_map;
+	bool enableReflection;
 };
 
 float dot(float3 a, float3 b)
@@ -12,7 +13,7 @@ float dot(float3 a, float3 b)
 	return temp.x + temp.y + temp.z;
 }
 
-void ShadeEmission(PhongParam% uniforms, SurfaceContext% ctx, float3& outClr)
+void _ShadeEmission(PhongParam% uniforms, SurfaceContext% ctx, float3& outClr)
 {
 	//outClr = ctx.normal * float3(0.5,0.5,0.5) + float3(0.5,0.5,0.5);
 	//outClr = outClr * float3(0.3, 0.3, 0.3);
@@ -33,5 +34,12 @@ void Shade(PhongParam% uniforms, SurfaceContext% ctx, float3& outClr)
 		diffuseCoefficence = Sample2D(uniforms.diffuse_map, ctx.uv);
 	else
 		diffuseCoefficence = uniforms.diffuse_color;
-	outClr = float3(di, di, di) * diffuseCoefficence;
+		
+	if (uniforms.enableReflection) {
+		float do_x2 = do * 2;
+		float3 reflectVec = ctx.normal * float3(do_x2, do_x2, do_x2) - ctx.outVec;
+		outClr = CalcSecondaryRay(ctx.tracerData, reflectVec) * diffuseCoefficence;
+	}
+	else
+		outClr = float3(di, di, di) * diffuseCoefficence;
 }

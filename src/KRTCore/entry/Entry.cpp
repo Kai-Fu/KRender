@@ -155,10 +155,16 @@ void KRayTracer_Root::EventNotifier::OnFrameFinished(bool bIsUserCancel)
 
 } // namespace KRayTracer
 
+static void _CalcSecondaryRay(SurfaceContext::TracingData* pData, const KVec3* ray_dir, KColor* outClr)
+{
+	CalcSecondaryRay(pData->tracing_inst, *pData->shading_ctx, *ray_dir, *outClr);
+}
+
 bool KRT_Initialize()
 {
 	KRayTracer::InitializeKRayTracer();
 	char* predefines = 
+"extern TracerData;\n"
 "struct SurfaceContext\n"
 "{\n"
 "	float3 inLight;\n"
@@ -171,19 +177,29 @@ bool KRT_Initialize()
 "	float3 binormal;\n"
 
 "	float2 uv;\n"
+
+"	TracerData tracerData;"
 "	};\n"
 
 "extern Texture2D;\n"
 "void _Sample2D(Texture2D tex, float2& uv, float4& outSample);\n"
-
 "float4 Sample2D(Texture2D tex, float2 uv)\n"
 "{\n"
 "	float4 ret;\n"
 "	_Sample2D(tex, uv, ret);\n"
 "	return ret;\n"
 "}\n"
+
+"void _CalcSecondaryRay(TracerData pData, float3& ray_dir, float3& outClr);\n"
+"float3 CalcSecondaryRay(TracerData pData, float3 ray_dir)\n"
+"{\n"
+"	float3 ret;\n"
+"	_CalcSecondaryRay(pData, ray_dir, ret);\n"
+"	return ret;\n"
+"}\n"
 ;
 	KSC_AddExternalFunction("_Sample2D", KSC_ShaderWithTexture::Sample2D);
+	KSC_AddExternalFunction("_CalcSecondaryRay", _CalcSecondaryRay);
 	bool ret = KSC_Initialize(predefines);
 
 	return ret;

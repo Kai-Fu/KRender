@@ -35,6 +35,7 @@ ISurfaceShader* KMaterialLibrary::CreateMaterial(const char* shaderTemplate, con
 		
 		if (pRet) {
 			pRet = new KSC_SurfaceShader(*pRet);
+			pRet->SetName(pMtlName);
 			mMaterialInstances[mtlName] = pRet;
 		}
 

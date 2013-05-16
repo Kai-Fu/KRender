@@ -136,6 +136,10 @@ bool SceneLoader::LoadFromFile(const char* file_name)
 			ret = false;
 		}
 	}
+
+	if (ret) 
+		BuildNodeIdMap();
+
 	mFileLoadingTime = UINT32(fileReadingTime.Stop() * 1000);
 
 	// End of file reading, now build the acceleration structure
@@ -214,9 +218,6 @@ bool SceneLoader::LoadAsSCN(FILE* pFile)
 		
 	// Then load the scene
 	bool ret = mpScene->LoadFromFile(pFile);
-
-	if (ret) 
-		BuildNodeIdMap();
 
 	return ret;
 }
