@@ -46,7 +46,11 @@ struct SurfaceContext
 	struct TracingData
 	{
 		TracingInstance* tracing_inst;
+		const IntersectContext* hit_ctx;
 		const ShadingContext* shading_ctx;
+
+		UINT32 iter_light_li;
+		UINT32 iter_light_si;
 	};
 
 	void Allocate(const KSC_TypeInfo& kscType);
@@ -55,9 +59,6 @@ struct SurfaceContext
 
 	void* mpData;
 
-	KColor* inLight;
-
-	KVec3* inVec;
 	KVec3* outVec;
 
 	KVec3* normal;
@@ -67,7 +68,6 @@ struct SurfaceContext
 	KVec2* uv;
 
 	TracingData** tracerData;
-
 };
 
 struct ShadingContext
@@ -116,7 +116,7 @@ public:
 	bool CastRay(const KRay& ray, IntersectContext& out_ctx) const;
 	bool IsPointOccluded(const KRay& ray, float len) const;
 
-	void ConvertToSurfaceContext(const ShadingContext& shadingCtx, const LightIterator* lightIt, SurfaceContext& surfaceCtx);
+	void ConvertToSurfaceContext(const IntersectContext& hitCtx, const ShadingContext& shadingCtx, SurfaceContext& surfaceCtx);
 	SurfaceContext& GetCurrentSurfaceCtxStorage();
 public:
 	KCamera::EvalContext mCameraContext;

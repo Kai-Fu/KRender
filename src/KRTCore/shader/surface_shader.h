@@ -9,7 +9,7 @@
 
 // The main entry function to calculate the shading for the specified ray
 bool CalcuShadingByRay(TracingInstance* pLocalData, const KRay& ray, KColor& out_clr, IntersectContext* out_ctx = NULL);
-bool CalcSecondaryRay(TracingInstance* pLocalData, const ShadingContext& shadingCtx, const KVec3& ray_dir, KColor& out_clr);
+bool CalcSecondaryRay(TracingInstance* pLocalData, const KVec3& org, UINT32 excludingBBox, UINT32 excludingTri, const KVec3& ray_dir, KColor& out_clr);
 
 bool CalcReflectedRay(TracingInstance* pLocalData, const ShadingContext& shadingCtx, KColor& reflectColor);
 bool CalcRefractedRay(TracingInstance* pLocalData, const ShadingContext& shadingCtx, float refractRatio, KColor& refractColor);
@@ -25,6 +25,7 @@ public:
 	// The surface shader implementation need to set the normal map
 	Texture::Tex2D* mNormalMap;
 	bool mHasEmission;
+	bool mHasTransmission;
 	bool mRecieveLight;
 
 public:
@@ -33,12 +34,14 @@ public:
 		mName(name),
 		mNormalMap(NULL),
 		mHasEmission(false),
+		mHasTransmission(false),
 		mRecieveLight(true)
 		{}
 	virtual ~ISurfaceShader() {}
 
 	virtual void SetParam(const char* paramName, void* pData, UINT32 dataSize) {}
 
+	virtual void ShaderTransmission(const SurfaceContext& shadingCtx, KColor& out_clr) const = 0;
 	virtual void ShadeEmission(const SurfaceContext& shadingCtx, KColor& out_clr) const = 0;
 	virtual void Shade(const SurfaceContext& shadingCtx, KColor& out_clr) const = 0;
 

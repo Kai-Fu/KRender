@@ -2,6 +2,7 @@
 #include <string>
 #include <common/math/nvmath.h>
 #include "txfilt.h"
+#include <FreeImage.h>
 
 namespace Texture {
 
@@ -117,6 +118,9 @@ public:
 			memcpy(dataDst, dataSrc, sizeof(float)*mChannelCnt);
 		}
 
+#if FREEIMAGE_COLORORDER == FREEIMAGE_COLORORDER_BGR
+		std::swap(ret[0], ret[2]);
+#endif
 		return ret;
 	}
 

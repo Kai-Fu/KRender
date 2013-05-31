@@ -144,12 +144,14 @@ KSC_SurfaceShader::KSC_SurfaceShader(const char* shaderTemplate, const char* sha
 	ISurfaceShader(shaderTemplate, shaderName)
 {
 	mpEmissionFuncPtr = NULL;
+	mpTransmissionFuncPtr = NULL;
 }
 
 KSC_SurfaceShader::KSC_SurfaceShader(const KSC_SurfaceShader& ref) :
 	ISurfaceShader(ref.mTypeName.c_str(), ref.mName.c_str()), KSC_ShaderWithTexture(ref)
 {
 	mpEmissionFuncPtr = ref.mpEmissionFuncPtr;
+	mpTransmissionFuncPtr = ref.mpTransmissionFuncPtr;
 	mNormalMap = ref.mNormalMap;
 	mHasEmission = ref.mHasEmission;
 	mRecieveLight = ref.mRecieveLight;
@@ -198,6 +200,20 @@ bool KSC_SurfaceShader::HandleModule(ModuleHandle kscModule)
 				mHasEmission = true;
 		}
 	}
+
+	shadeFunc = KSC_GetFunctionHandleByName("ShadeTransmission", kscModule);
+	if (shadeFunc != NULL && KSC_GetFunctionArgumentCount(shadeFunc) == 3) {
+		KSC_TypeInfo argUniform = KSC_GetFunctionArgumentType(shadeFunc, 0);
+		KSC_TypeInfo arg0TypeInfo = KSC_GetFunctionArgumentType(shadeFunc, 1);
+		KSC_TypeInfo arg1TypeInfo = KSC_GetFunctionArgumentType(shadeFunc, 2);
+		if (0 == strcmp(argUniform.typeString, mUnifomArgType.typeString) &&
+			arg0TypeInfo.isRef && arg0TypeInfo.isKSCLayout && arg0TypeInfo.hStruct != NULL &&
+			arg1TypeInfo.isRef && arg1TypeInfo.type == SC::kFloat3) {
+			mpTransmissionFuncPtr = KSC_GetFunctionPtr(shadeFunc);
+			if (mpTransmissionFuncPtr)
+				mHasTransmission = true;
+		}
+	}
 	return true;
 }
 
@@ -220,6 +236,13 @@ void KSC_SurfaceShader::ShadeEmission(const SurfaceContext& shadingCtx, KColor& 
 {
 	typedef void (*PFN_invoke)(void*, void*, void*);
 	PFN_invoke funcPtr = (PFN_invoke)mpEmissionFuncPtr;
+	funcPtr(mpUniformData, shadingCtx.mpData, &out_clr);
+}
+
+void KSC_SurfaceShader::ShaderTransmission(const SurfaceContext& shadingCtx, KColor& out_clr) const
+{
+	typedef void (*PFN_invoke)(void*, void*, void*);
+	PFN_invoke funcPtr = (PFN_invoke)mpTransmissionFuncPtr;
 	funcPtr(mpUniformData, shadingCtx.mpData, &out_clr);
 }
 

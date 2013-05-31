@@ -69,12 +69,12 @@ bool CalcuShadingByRay(TracingInstance* pLocalData, const KRay& ray, KColor& out
 	return res;
 }
 
-bool CalcSecondaryRay(TracingInstance* pLocalData, const ShadingContext& shadingCtx, const KVec3& ray_dir, KColor& out_clr)
+bool CalcSecondaryRay(TracingInstance* pLocalData, const KVec3& org, UINT32 excludingBBox, UINT32 excludingTri, const KVec3& ray_dir, KColor& out_clr)
 {
 	KRay secondaryRay;
-	secondaryRay.Init(shadingCtx.position, ray_dir, NULL);
-	secondaryRay.mExcludeBBoxNode = shadingCtx.excluding_bbox;
-	secondaryRay.mExcludeTriID = shadingCtx.excluding_tri;
+	secondaryRay.Init(org, ray_dir, NULL);
+	secondaryRay.mExcludeBBoxNode = excludingBBox;
+	secondaryRay.mExcludeTriID = excludingTri;
 	return CalcuShadingByRay(pLocalData, secondaryRay, out_clr, NULL);
 }
 

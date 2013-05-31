@@ -10,7 +10,7 @@ void PhongSurface::Shade(const SurfaceContext& shadingCtx, KColor& out_clr) cons
 	LightIterator li_iter;
 	const KVec3& normal = *shadingCtx.normal;
 	out_clr.Clear();
-
+	/*
 	float in_side = *shadingCtx.normal * *shadingCtx.outVec;
 	float out_side = *shadingCtx.normal * *shadingCtx.inVec;
 	if (in_side < 0 || out_side < 0)
@@ -30,7 +30,7 @@ void PhongSurface::Shade(const SurfaceContext& shadingCtx, KColor& out_clr) cons
 	KColor diffuseClr(*shadingCtx.inLight);
 	diffuseClr.Modulate(diffuseCoefficient);
 
-	diffuseClr.Scale(diffuse_scale);
+	diffuseClr.Scale(diffuse_scale);*/
 
 	/*if (mDiffuseMap && shadingCtx.hasUV) {
 	
@@ -39,7 +39,7 @@ void PhongSurface::Shade(const SurfaceContext& shadingCtx, KColor& out_clr) cons
 		else
 			diffuseClr = mDiffuseMap->SampleEWA(shadingCtx.uv.uv, shadingCtx.uv.du, shadingCtx.uv.dv);
 	}
-	else*/ {
+	else*/ /*{
 		diffuseClr.r *= mParam.mDiffuse.r;
 		diffuseClr.g *= mParam.mDiffuse.g;
 		diffuseClr.b *= mParam.mDiffuse.b;
@@ -53,6 +53,6 @@ void PhongSurface::Shade(const SurfaceContext& shadingCtx, KColor& out_clr) cons
 	specularClr.g *= mParam.mSpecular.g;
 	specularClr.b *= mParam.mSpecular.b;
 
-	out_clr.Add(specularClr);
+	out_clr.Add(specularClr);*/
 }
 

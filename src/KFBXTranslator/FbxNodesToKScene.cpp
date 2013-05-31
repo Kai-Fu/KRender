@@ -8,6 +8,7 @@
 static FbxManager* mySdkManager = NULL;
 static FbxImporter* myImporter = NULL;
 static FbxScene* myScene = NULL;
+static FbxAnimLayer* myAnimLayer = NULL;
 static std::map<FbxObject*, std::pair<FbxMesh*, int> > myObjectToMesh;
 static FbxLongLong myRBAnimInteropCnt = 8;
 
@@ -72,6 +73,14 @@ int InitFbxSDK(const char* filename)
 		// Assume Z-up world
 		FbxAxisSystem axisSystem(FbxAxisSystem::eMayaZUp);
 		axisSystem.ConvertScene(myScene);
+
+		int numStacks = myScene->GetSrcObjectCount<FbxAnimStack>();
+		if (numStacks > 0) {
+			FbxAnimStack* pAnimStack = FbxCast<FbxAnimStack>(myScene->GetSrcObject<FbxAnimStack>(0));
+			int numAnimLayers = pAnimStack->GetMemberCount();
+			if (numAnimLayers > 0)
+				myAnimLayer = FbxCast<FbxAnimLayer>(pAnimStack->GetMember(0));
+		}
 	}
 
 	return 1;
@@ -92,20 +101,19 @@ void DestroyFbxSDK()
 /************************************************************************/
 bool hasLocalRigidBodyAnim(FbxNode* node) 
 {
-	FbxAnimCurveNode* curveNode[3] = { NULL, NULL, NULL };
+	if (myAnimLayer == NULL)
+		return false;
 
-	curveNode[0] = node->LclTranslation.GetCurveNode();
-	curveNode[1] = node->LclRotation.GetCurveNode();
-	curveNode[2] = node->LclScaling.GetCurveNode();
-	
+	FbxAnimCurve* curve[3] = {NULL, NULL, NULL};
+	curve[0] = node->LclTranslation.GetCurve(myAnimLayer);
+	curve[1] = node->LclRotation.GetCurve(myAnimLayer);
+	curve[2] = node->LclScaling.GetCurve(myAnimLayer);
+
 	for (int i = 0; i < 3; ++i) {
-		if (!curveNode[i]) continue;
+		if (!curve[i]) continue;
 
-		FbxTimeSpan timeSpan;
-		curveNode[i]->GetAnimationInterval(timeSpan);
-		if (timeSpan.GetStop() != FBXSDK_TIME_INFINITE)
+		if (curve[i]->KeyGetCount() > 1)
 			return true;
-			
 	}
 
 	return false;
@@ -501,22 +509,76 @@ void GetConvertedMaterials(FbxNode* pFbxNode, std::vector<ShaderHandle>& convert
 
 			tmpScale = (float)pMtl->Shininess.Get();
 			KRT_SetShaderParameter(pPhongSurf, "power", &tmpScale, sizeof(float));
-			//Diffuse Textures
-			FbxProperty lProperty = pMtl->FindProperty(FbxSurfaceMaterial::sDiffuse);
-			if(lProperty.IsValid())
-			{
-				//no layered texture simply get on the property
-				int lNbTextures = lProperty.GetSrcObjectCount<FbxTexture>();
-				for(int j =0; j<lNbTextures; ++j)
-				{
 
-					FbxFileTexture* lTexture = FbxCast <FbxFileTexture> (lProperty.GetSrcObject<FbxTexture>(j));
-					if(lTexture)
-					{
-						KRT_SetShaderParameter(pPhongSurf, "diffuse_map", (void*)lTexture->GetFileName(), 0);
+			//Diffuse Textures
+			{
+				FbxProperty lProperty = pMtl->FindProperty(FbxSurfaceMaterial::sDiffuse);
+				if(lProperty.IsValid())
+				{
+					//no layered texture simply get on the property
+					int lNbTextures = lProperty.GetSrcObjectCount<FbxTexture>();
+					if (lNbTextures > 0) {
+
+						FbxFileTexture* lTexture = FbxCast <FbxFileTexture> (lProperty.GetSrcObject<FbxTexture>(0));
+						if(lTexture)
+						{
+							KRT_SetShaderParameter(pPhongSurf, "diffuse_map", (void*)lTexture->GetFileName(), 0);
+						}
 					}
 				}
 			}
+			// Transparenty texture
+			{
+				FbxProperty lProperty = pMtl->FindProperty(FbxSurfaceMaterial::sTransparentColor);
+				if(lProperty.IsValid())
+				{
+					//no layered texture simply get on the property
+					int lNbTextures = lProperty.GetSrcObjectCount<FbxTexture>();
+					if (lNbTextures > 0) {
+
+						FbxFileTexture* lTexture = FbxCast <FbxFileTexture> (lProperty.GetSrcObject<FbxTexture>(0));
+						if(lTexture)
+						{
+							KRT_SetShaderParameter(pPhongSurf, "transparent_map", (void*)lTexture->GetFileName(), 0);
+						}
+					}
+				}
+			}
+			// Bump texture
+			{
+				FbxProperty lProperty = pMtl->FindProperty(FbxSurfaceMaterial::sBump);
+				if(lProperty.IsValid())
+				{
+					//no layered texture simply get on the property
+					int lNbTextures = lProperty.GetSrcObjectCount<FbxTexture>();
+					if (lNbTextures > 0) {
+
+						FbxFileTexture* lTexture = FbxCast <FbxFileTexture> (lProperty.GetSrcObject<FbxTexture>(0));
+						if(lTexture)
+						{
+							KRT_SetShaderParameter(pPhongSurf, "normal_map", (void*)lTexture->GetFileName(), 0);
+						}
+					}
+				}
+			}
+			// specular shininess texture
+			{
+				FbxProperty lProperty = pMtl->FindProperty(FbxSurfaceMaterial::sSpecularFactor);
+				if(lProperty.IsValid())
+				{
+					//no layered texture simply get on the property
+					int lNbTextures = lProperty.GetSrcObjectCount<FbxTexture>();
+					if (lNbTextures > 0) {
+
+						FbxFileTexture* lTexture = FbxCast <FbxFileTexture> (lProperty.GetSrcObject<FbxTexture>(0));
+						if(lTexture)
+						{
+							KRT_SetShaderParameter(pPhongSurf, "shininess_map", (void*)lTexture->GetFileName(), 0);
+						}
+					}
+				}
+			}
+
 		}
 		else {
 			std::string wire_color_mtl_name = "__wire_color_";

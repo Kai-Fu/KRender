@@ -22,7 +22,7 @@ extern UINT32 ENABLE_MB;
 
 
 // Comment out this to enable safe ray-triangle intersection algorithm
-//#define USE_PACKED_PRIMITIVE
+#define USE_PACKED_PRIMITIVE
 
 
 

@@ -504,8 +504,6 @@ SurfaceContext::SurfaceContext()
 {
 	mpData = NULL;
 
-	inLight = NULL;
-	inVec = NULL;
 	outVec = NULL;
 	
 	normal = NULL;
@@ -525,8 +523,6 @@ void SurfaceContext::Allocate(const KSC_TypeInfo& kscType)
 {
 	assert(kscType.hStruct);
 	mpData = KSC_AllocMemForType(kscType, 1);
-	inLight = (KColor*)KSC_GetStructMemberPtr(kscType.hStruct, mpData, "inLight");
-	inVec = (KVec3*)KSC_GetStructMemberPtr(kscType.hStruct, mpData, "inVec");
 	outVec = (KVec3*)KSC_GetStructMemberPtr(kscType.hStruct, mpData, "outVec");
 
 	normal = (KVec3*)KSC_GetStructMemberPtr(kscType.hStruct, mpData, "normal");
@@ -539,18 +535,13 @@ void SurfaceContext::Allocate(const KSC_TypeInfo& kscType)
 	*tracerData = &tracerDataLocal;
 }
 
-void TracingInstance::ConvertToSurfaceContext(const ShadingContext& shadingCtx, const LightIterator* lightIt, SurfaceContext& surfaceCtx)
+void TracingInstance::ConvertToSurfaceContext(const IntersectContext& hitCtx, const ShadingContext& shadingCtx, SurfaceContext& surfaceCtx)
 {
-	if (lightIt) {
-		*surfaceCtx.inLight = lightIt->intensity;
-		*surfaceCtx.inVec = lightIt->direction;
-	}
-	else {
-		surfaceCtx.inLight->Clear();
-		*surfaceCtx.inVec = KVec3(0,0,0);
-	}
+	surfaceCtx.tracerDataLocal.hit_ctx = &hitCtx;
 	surfaceCtx.tracerDataLocal.shading_ctx = &shadingCtx;
 	surfaceCtx.tracerDataLocal.tracing_inst = this;
+	surfaceCtx.tracerDataLocal.iter_light_li = 0;
+	surfaceCtx.tracerDataLocal.iter_light_si = 0;
 
 	*surfaceCtx.outVec = shadingCtx.out_vec;
 	*surfaceCtx.normal = shadingCtx.normal;

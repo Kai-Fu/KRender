@@ -482,6 +482,15 @@ namespace SC {
 		static Exp_For* Parse(CompilingContext& context, CodeDomain* curDomain);
 	};
 
+	class Exp_Nop : public Exp_ValueEval
+	{
+	public:
+		Exp_Nop();
+		virtual ~Exp_Nop();
+
+		virtual llvm::Value* GenerateCode(CG_Context* context) const;
+		virtual bool CheckSemantic(Exp_ValueEval::TypeInfo& outType, std::string& errMsg, std::vector<std::string>& warnMsg);
+	};
 
 	class RootDomain : public CodeDomain
 	{

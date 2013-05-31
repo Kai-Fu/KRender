@@ -123,6 +123,8 @@ public:
 	bool RemoveLightSource(ILightObject* pLight);
 	ILightObject* GetLightPtr(UINT32 lightIdx);
 	const ILightObject* GetLightPtr(UINT32 lightIdx) const;
+	bool GetLightIter(TracingInstance* pLocalData, const KVec2& samplePos, UINT32 lightIdx, const ShadingContext* shadingCtx,  const IntersectContext* hit_ctx, LightIterator& out_iter) const;
+
 
 	void Shade(TracingInstance* pLocalData, 
 		const ShadingContext& shadingCtx, 
@@ -135,8 +137,8 @@ public:
 	static LightScheme* GetInstance();
 	static void Initialize();
 	static void Shutdown();
+
 private:
-	bool GetLightIter(TracingInstance* pLocalData, const KVec2& samplePos, UINT32 lightIdx, const ShadingContext* shadingCtx,  const IntersectContext* hit_ctx, LightIterator& out_iter) const;
 	void AdjustHitPos(TracingInstance* pLocalData, const IntersectContext& hit_ctx, const ShadingContext& shadingCtx, KVec3& in_out_pos) const;
 
 protected:

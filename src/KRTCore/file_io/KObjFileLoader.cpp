@@ -78,8 +78,8 @@ bool KObjFileLoader::LoadObjFile(const char* filename, KScene& scene)
 				}
 				else {
 					pMesh->mFaceTexIdx[validFaceCnt].idx[0] = idx0-1;
-					pMesh->mFaceTexIdx[validFaceCnt].idx[0] = idx1-1;
-					pMesh->mFaceTexIdx[validFaceCnt].idx[0] = idx2-1;
+					pMesh->mFaceTexIdx[validFaceCnt].idx[1] = idx1-1;
+					pMesh->mFaceTexIdx[validFaceCnt].idx[2] = idx2-1;
 				}
 			}
 

@@ -1025,8 +1025,9 @@ bool CompilingContext::ParseSingleExpression(CodeDomain* curDomain, const char* 
 	
 	Token firstT = PeekNextToken(0);
 
-	if (endT && PeekNextToken(0).IsEqual(endT))
+	if (endT && PeekNextToken(0).IsEqual(endT)) {
 		return false;
+	}
 	else if ((GetStatusCode() & kAllowForExp) && PeekNextToken(0).IsEqual("for")) {
 		Exp_For* pFor = Exp_For::Parse(*this, curDomain);
 		if (!pFor) {
@@ -1617,6 +1618,10 @@ Exp_ValueEval* CompilingContext::ParseSimpleExpression(CodeDomain* curDomain)
 
 Exp_ValueEval* CompilingContext::ParseComplexExpression(CodeDomain* curDomain, const char* pEndToken0, const char* pEndToken1, Exp_ValueEval* pValueExp0, Token tOp0)
 {
+	Token curT = PeekNextToken(0);
+	if (curT.IsEqual(pEndToken0) || curT.IsEqual(pEndToken1))
+		return NULL;
+	
 	std::auto_ptr<Exp_ValueEval> simpleExp0;
 	if (pValueExp0) 
 		simpleExp0.reset(pValueExp0);
@@ -1630,7 +1635,7 @@ Exp_ValueEval* CompilingContext::ParseComplexExpression(CodeDomain* curDomain, c
 	}
 
 	Exp_ValueEval* ret = NULL;
-	Token curT = pValueExp0 ? tOp0 : PeekNextToken(0);
+	curT = pValueExp0 ? tOp0 : PeekNextToken(0);
 	if (curT.IsEqual(pEndToken0) || curT.IsEqual(pEndToken1)) {
 		ret = simpleExp0.release();
 	}
@@ -2634,18 +2639,23 @@ Exp_For* Exp_For::Parse(CompilingContext& context, CodeDomain* curDomain)
 		return NULL;
 	std::auto_ptr<Exp_For> result(new Exp_For());
 	result->mStartStepCond = new CodeDomain(curDomain);
+
 	// Parse start expression
-	if (!context.ParseSingleExpression(result->mStartStepCond, ";")) 
-		return NULL;
+	if (!context.ParseSingleExpression(result->mStartStepCond, ";")) {
+		if (context.HasErrorMessage())
+			return NULL;
+		result->mStartStepCond->AddValueExpression(new Exp_Nop());
+	}
 	assert(result->mStartStepCond->GetExpressionCnt() == 1);
 	
-	curT = context.PeekNextToken(0);
+	context.GetNextToken(); // Eat the ending ";"
 	// Parse continuing condition expression
 	Exp_ValueEval* condValue = context.ParseComplexExpression(result->mStartStepCond, ";");
 	if (condValue == NULL) {
 		context.AddErrorMessage(curT, "Invalid for condition expression.");
 		return NULL;
 	}
+
 	context.GetNextToken(); // Eat the ending ";"
 	result->mStartStepCond->AddValueExpression(condValue);
 	assert(result->mStartStepCond->GetExpressionCnt() == 2);
@@ -2654,13 +2664,20 @@ Exp_For* Exp_For::Parse(CompilingContext& context, CodeDomain* curDomain)
 	// Parse step expression
 	Exp_ValueEval* stepValue = context.ParseComplexExpression(result->mStartStepCond, ")");
 	if (stepValue == NULL) {
-		context.AddErrorMessage(curT, "Invalid for step expression.");
-		return NULL;
+		if (context.HasErrorMessage()) {
+			context.AddErrorMessage(curT, "Invalid for step expression.");
+			return NULL;
+		}
 	}
-	context.GetNextToken(); // Eat the ending ";"
-	result->mStartStepCond->AddValueExpression(stepValue);
+	context.GetNextToken(); // Eat the ending ")"
+	if (stepValue) 
+		result->mStartStepCond->AddValueExpression(stepValue);
+	else
+		result->mStartStepCond->AddValueExpression(new Exp_Nop());
+
 	assert(result->mStartStepCond->GetExpressionCnt() == 3);
 
+	curT = context.PeekNextToken(0);
 	result->mForBody = new CodeDomain(result->mStartStepCond);
 	if (curT.IsEqual("{")) {
 		context.GetNextToken();  // Eat the "{"
@@ -2678,6 +2695,31 @@ Exp_For* Exp_For::Parse(CompilingContext& context, CodeDomain* curDomain)
 	}
 
 	return result.release();
+}
+
+Exp_Nop::Exp_Nop()
+{
+
+}
+
+Exp_Nop::~Exp_Nop()
+{
+
+}
+
+llvm::Value* Exp_Nop::GenerateCode(CG_Context* context) const
+{
+	return NULL;
+}
+
+bool Exp_Nop::CheckSemantic(Exp_ValueEval::TypeInfo& outType, std::string& errMsg, std::vector<std::string>& warnMsg)
+{
+	outType.arraySize = 0;
+	outType.assignable = false;
+	outType.pStructDef = NULL;
+	outType.type = VarType::kInvalid;
+	mCachedTypeInfo = outType;
+	return true;
 }
 
 #ifdef WANT_MEM_LEAK_CHECK

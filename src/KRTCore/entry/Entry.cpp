@@ -10,6 +10,8 @@
 
 #include <FreeImage.h>
 
+extern UINT32 AREA_LIGHT_SAMP_CNT;
+
 namespace KRayTracer {
 
 static KRayTracer_Root* g_pRoot = NULL;
@@ -157,7 +159,47 @@ void KRayTracer_Root::EventNotifier::OnFrameFinished(bool bIsUserCancel)
 
 static void _CalcSecondaryRay(SurfaceContext::TracingData* pData, const KVec3* ray_dir, KColor* outClr)
 {
-	CalcSecondaryRay(pData->tracing_inst, *pData->shading_ctx, *ray_dir, *outClr);
+	CalcSecondaryRay(pData->tracing_inst, pData->shading_ctx->position, pData->shading_ctx->excluding_bbox, pData->shading_ctx->excluding_tri, *ray_dir, *outClr);
+}
+
+static SC::Boolean _GetNextLightSample(SurfaceContext::TracingData* pData, KVec3* outLightDir, KVec3* outLightIntensity)
+{
+	LightScheme* pLightScheme = LightScheme::GetInstance();
+	UINT32 lightCnt = pLightScheme->GetLightCount();
+
+	while (1) {
+		if (pData->iter_light_li >= lightCnt)
+			break;
+
+		UINT32 lightIdx = pData->iter_light_li;
+		const ILightObject* pLight = pLightScheme->GetLightPtr(lightIdx);
+		KVec2 sampPos(0, 0);
+		float intensityScale = 1.0f;
+
+		if (pLight->IsAreaLight()) {
+			sampPos = pData->tracing_inst->GetAreaLightSample(pData->iter_light_li, pData->iter_light_si);
+			intensityScale = 1.0f / AREA_LIGHT_SAMP_CNT;
+			pData->iter_light_si++; // Move to next sample
+			if (pData->iter_light_si >= AREA_LIGHT_SAMP_CNT) {
+				pData->iter_light_si = 0;
+				pData->iter_light_li++; // The sampling for this light is done, move to next light
+			}
+		}
+		else
+			pData->iter_light_li++; // Move to next light
+	
+		LightIterator li_it;
+		bool res = pLightScheme->GetLightIter(pData->tracing_inst, sampPos, lightIdx, pData->shading_ctx, pData->hit_ctx, li_it);
+		if (res) {
+			*outLightDir = li_it.direction;
+			(*outLightIntensity)[0] = li_it.intensity.r * intensityScale;
+			(*outLightIntensity)[1] = li_it.intensity.g * intensityScale;
+			(*outLightIntensity)[2] = li_it.intensity.b * intensityScale;
+			return 1;
+		}
+	}
+
+	return 0;
 }
 
 bool KRT_Initialize()
@@ -167,9 +209,6 @@ bool KRT_Initialize()
 "extern TracerData;\n"
 "struct SurfaceContext\n"
 "{\n"
-"	float3 inLight;\n"
-
-"	float3 inVec;\n"
 "	float3 outVec;\n"
 
 "	float3 normal;\n"
@@ -197,9 +236,12 @@ bool KRT_Initialize()
 "	_CalcSecondaryRay(pData, ray_dir, ret);\n"
 "	return ret;\n"
 "}\n"
+
+"bool GetNextLightSample(TracerData pData, float3& outLightDir, float3& outLightIntensity);\n"
 ;
 	KSC_AddExternalFunction("_Sample2D", KSC_ShaderWithTexture::Sample2D);
 	KSC_AddExternalFunction("_CalcSecondaryRay", _CalcSecondaryRay);
+	KSC_AddExternalFunction("GetNextLightSample", _GetNextLightSample);
 	bool ret = KSC_Initialize(predefines);
 
 	return ret;

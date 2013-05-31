@@ -559,6 +559,9 @@ llvm::Value* Exp_For::GenerateCode(CG_Context* context) const
 	BasicBlock *AfterBB = BasicBlock::Create(getGlobalContext(), "afterloop", pCurFunc);
   
 	// Insert the conditional branch into the end of LoopEndBB.
+	if (contCond->getType() == SC_INT_TYPE) {
+		contCond = CG_Context::sBuilder.CreateICmpNE(contCond, Constant::getIntegerValue(SC_INT_TYPE, APInt(sizeof(Int)*8, (uint64_t)0, true)));	
+	}
 	CG_Context::sBuilder.CreateCondBr(contCond, LoopBB, AfterBB);
   
 	// Any new code will be inserted in AfterBB.
