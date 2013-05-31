@@ -239,7 +239,7 @@ void KSC_SurfaceShader::ShadeEmission(const SurfaceContext& shadingCtx, KColor& 
 	funcPtr(mpUniformData, shadingCtx.mpData, &out_clr);
 }
 
-void KSC_SurfaceShader::ShaderTransmission(const SurfaceContext& shadingCtx, KColor& out_clr) const
+void KSC_SurfaceShader::ShaderTransmission(const TransContext& shadingCtx, KColor& out_clr) const
 {
 	typedef void (*PFN_invoke)(void*, void*, void*);
 	PFN_invoke funcPtr = (PFN_invoke)mpTransmissionFuncPtr;

@@ -14,14 +14,14 @@ float dot(float3 a, float3 b)
 	return temp.x + temp.y + temp.z;
 }
 
-void ShadeTransmission(PhongParam% uniforms, SurfaceContext% ctx, float3& outClr)
+void ShadeTransmission(PhongParam% uniforms, TransContext% ctx, float3& outClr)
 {
-	/*float di = dot(ctx.inVec, ctx.normal);
+	//float di = dot(ctx.inVec, ctx.normal);
+	outClr = float3(0,0,0);
 	if (uniforms.transparent_map) {
 		float3 translucent = Sample2D(uniforms.transparent_map, ctx.uv);
 		outClr = (float3(1,1,1) - translucent);
 	}
-	outClr = float3(0,0,0);*/
 }
 
 void Shade(PhongParam% uniforms, SurfaceContext% ctx, float3& outClr)

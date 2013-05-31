@@ -218,7 +218,18 @@ bool KRT_Initialize()
 "	float2 uv;\n"
 
 "	TracerData tracerData;"
-"	};\n"
+"};\n"
+
+"struct TransContext\n"
+"{\n"
+"	float3 lightVec;\n"
+
+"	float3 normal;\n"
+"	float3 tangent;\n"
+"	float3 binormal;\n"
+
+"	float2 uv;\n"
+"};\n"
 
 "extern Texture2D;\n"
 "void _Sample2D(Texture2D tex, float2& uv, float4& outSample);\n"

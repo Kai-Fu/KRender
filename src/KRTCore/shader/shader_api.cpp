@@ -193,9 +193,12 @@ TracingInstance::TracingInstance(const KKDBBoxScene* scene, const RenderBuffers*
 	mBounceDepth = 0;
 
 	mSurfaceContexts.resize(MAX_REFLECTION_BOUNCE);
+	mTransContexts.resize(MAX_REFLECTION_BOUNCE);
 	KSC_TypeInfo surfaceCtxType = KSC_GetStructTypeByName("SurfaceContext", NULL);
+	KSC_TypeInfo transCtxType = KSC_GetStructTypeByName("TransContext", NULL);
 	for (UINT32 i = 0; i < MAX_REFLECTION_BOUNCE; ++i) {
 		mSurfaceContexts[i].Allocate(surfaceCtxType);
+		mTransContexts[i].Allocate(transCtxType);
 	}
 }
 
@@ -207,6 +210,20 @@ TracingInstance::~TracingInstance()
 SurfaceContext& TracingInstance::GetCurrentSurfaceCtxStorage()
 {
 	return mSurfaceContexts[mBounceDepth - 1];
+}
+
+void TracingInstance::ConvertToTransContext(const IntersectContext& hitCtx, const ShadingContext& shadingCtx, TransContext& transCtx)
+{
+	*transCtx.lightVec = shadingCtx.out_vec;
+	*transCtx.normal = shadingCtx.normal;
+	*transCtx.tangent = shadingCtx.tangent.tangent;
+	*transCtx.binormal = shadingCtx.tangent.binormal;
+	*transCtx.uv = shadingCtx.hasUV ? shadingCtx.uv.uv : KVec2(0,0);
+}
+
+TransContext& TracingInstance::GetCurrentTransCtxStorage()
+{
+	return mTransContexts[mBounceDepth - 1];
 }
 
 const KKDBBoxScene* TracingInstance::GetScenePtr() const
@@ -533,6 +550,19 @@ void SurfaceContext::Allocate(const KSC_TypeInfo& kscType)
 
 	tracerData = (TracingData**)KSC_GetStructMemberPtr(kscType.hStruct, mpData, "tracerData");
 	*tracerData = &tracerDataLocal;
+}
+
+void TransContext::Allocate(const KSC_TypeInfo& kscType)
+{
+	assert(kscType.hStruct);
+	mpData = KSC_AllocMemForType(kscType, 1);
+	lightVec = (KVec3*)KSC_GetStructMemberPtr(kscType.hStruct, mpData, "lightVec");
+
+	normal = (KVec3*)KSC_GetStructMemberPtr(kscType.hStruct, mpData, "normal");
+	tangent = (KVec3*)KSC_GetStructMemberPtr(kscType.hStruct, mpData, "tangent");
+	binormal = (KVec3*)KSC_GetStructMemberPtr(kscType.hStruct, mpData, "binormal");
+	
+	uv = (KVec2*)KSC_GetStructMemberPtr(kscType.hStruct, mpData, "uv");
 }
 
 void TracingInstance::ConvertToSurfaceContext(const IntersectContext& hitCtx, const ShadingContext& shadingCtx, SurfaceContext& surfaceCtx)

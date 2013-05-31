@@ -70,6 +70,21 @@ struct SurfaceContext
 	TracingData** tracerData;
 };
 
+struct TransContext
+{
+	void* mpData;
+
+	KVec3* lightVec;
+
+	KVec3* normal;
+	KVec3* tangent;
+	KVec3* binormal;
+
+	KVec2* uv;
+
+	void Allocate(const KSC_TypeInfo& kscType);
+};
+
 struct ShadingContext
 {
 	KVec3 position;
@@ -118,6 +133,9 @@ public:
 
 	void ConvertToSurfaceContext(const IntersectContext& hitCtx, const ShadingContext& shadingCtx, SurfaceContext& surfaceCtx);
 	SurfaceContext& GetCurrentSurfaceCtxStorage();
+
+	void ConvertToTransContext(const IntersectContext& hitCtx, const ShadingContext& shadingCtx, TransContext& transCtx);
+	TransContext& GetCurrentTransCtxStorage();
 public:
 	KCamera::EvalContext mCameraContext;
 
@@ -125,6 +143,7 @@ private:
 	const KKDBBoxScene* mpScene;
 	const RenderBuffers* mpRenderBuffers;
 	std::vector<SurfaceContext> mSurfaceContexts;
+	std::vector<TransContext> mTransContexts;
 	UINT32 mBounceDepth;
 	UINT32 mCurPixel_X;
 	UINT32 mCurPixel_Y;

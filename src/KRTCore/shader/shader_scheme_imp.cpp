@@ -89,14 +89,10 @@ bool LightScheme::GetLightIter(TracingInstance* pLocalData, const KVec2& sampleP
 						KColor temp_trans;
 						ShadingContext shading_context;
 						pLocalData->CalcuShadingContext(ray, test_ctx, shading_context);
-						shading_context.out_vec = -shading_context.out_vec;
-						SurfaceContext& surfaceCtx = pLocalData->GetCurrentSurfaceCtxStorage();
-						LightIterator lightIt = {-lightDir, transmission};
-						lightIt.direction.normalize();
-						//pLocalData->ConvertToSurfaceContext(test_ctx, shading_context, surfaceCtx);
-						//shadingCtx->surface_shader->ShaderTransmission(surfaceCtx, temp_trans);
-						//transmission = temp_trans;
-						transmission.Clear();
+						TransContext& transCtx = pLocalData->GetCurrentTransCtxStorage();
+						pLocalData->ConvertToTransContext(test_ctx, shading_context, transCtx);
+						shadingCtx->surface_shader->ShaderTransmission(transCtx, temp_trans);
+						transmission = temp_trans;
 
 						lum = transmission.Luminance();
 						if (lum > 0.001f) {
@@ -145,45 +141,6 @@ void LightScheme::Shade(TracingInstance* pLocalData,
 	KColor tempClr;
 	shadingCtx.surface_shader->Shade(surfaceCtx, tempClr);
 	out_color = tempClr;
-
-	/*LightIterator li_it;
-	out_color.Clear();
-
-	UINT32 lightCnt = GetLightCount();
-	if (shadingCtx.surface_shader->mHasEmission) {
-		SurfaceContext& surfaceCtx = pLocalData->GetCurrentSurfaceCtxStorage();
-		pLocalData->ConvertToSurfaceContext(hit_ctx, shadingCtx, NULL, surfaceCtx);
-		shadingCtx.surface_shader->ShadeEmission(surfaceCtx, out_color);
-	}
-
-	if (shadingCtx.surface_shader->mRecieveLight) {
-		for (UINT32 li = 0; li < lightCnt; ++li) {
-			const ILightObject* pLight = GetLightPtr(li);
-
-			if (pLight->IsAreaLight()) {
-				for (UINT32 si = 0; si = AREA_LIGHT_SAMP_CNT; ++si) {
-					if (GetLightIter(pLocalData, pLocalData->GetAreaLightSample(li, si), li, &shadingCtx, &hit_ctx, li_it)) {
-						KColor tempClr;
-						SurfaceContext& surfaceCtx = pLocalData->GetCurrentSurfaceCtxStorage();
-						pLocalData->ConvertToSurfaceContext(hit_ctx, shadingCtx, &li_it, surfaceCtx);
-						shadingCtx.surface_shader->Shade(surfaceCtx, tempClr);
-						out_color.Add(tempClr);
-					}
-				}
-
-				out_color.Scale(1.0f / AREA_LIGHT_SAMP_CNT);
-			}
-			else {
-				if (GetLightIter(pLocalData, KVec2(0,0), li, &shadingCtx, &hit_ctx, li_it)) {
-					KColor tempClr;
-					SurfaceContext& surfaceCtx = pLocalData->GetCurrentSurfaceCtxStorage();
-					pLocalData->ConvertToSurfaceContext(hit_ctx, shadingCtx, &li_it, surfaceCtx);
-					shadingCtx.surface_shader->Shade(surfaceCtx, tempClr);
-					out_color.Add(tempClr);
-				}
-			}
-		}
-	} // end of if (mRecieveLight)*/
 }
 
 

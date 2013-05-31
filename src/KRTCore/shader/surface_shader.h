@@ -41,7 +41,7 @@ public:
 
 	virtual void SetParam(const char* paramName, void* pData, UINT32 dataSize) {}
 
-	virtual void ShaderTransmission(const SurfaceContext& shadingCtx, KColor& out_clr) const = 0;
+	virtual void ShaderTransmission(const TransContext& shadingCtx, KColor& out_clr) const = 0;
 	virtual void ShadeEmission(const SurfaceContext& shadingCtx, KColor& out_clr) const = 0;
 	virtual void Shade(const SurfaceContext& shadingCtx, KColor& out_clr) const = 0;
 
