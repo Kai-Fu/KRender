@@ -71,6 +71,7 @@ public:
 		   const KVec2 &du, const KVec2 &dv) const;
 	
 	KVec4 SampleBilinear(const TextureMap *map, const KVec2 &pt) const;
+	KVec4 SampleBilinear_BorderClamp(const TextureMap *map, const KVec2 &pt) const;
 
 	KVec4 SampleTrilinear(const TextureMap *map, const KVec2 &pt, const KVec2 &du, const KVec2 &dv) const;
 
@@ -81,6 +82,8 @@ private:
     float lodBias;
 
     KVec4 bilerpFinest(const TextureMap *map, const KVec2 &tex) const;
+	KVec4 bilerpFinest_borderClamp(const TextureMap *map, const KVec2 &tex) const;
+
     KVec4 mipmap(const TextureMap *map, const KVec2 &tex, const KVec2 &du,
 		    const KVec2 &dv) const;
     KVec4 ewa(const TextureMap *map, const KVec2 &tex, const KVec2 &du,

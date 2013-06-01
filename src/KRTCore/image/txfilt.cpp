@@ -50,6 +50,14 @@ mod(int a, int b)
     return a;
 }
 
+
+static inline int clamp(int v, int a, int b)
+{
+	if (v < a) return a;
+	if (v > b) return b;
+	return v;
+}
+
 inline float
 max(float a, float b, float c)
 {
@@ -123,6 +131,11 @@ KVec4 TextureFilter::SampleBilinear(const TextureMap *map, const KVec2 &pt) cons
 	return bilerpFinest(map, pt);
 }
 
+KVec4 TextureFilter::SampleBilinear_BorderClamp(const TextureMap *map, const KVec2 &pt) const
+{
+	return bilerpFinest_borderClamp(map, pt);
+}
+
 KVec4 TextureFilter::SampleTrilinear(const TextureMap *map, const KVec2 &pt, const KVec2 &du, const KVec2 &dv) const
 {
 	return mipmap(map, pt, du, dv);
@@ -168,6 +181,24 @@ TextureFilter::bilerpFinest(const TextureMap *map, const KVec2 &tex) const
     int u1 = mod(FloatToInt(p[0])+1, map->size());
     int v0 = mod(FloatToInt(p[1]),   map->size());
     int v1 = mod(FloatToInt(p[1])+1, map->size());
+
+
+    return lerp(dv, lerp(du, map->texel(u0, v0), map->texel(u1, v0)),
+		    lerp(du, map->texel(u0, v1), map->texel(u1, v1)));
+}
+
+KVec4 
+TextureFilter::bilerpFinest_borderClamp(const TextureMap *map, const KVec2 &tex) const
+{
+	 KVec2 p(tex[0] * map->size(), tex[1] * map->size());
+
+    float du = frac(p[0]);
+    float dv = frac(p[1]);
+
+    int u0 = clamp(FloatToInt(p[0]),   0, map->size());
+    int u1 = clamp(FloatToInt(p[0])+1, 0, map->size());
+    int v0 = clamp(FloatToInt(p[1]),   0, map->size());
+    int v1 = clamp(FloatToInt(p[1])+1, 0, map->size());
 
 
     return lerp(dv, lerp(du, map->texel(u0, v0), map->texel(u1, v0)),

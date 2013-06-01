@@ -2,7 +2,6 @@
 #include "../entry/TracingThread.h"
 #include "../util/HelperFunc.h"
 #include "light_scheme.h"
-#include "../material/standard_mtl.h"
 #include "../intersection/intersect_ray_bbox.h"
 
 

@@ -7,6 +7,7 @@
 
 namespace Texture {
 
+
 class Tex2D
 {
 public:
@@ -64,6 +65,8 @@ public:
 	virtual UINT32 GetWidth() const;
 	virtual UINT32 GetHeight() const;
 
+	KVec4 SampleBilinear_BorderClamp(const KVec2& uv) const;
+
 private:
 	void* mpData;
 };
@@ -87,6 +90,23 @@ public:
 	virtual UINT32 GetHeight() const;
 };
 
+class TexCube
+{
+public:
+	enum SampleMode {ePoint = 0x01, eBilinear = 0x02 };
+	enum FaceID {eLeft = 0, eFront, eRight, eBack, eTop, eBottom};
+	TexCube();
+	~TexCube();
+	bool SetSourceFile(const char* filename);
+
+	KVec4 SamplePoint(const KVec3& uvw) const;
+	KVec4 SampleBilinear(const KVec3& uvw) const;
+
+protected:
+	void GetFaceID_UV(const KVec3& uvw, Image2D* &face, KVec2& uv) const;
+private:
+	Image2D* mFaceTex[6];
+};
 
 class TextureManager
 {

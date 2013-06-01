@@ -4,7 +4,6 @@
 #include "../camera/camera_manager.h"
 #include "../material/material_library.h"
 #include "../base/raw_geometry.h"
-#include "../material/standard_mtl.h"
 #include "../api/KRT_API.h"
 #include <KShaderCompiler/inc/SC_API.h>
 

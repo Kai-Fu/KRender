@@ -256,6 +256,13 @@ KVec4 Image2D::SampleBilinear(const KVec2& uv) const
 	return filter.SampleBilinear((BitmapData*)mpData, uv);
 }
 
+KVec4 Image2D::SampleBilinear_BorderClamp(const KVec2& uv) const
+{
+	assert(mpData);
+	TextureFilter filter;
+	return filter.SampleBilinear_BorderClamp((BitmapData*)mpData, uv);
+}
+
 KVec4 Image2D::SampleTrilinear(const KVec2& uv, const KVec2& du, const KVec2& dv) const
 {
 	// No supported
@@ -345,6 +352,109 @@ UINT32 Procedure2D::GetWidth() const
 UINT32 Procedure2D::GetHeight() const
 {
 	return Tex2D::cInfinite;
+}
+
+TexCube::TexCube()
+{
+	for (int i = 0; i < 6; ++i)
+		mFaceTex[i] = NULL;
+}
+TexCube::~TexCube()
+{
+	for (int i = 0; i < 6; ++i) {
+		if (mFaceTex[i])
+			delete mFaceTex[i];
+	}
+}
+
+bool TexCube::SetSourceFile(const char* filename)
+{
+	for (int i = 0; i < 6; ++i) {
+		if (mFaceTex[i])
+			delete mFaceTex[i];
+		mFaceTex[i] = NULL;
+	}
+
+	std::string fileName(filename);
+	size_t ateriskPos = fileName.rfind("*");
+	std::string baseName = fileName.substr(0, ateriskPos);
+	std::string extName = fileName.substr(ateriskPos + 1);
+
+	const char* faceNames[] = {
+		"_left",
+		"_front",
+		"_right",
+		"_back",
+		"_top",
+		"_bottom"
+	};
+
+	bool succeeded = true;
+	for (int i = 0; i < 6; ++i) {
+		Image2D* newFace = new Image2D();
+		bool res = newFace->SetSourceFile((baseName + faceNames[i] + extName).c_str());
+		if (!res) {
+			succeeded = false;
+			break;
+		}
+		mFaceTex[i] = newFace;
+	}
+
+	if (!succeeded) {
+		for (int i = 0; i < 6; ++i) {
+			if (mFaceTex[i])
+				delete mFaceTex[i];
+			mFaceTex[i] = NULL;
+		}
+		return false;
+	}
+	else
+		return true;
+
+}
+
+void TexCube::GetFaceID_UV(const KVec3& uvw, Image2D* &face, KVec2& uv) const
+{
+	static int uIdx[6] = {1, 0, 1, 0, 0, 0};
+	static int vIdx[6] = {2, 2, 2, 2, 1, 1};
+	static float uSign[6] = {1, 1, -1, -1, 1, 1};
+	static float vSign[6] = {1, 1, 1, 1, -1, 1};
+	static int faceIndices[6] = {3, 1, 0, 4, 2, 5};
+
+	int maxLenIdx = 0;
+	if (fabs(uvw[1]) > fabs(uvw[0]))
+		maxLenIdx = 1;
+	if (fabs(uvw[2]) > fabs(uvw[maxLenIdx]))
+		maxLenIdx = 2;
+
+	KVec3 scaledVec = uvw / fabs(uvw[maxLenIdx]);
+	if (uvw[maxLenIdx] < 0)
+		maxLenIdx += 3;
+
+	int faceIdx = faceIndices[maxLenIdx];
+	face = mFaceTex[faceIdx];
+	uv = KVec2(scaledVec[uIdx[maxLenIdx]] * uSign[maxLenIdx], scaledVec[vIdx[maxLenIdx]] * vSign[maxLenIdx]);
+	uv *= 0.5f;
+	uv += KVec2(0.5f, 0.5f);
+}
+
+
+KVec4 TexCube::SamplePoint(const KVec3& uvw) const
+{
+	Image2D* face;
+	KVec2 uv;
+	GetFaceID_UV(uvw, face, uv);
+
+	return face->SamplePoint(uv);
+}
+
+KVec4 TexCube::SampleBilinear(const KVec3& uvw) const
+{
+	Image2D* face;
+	KVec2 uv;
+	GetFaceID_UV(uvw, face, uv);
+
+	return face->SampleBilinear_BorderClamp(uv);
 }
 
 

@@ -355,8 +355,9 @@ void TracingInstance::CalcuShadingContext(const KRay& hitRay, const IntersectCon
 	KVec3 rayDir = hitRay.GetDir();
 	rayDir.normalize(); // Normalize the ray direction because it's not normalized
 
+#if 0
 	// Calculate the ddx and ddy
-	if (!out_shading_ctx.is_primary_ray && out_shading_ctx.hasUV) {
+	if (out_shading_ctx.is_primary_ray && out_shading_ctx.hasUV) {
 
 		KVec3 u_dir, v_dir;
 		float rayCoverage = 1.0f;
@@ -422,6 +423,7 @@ void TracingInstance::CalcuShadingContext(const KRay& hitRay, const IntersectCon
 		}
 
 	}
+#endif
 
 	// Get the surface shader
 	ISurfaceShader* pSurfShader = pNode->mpSurfShader;

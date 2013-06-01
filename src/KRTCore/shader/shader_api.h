@@ -102,7 +102,7 @@ struct ShadingContext
 
 	ISurfaceShader* surface_shader;
 	const TracingInstance* tracing_instance;
-	bool is_primary_ray;
+	//bool is_primary_ray;
 };
 
 
