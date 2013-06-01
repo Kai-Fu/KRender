@@ -153,7 +153,6 @@ KSC_SurfaceShader::KSC_SurfaceShader(const KSC_SurfaceShader& ref) :
 	mpEmissionFuncPtr = ref.mpEmissionFuncPtr;
 	mpTransmissionFuncPtr = ref.mpTransmissionFuncPtr;
 	mNormalMap = ref.mNormalMap;
-	mHasEmission = ref.mHasEmission;
 	mRecieveLight = ref.mRecieveLight;
 }
 
@@ -186,22 +185,8 @@ bool KSC_SurfaceShader::Validate(FunctionHandle shadeFunc)
 
 bool KSC_SurfaceShader::HandleModule(ModuleHandle kscModule)
 {
-	// Look for the function "ShadeEmission(SurfaceContext% ctx, KColor& outClr)"
-	FunctionHandle shadeFunc = KSC_GetFunctionHandleByName("ShadeEmission", kscModule);
-	if (shadeFunc != NULL && KSC_GetFunctionArgumentCount(shadeFunc) == 3) {
-		KSC_TypeInfo argUniform = KSC_GetFunctionArgumentType(shadeFunc, 0);
-		KSC_TypeInfo arg0TypeInfo = KSC_GetFunctionArgumentType(shadeFunc, 1);
-		KSC_TypeInfo arg1TypeInfo = KSC_GetFunctionArgumentType(shadeFunc, 2);
-		if (0 == strcmp(argUniform.typeString, mUnifomArgType.typeString) &&
-			arg0TypeInfo.isRef && arg0TypeInfo.isKSCLayout && arg0TypeInfo.hStruct != NULL &&
-			arg1TypeInfo.isRef && arg1TypeInfo.type == SC::kFloat3) {
-			mpEmissionFuncPtr = KSC_GetFunctionPtr(shadeFunc);
-			if (mpEmissionFuncPtr)
-				mHasEmission = true;
-		}
-	}
-
-	shadeFunc = KSC_GetFunctionHandleByName("ShadeTransmission", kscModule);
+	// Look for the function "ShadeTransmission(SurfaceContext% ctx, KColor& outClr)"
+	FunctionHandle shadeFunc = KSC_GetFunctionHandleByName("ShadeTransmission", kscModule);
 	if (shadeFunc != NULL && KSC_GetFunctionArgumentCount(shadeFunc) == 3) {
 		KSC_TypeInfo argUniform = KSC_GetFunctionArgumentType(shadeFunc, 0);
 		KSC_TypeInfo arg0TypeInfo = KSC_GetFunctionArgumentType(shadeFunc, 1);
@@ -230,13 +215,6 @@ void KSC_SurfaceShader::SetParam(const char* paramName, void* pData, UINT32 data
 void KSC_SurfaceShader::Shade(const SurfaceContext& shadingCtx, KColor& out_clr) const
 {
 	Execute(shadingCtx.mpData, &out_clr);
-}
-
-void KSC_SurfaceShader::ShadeEmission(const SurfaceContext& shadingCtx, KColor& out_clr) const
-{
-	typedef void (*PFN_invoke)(void*, void*, void*);
-	PFN_invoke funcPtr = (PFN_invoke)mpEmissionFuncPtr;
-	funcPtr(mpUniformData, shadingCtx.mpData, &out_clr);
 }
 
 void KSC_SurfaceShader::ShaderTransmission(const TransContext& shadingCtx, KColor& out_clr) const

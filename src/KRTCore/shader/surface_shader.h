@@ -24,7 +24,6 @@ protected:
 public:
 	// The surface shader implementation need to set the normal map
 	Texture::Tex2D* mNormalMap;
-	bool mHasEmission;
 	bool mHasTransmission;
 	bool mRecieveLight;
 
@@ -33,7 +32,6 @@ public:
 		mTypeName(typeName), 
 		mName(name),
 		mNormalMap(NULL),
-		mHasEmission(false),
 		mHasTransmission(false),
 		mRecieveLight(true)
 		{}
@@ -42,7 +40,6 @@ public:
 	virtual void SetParam(const char* paramName, void* pData, UINT32 dataSize) {}
 
 	virtual void ShaderTransmission(const TransContext& shadingCtx, KColor& out_clr) const = 0;
-	virtual void ShadeEmission(const SurfaceContext& shadingCtx, KColor& out_clr) const = 0;
 	virtual void Shade(const SurfaceContext& shadingCtx, KColor& out_clr) const = 0;
 
 	virtual bool Save(FILE* pFile) = 0;
