@@ -36,8 +36,6 @@ bool SamplingThreadContainer::Render(
 		return false;
 	// setup the image size of the camera
 	mRenderInputData.pCurrentCamera->SetImageSize(param.image_width, param.image_height);
-	
-	mRenderInputData.bgColor = KColor(0,0,0);
 
 	// allocate the internal buffers for rendering
 	mRenderBuffers.SetImageSize(param.image_width, param.image_height, param.pixel_format, param.user_buffer);

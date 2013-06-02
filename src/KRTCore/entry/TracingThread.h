@@ -37,7 +37,6 @@ namespace KRayTracer {
 			SceneLoader*			pScene;
 			volatile long			stopSignal;
 			KCamera*				pCurrentCamera;
-			KColor					bgColor;
 			RenderBuffers*			pRenderBuffers;
 			Tile2DSet*				pImageTile2D;
 			EventCallBack*			pEventCB;
