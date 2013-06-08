@@ -3,6 +3,7 @@
 #include "../util/HelperFunc.h"
 #include "light_scheme.h"
 #include "../intersection/intersect_ray_bbox.h"
+#include "../shader/environment_shader.h"
 
 
 bool CalcuShadingByRay(TracingInstance* pLocalData, const KRay& ray, KColor& out_clr, IntersectContext* out_ctx/* = NULL*/)
@@ -34,7 +35,8 @@ bool CalcuShadingByRay(TracingInstance* pLocalData, const KRay& ray, KColor& out
 	out_clr.Clear();
 
 	if (isHit) {
-
+		// This ray hits something, shade the ray sample by surface shader of the hit object.
+		//
 		if (out_ctx)
 			*out_ctx = hit_ctx;
 		
@@ -64,6 +66,15 @@ bool CalcuShadingByRay(TracingInstance* pLocalData, const KRay& ray, KColor& out
 			res = true;
 		}
 	}
+	else {
+		// This ray hits nothing, so it should evaluate the environment shader to determine current color of the ray sample.
+		//
+		const KEnvShader* pEnvShader = KEnvShader::GetEnvShader();
+		if (pEnvShader) {
+			pEnvShader->Sample(ray.GetOrg(), ray.GetDir(), out_clr);
+		}
+	}
+
 	pLocalData->DecBounceDepth();
 	return res;
 }

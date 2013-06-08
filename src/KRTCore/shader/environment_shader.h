@@ -12,6 +12,9 @@ public:
 	virtual void Sample(const KVec3& pos, const KVec3& dir, KColor& outClr) const = 0;
 
 	static const KEnvShader* GetEnvShader();
+	static bool Initialize();
+	static void Shutdown();
+
 
 	static void UseSpheeEnvironment(const KColor& upClr, const KColor& downClr, float transHeight);
 	static void UseCubemapEnvironment(const char* filename);

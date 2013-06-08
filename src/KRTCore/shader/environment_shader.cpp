@@ -17,6 +17,19 @@ const KEnvShader* KEnvShader::GetEnvShader()
 	return s_currentEvnShader;
 }
 
+ bool KEnvShader::Initialize()
+ {
+	 UseSpheeEnvironment(KColor(0,0,0.9f), KColor(0, 0, 0), 0.8f);
+	 return true;
+ }
+
+ void KEnvShader::Shutdown()
+ {
+	 if (s_currentEvnShader)
+		delete s_currentEvnShader;
+	 s_currentEvnShader = NULL;
+ }
+
 void KEnvShader::UseSpheeEnvironment(const KColor& upClr, const KColor& downClr, float transHeight)
 {
 	if (s_currentEvnShader)
@@ -37,7 +50,7 @@ KHemishpereEnvShader::KHemishpereEnvShader(const KColor& upClr, const KColor& do
 {
 	mColorUp = upClr;
 	mColorDown = downClr;
-	mTransitionHeight = transHeight;
+	mTransitionHeight = fabs(transHeight);
 }
 
 KHemishpereEnvShader::~KHemishpereEnvShader()
@@ -49,15 +62,14 @@ void KHemishpereEnvShader::Sample(const KVec3& pos, const KVec3& dir, KColor& ou
 {
 	KVec3 nDir = dir;
 	nDir.normalize();
-	if (nDir[2] > fabs(mTransitionHeight)) {
-		if (nDir[2] > 0)
-			outClr = mColorUp;
-		else
-			outClr = mColorDown;
-	}
+	float majorN = nDir[1];
+	if (majorN >= mTransitionHeight)
+		outClr = mColorUp;
+	else if (majorN < -mTransitionHeight)
+		outClr = mColorDown;
 	else {
-		float n = fabs(mTransitionHeight);
-		float l = (nDir[2] + n) / n * 0.5f;
+		float n = mTransitionHeight;
+		float l = (majorN + n) / n * 0.5f;
 		outClr = mColorDown;
 		outClr.Lerp(mColorUp, l);
 	}

@@ -4,6 +4,7 @@
 #include "../camera/camera_manager.h"
 #include "../material/material_library.h"
 #include "../base/raw_geometry.h"
+#include "../shader/environment_shader.h"
 #include "../api/KRT_API.h"
 #include <KShaderCompiler/inc/SC_API.h>
 
@@ -22,6 +23,7 @@ KRayTracer_Root* InitializeKRayTracer()
 	KMaterialLibrary::Initialize();
 	CameraManager::Initialize();
 	LightScheme::Initialize();
+	KEnvShader::Initialize();
 
 	g_pRoot = new KRayTracer_Root();
 	return g_pRoot;
@@ -29,6 +31,7 @@ KRayTracer_Root* InitializeKRayTracer()
 
 void DestroyKRayTracer()
 {
+	KEnvShader::Shutdown();
 	LightScheme::Shutdown();
 	CameraManager::Shutdown();
 	KMaterialLibrary::Shutdown();
@@ -203,7 +206,6 @@ static SC::Boolean _GetNextLightSample(SurfaceContext::TracingData* pData, KVec3
 
 bool KRT_Initialize()
 {
-	KRayTracer::InitializeKRayTracer();
 	char* predefines = 
 "extern TracerData;\n"
 "struct SurfaceContext\n"
@@ -253,14 +255,16 @@ bool KRT_Initialize()
 	KSC_AddExternalFunction("_CalcSecondaryRay", _CalcSecondaryRay);
 	KSC_AddExternalFunction("GetNextLightSample", _GetNextLightSample);
 	bool ret = KSC_Initialize(predefines);
+	if (ret)
+		KRayTracer::InitializeKRayTracer();
 
 	return ret;
 }
 
 void KRT_Destory()
 {
-	KSC_Destory();
 	KRayTracer::DestroyKRayTracer();
+	KSC_Destory();
 }
 
 bool KRT_LoadScene(const char* fileName, KRT_SceneStatistic& statistic)
