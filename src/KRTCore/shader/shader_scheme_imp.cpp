@@ -92,11 +92,12 @@ bool LightScheme::GetLightIter(TracingInstance* pLocalData, const KVec2& sampleP
 						TransContext& transCtx = pLocalData->GetCurrentTransCtxStorage();
 						pLocalData->ConvertToTransContext(test_ctx, shading_context, transCtx);
 						shadingCtx->surface_shader->ShaderTransmission(transCtx, temp_trans);
-						transmission = temp_trans;
+						transmission.Modulate(temp_trans);
 
 						lum = transmission.Luminance();
 						if (lum > 0.001f) {
 							KVec3 go_dis = lightDir*test_ctx.t;
+							go_dis *= 1.00001f;
 							temp_light_pos += go_dis;
 							lightDir -= go_dis;
 							ray.Init(temp_light_pos, lightDir, NULL);

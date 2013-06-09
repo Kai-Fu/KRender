@@ -19,7 +19,7 @@ const KEnvShader* KEnvShader::GetEnvShader()
 
  bool KEnvShader::Initialize()
  {
-	 UseSpheeEnvironment(KColor(0,0,0.9f), KColor(0, 0, 0), 0.8f);
+	 UseSpheeEnvironment(KColor(0,0,0.9f), KColor(0.2f, 0.2f, 0.2f), 0.8f);
 	 return true;
  }
 

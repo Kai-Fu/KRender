@@ -20,7 +20,7 @@ void ShadeTransmission(PhongParam% uniforms, TransContext% ctx, float3& outClr)
 	outClr = float3(0,0,0);
 	if (uniforms.transparent_map) {
 		float3 translucent = Sample2D(uniforms.transparent_map, ctx.uv);
-		outClr = (float3(1,1,1) - translucent);
+		outClr = float3(1,1,1) - translucent;
 	}
 }
 
@@ -45,6 +45,16 @@ void Shade(PhongParam% uniforms, SurfaceContext% ctx, float3& outClr)
 			di = 0;
 		float3 dIntensity = float3(di, di, di) * inL_Intensity;
 		outClr = outClr + dIntensity * diffuseCoefficence;
+	}
+	
+	if (uniforms.transparent_map) {
+		float3 translucent = Sample2D(uniforms.transparent_map, ctx.uv);
+		
+		if (translucent.x < 1 || translucent.y < 1 || translucent.z < 1) {
+			float3 transClr = CalcSecondaryRay(ctx.tracerData, -ctx.outVec);
+			outClr = outClr * translucent + transClr * (float3(1,1,1) - translucent);
+			//outClr = float3(0,1,0);
+		}
 	}
 	
 	/*outClr = float3(0,0,0);
