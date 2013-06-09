@@ -73,8 +73,8 @@ bool LightScheme::GetLightIter(TracingInstance* pLocalData, const KVec2& sampleP
 				KRay ray;
 				lightDir = adjustedPos - temp_light_pos;
 				ray.Init(temp_light_pos, lightDir, NULL);
-				ray.mExcludeBBoxNode = hit_ctx->bbox_node_idx;
-				ray.mExcludeTriID = hit_ctx->tri_id;
+				ray.mExcludeBBoxNode = INVALID_INDEX;
+				ray.mExcludeTriID = INVALID_INDEX;
 
 				float lum = 1.0f;
 				while (lum > 0) {
@@ -91,18 +91,18 @@ bool LightScheme::GetLightIter(TracingInstance* pLocalData, const KVec2& sampleP
 						pLocalData->CalcuShadingContext(ray, test_ctx, shading_context);
 						TransContext& transCtx = pLocalData->GetCurrentTransCtxStorage();
 						pLocalData->ConvertToTransContext(test_ctx, shading_context, transCtx);
-						shadingCtx->surface_shader->ShaderTransmission(transCtx, temp_trans);
+						shading_context.surface_shader->ShaderTransmission(transCtx, temp_trans);
 						transmission.Modulate(temp_trans);
 
 						lum = transmission.Luminance();
 						if (lum > 0.001f) {
 							KVec3 go_dis = lightDir*test_ctx.t;
-							go_dis *= 1.00001f;
-							temp_light_pos += go_dis;
-							lightDir -= go_dis;
+							temp_light_pos += (go_dis * 1.00001f);
+							lightDir -= (go_dis * 0.9999f);
 							ray.Init(temp_light_pos, lightDir, NULL);
 							ray.mExcludeBBoxNode = test_ctx.bbox_node_idx;
 							ray.mExcludeTriID = test_ctx.tri_id; 
+
 						}
 						else {
 							transmission.Clear();

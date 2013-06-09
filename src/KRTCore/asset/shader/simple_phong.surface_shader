@@ -43,6 +43,7 @@ void Shade(PhongParam% uniforms, SurfaceContext% ctx, float3& outClr)
 		float di = dot(inL_Dir, ctx.normal);
 		if (di < 0)
 			di = 0;
+		
 		float3 dIntensity = float3(di, di, di) * inL_Intensity;
 		outClr = outClr + dIntensity * diffuseCoefficence;
 	}
@@ -53,7 +54,6 @@ void Shade(PhongParam% uniforms, SurfaceContext% ctx, float3& outClr)
 		if (translucent.x < 1 || translucent.y < 1 || translucent.z < 1) {
 			float3 transClr = CalcSecondaryRay(ctx.tracerData, -ctx.outVec);
 			outClr = outClr * translucent + transClr * (float3(1,1,1) - translucent);
-			//outClr = float3(0,1,0);
 		}
 	}
 	
