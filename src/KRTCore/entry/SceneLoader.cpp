@@ -6,6 +6,7 @@
 #include "../camera/camera_manager.h"
 #include "../shader/light_scheme.h"
 #include "../util/HelperFunc.h"
+#include "../file_io/AbcLoader.h"
 
 #include <assert.h>
 
@@ -77,6 +78,7 @@ protected:
 #define FILE_EXT_UNKNOWN -1
 #define FILE_EXT_SCN	1
 #define FILE_EXT_OBJ	2
+#define FILE_EXT_ABC	3
 static int _FileExtension(const char* file_name)
 {
 	std::string pathname(file_name);
@@ -87,6 +89,8 @@ static int _FileExtension(const char* file_name)
 			return FILE_EXT_OBJ;
 		else if (strcmp(ext, "scn") == 0)
 			return FILE_EXT_SCN;
+		else if (strcmp(ext, "abc") == 0)
+			return FILE_EXT_ABC;
 		else
 			return FILE_EXT_UNKNOWN;
 	}
@@ -131,6 +135,15 @@ bool SceneLoader::LoadFromFile(const char* file_name)
 		if (OBJLoader.LoadObjFile(file_name, *pKDScene)) {
 			ret = true;
 		}
+		else {
+			mpScene->Reset();
+			ret = false;
+		}
+	}
+	else if (ext == FILE_EXT_ABC) {
+		AbcLoader loader;
+		if (loader.Load(file_name))
+			ret = true;
 		else {
 			mpScene->Reset();
 			ret = false;
@@ -221,6 +234,7 @@ bool SceneLoader::LoadAsSCN(FILE* pFile)
 
 	return ret;
 }
+
 
 bool SceneLoader::SaveToFile(const char* file_name) const
 {
