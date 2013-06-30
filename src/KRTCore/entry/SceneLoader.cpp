@@ -142,7 +142,7 @@ bool SceneLoader::LoadFromFile(const char* file_name)
 	}
 	else if (ext == FILE_EXT_ABC) {
 		AbcLoader loader;
-		if (loader.Load(file_name))
+		if (loader.Load(file_name, *mpScene))
 			ret = true;
 		else {
 			mpScene->Reset();
