@@ -32,10 +32,13 @@ private:
 
 	void GetXformWorldTransform(const AbcG::IXform& xform, std::vector<KMatrix4>& frames);
 	KKDTreeScene* GetXformStaticScene(const Abc::IObject& obj, KMatrix4& mat);
+
+	static void ConvertMatrix(const Imath::M44d& ilmMat, KMatrix4& mat);
 private:
 	double mCurTime;
-	double mDuration;
+	double mSampleDuration;
 	int mXformSampleCnt;
+	int mDeformSampleCnt;
 
 	KKDBBoxScene* mpScene;
 	std::hash_map<AbcA::ObjectReader*, KKDTreeScene*> mXformNodes;

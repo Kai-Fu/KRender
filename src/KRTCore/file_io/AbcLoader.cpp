@@ -16,6 +16,9 @@ AbcLoader::AbcLoader()
 {
 	mCurTime = 0;
 	mpScene = NULL;
+	mSampleDuration = 1.0 / 24.0;
+	mXformSampleCnt = 12;
+	mDeformSampleCnt = 3;
 }
 
 AbcLoader::~AbcLoader()
@@ -172,20 +175,103 @@ void AbcLoader::ProcessMesh(const AbcG::IPolyMesh& mesh)
 	assert(pScene);
 
 	KTriMesh* pMesh = pScene->GetMesh(pScene->AddMesh());
+
+	if (mesh.getSchema().isConstant()) {
+		// static mesh
+		AbcG::IPolyMeshSchema::Sample psamp;
+		mesh.getSchema().get(psamp);
+
+	}
+	else {
+		// deformable mesh
+		for (int i = 0; i < mDeformSampleCnt; ++i) {
+
+		}
+	}
+}
+
+void AbcLoader::ConvertMatrix(const Imath::M44d& ilmMat, KMatrix4& mat)
+{
+	for (int i = 0; i < 16; ++i)
+		((float*)&mat)[i] = (float)ilmMat.getValue()[i];
 }
 
 void AbcLoader::GetXformWorldTransform(const AbcG::IXform& xform, std::vector<KMatrix4>& frames)
 {
-	KMatrix4 mat;
-	Imath::M44d localMat;
+	bool isAniminated = false;
 	for (Abc::IObject node = xform; node.valid(); node = node.getParent()) {
-
 		if (AbcG::IXform::matches(node.getHeader())) {
 			AbcG::IXform xform(node, Abc::kWrapExisting);
-			localMat *= xform.getSchema().getValue().getMatrix();
+			if (!xform.getSchema().isConstant()) {
+				isAniminated = true;
+				break;
+			}
 		}
 	}
 
-	for (int i = 0; i < 16; ++i)
-		((float*)&mat)[i] = (float)localMat.getValue()[i];
+	if (isAniminated) {
+
+		double sampleStep = mSampleDuration / (double)mXformSampleCnt;
+		frames.resize(mXformSampleCnt);
+		for (int i = 0; i < mXformSampleCnt; ++i) 
+			frames[i] = nvmath::cIdentity44f;
+
+
+		for (Abc::IObject node = xform; node.valid(); node = node.getParent()) {
+			if (AbcG::IXform::matches(node.getHeader())) {
+				AbcG::IXform xform(node, Abc::kWrapExisting);
+
+				KMatrix4 localTransform;
+
+				for (int i = 0; i < mXformSampleCnt; ++i) {
+					
+					Abc::chrono_t sampleTime = mCurTime + sampleStep * (double)i;
+					// Do two samples, one with floor index and the other with ceiling index, then
+					// lerp between these two samples with the current time.
+					Abc::ISampleSelector ss0(sampleTime, Abc::ISampleSelector::kFloorIndex);
+					Abc::ISampleSelector ss1(sampleTime, Abc::ISampleSelector::kCeilIndex);
+					Abc::TimeSamplingPtr iTsmp = xform.getSchema().getTimeSampling();
+					size_t numSamps = xform.getSchema().getNumSamples();
+					Abc::chrono_t t0 = iTsmp->getFloorIndex(sampleTime, numSamps).second;
+					Abc::chrono_t t1 = iTsmp->getCeilIndex(sampleTime, numSamps).second;
+				
+					Imath::M44d mat0, mat1;
+					mat0 = xform.getSchema().getValue(ss0).getMatrix();
+					mat1 = xform.getSchema().getValue(ss1).getMatrix();
+
+					if (sampleTime >= t1) {
+						ConvertMatrix(mat1, localTransform);
+					}
+					else if (sampleTime <= t0) {
+						ConvertMatrix(mat0, localTransform);
+					}
+					else {
+						KMatrix4 kt0, kt1;
+						ConvertMatrix(mat0, kt0);
+						ConvertMatrix(mat1, kt1);
+						nvmath::lerp( float((sampleTime-t0)/(t1-t0)), kt0, kt1, localTransform);
+					}
+
+					frames[i] = localTransform * frames[i];
+				}
+			}
+		}
+	}
+	else {
+		// For static xform...
+		frames.resize(1);
+		frames[0] = nvmath::cIdentity44f;
+		for (Abc::IObject node = xform; node.valid(); node = node.getParent()) {
+			if (AbcG::IXform::matches(node.getHeader())) {
+				AbcG::IXform xform(node, Abc::kWrapExisting);
+				Imath::M44d mat = xform.getSchema().getValue().getMatrix();
+				KMatrix4 localTransform;
+				ConvertMatrix(mat, localTransform);
+				frames[0] = localTransform * frames[0];
+			}
+
+		}
+	}
+
+	
 }
