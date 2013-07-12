@@ -196,6 +196,26 @@ void AbcLoader::ConvertMatrix(const Imath::M44d& ilmMat, KMatrix4& mat)
 		((float*)&mat)[i] = (float)ilmMat.getValue()[i];
 }
 
+void AbcLoader::ConvertStaticMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::chrono_t t, KTriMesh& outMesh)
+{
+	AbcG::IPolyMeshSchema::Sample meshSample;
+	//Abc::ISampleSelector ss(t, Abc::ISampleSelector::kNearIndex);
+	meshSchema.get(meshSample);
+	// Get arrays of mesh data
+    Abc::P3fArraySamplePtr vertPos = meshSample.getPositions();
+    Abc::Int32ArraySamplePtr faces = meshSample.getFaceIndices();
+    Abc::Int32ArraySamplePtr faceCnt = meshSample.getFaceCounts();
+	AbcG::IN3fGeomParam normParam = meshSchema.getNormalsParam();
+	
+	normParam.getArrayExtent();
+	AbcG::IN3fGeomParam::Sample::samp_ptr_type pNormData;
+	normParam.getValueProperty().get(pNormData);
+	Abc::N3fArraySample* pNorm = pNormData.get();
+	pNorm->size();
+	Imath::V3f n = (*pNorm)[0];
+	const Imath::V3f* pData = pNorm->get();
+}
+
 void AbcLoader::GetXformWorldTransform(const AbcG::IXform& xform, std::vector<KMatrix4>& frames)
 {
 	bool isAniminated = false;
