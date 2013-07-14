@@ -196,24 +196,71 @@ void AbcLoader::ConvertMatrix(const Imath::M44d& ilmMat, KMatrix4& mat)
 		((float*)&mat)[i] = (float)ilmMat.getValue()[i];
 }
 
-void AbcLoader::ConvertStaticMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::chrono_t t, KTriMesh& outMesh)
+bool AbcLoader::ConvertStaticMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::chrono_t t, KTriMesh& outMesh)
 {
 	AbcG::IPolyMeshSchema::Sample meshSample;
 	//Abc::ISampleSelector ss(t, Abc::ISampleSelector::kNearIndex);
 	meshSchema.get(meshSample);
-	// Get arrays of mesh data
+
+	// Get the data of vertex positions and faces
+	//
     Abc::P3fArraySamplePtr vertPos = meshSample.getPositions();
     Abc::Int32ArraySamplePtr faces = meshSample.getFaceIndices();
     Abc::Int32ArraySamplePtr faceCnt = meshSample.getFaceCounts();
+
+	// Now for normal data
+	//
 	AbcG::IN3fGeomParam normParam = meshSchema.getNormalsParam();
-	
-	normParam.getArrayExtent();
-	AbcG::IN3fGeomParam::Sample::samp_ptr_type pNormData;
-	normParam.getValueProperty().get(pNormData);
-	Abc::N3fArraySample* pNorm = pNormData.get();
-	pNorm->size();
-	Imath::V3f n = (*pNorm)[0];
-	const Imath::V3f* pData = pNorm->get();
+	if (normParam.getScope() != Alembic::AbcGeom::kVertexScope &&
+		normParam.getScope() != Alembic::AbcGeom::kVaryingScope &&
+		normParam.getScope() != Alembic::AbcGeom::kFacevaryingScope){
+		std::cout << "Normal vector has an unsupported scope, skipping mesh: " << meshSchema.getName() << std::endl;
+		return false;
+	}
+
+	Alembic::AbcGeom::IN3fGeomParam::Sample normSamp;
+	normParam.getExpanded(normSamp); // TODO: need to consider the time
+	Alembic::Abc::N3fArraySamplePtr normVal = normSamp.getVals();
+	size_t normCnt = normVal->size();
+
+	if ((normParam.getScope() == Alembic::AbcGeom::kVertexScope || 
+		normParam.getScope() == Alembic::AbcGeom::kVaryingScope) &&
+		normCnt == vertPos->size() ) {
+		// This mesh has per-vertex normal
+		for (size_t i = 0; i < normCnt; ++i) {
+			(*normVal)[i].x;
+		}
+
+	}
+	else if (normCnt == faceCnt->size() &&
+		normParam.getScope() == Alembic::AbcGeom::kFacevaryingScope) {
+		// This mesh has per-face normal
+
+	}
+
+	// Now for UV data
+	//
+	AbcG::IV2fGeomParam uvParam = meshSchema.getUVsParam();
+	Alembic::AbcGeom::IV2fGeomParam::Sample uvSamp;
+	uvParam.getIndexed(uvSamp);  // TODO: need to consider the time
+	Alembic::AbcGeom::V2fArraySamplePtr uvVal = uvSamp.getVals();
+	Alembic::Abc::UInt32ArraySamplePtr uvIdxVal = uvSamp.getIndices();
+
+	size_t uvCnt = uvIdxVal->size();
+	if (uvCnt == faces->size()) {
+		// per-vertex uv
+
+	}
+	else if (uvCnt != vertPos->size() ) {
+		// per-polygon per-vertex uv
+
+	}
+	else {
+		std::cout << " UVs aren't per-vertex or per-polygon per-vertex, skipping mesh: " << meshSchema.getName() << std::endl;
+		return false;
+	}
+
+	return true;
 }
 
 void AbcLoader::GetXformWorldTransform(const AbcG::IXform& xform, std::vector<KMatrix4>& frames)

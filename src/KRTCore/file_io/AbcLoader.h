@@ -34,7 +34,7 @@ private:
 	KKDTreeScene* GetXformStaticScene(const Abc::IObject& obj, KMatrix4& mat);
 
 	static void ConvertMatrix(const Imath::M44d& ilmMat, KMatrix4& mat);
-	static void ConvertStaticMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::chrono_t t, KTriMesh& outMesh);
+	static bool ConvertStaticMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::chrono_t t, KTriMesh& outMesh);
 private:
 	double mCurTime;
 	double mSampleDuration;
