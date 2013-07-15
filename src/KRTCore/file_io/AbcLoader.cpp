@@ -205,8 +205,8 @@ bool AbcLoader::ConvertStaticMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::
 	// Get the data of vertex positions and faces
 	//
     Abc::P3fArraySamplePtr vertPos = meshSample.getPositions();
-    Abc::Int32ArraySamplePtr faces = meshSample.getFaceIndices();
-    Abc::Int32ArraySamplePtr faceCnt = meshSample.getFaceCounts();
+    Abc::Int32ArraySamplePtr faceIdx = meshSample.getFaceIndices();
+    Abc::Int32ArraySamplePtr faceCnts = meshSample.getFaceCounts();
 
 	// Now for normal data
 	//
@@ -223,19 +223,71 @@ bool AbcLoader::ConvertStaticMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::
 	Alembic::Abc::N3fArraySamplePtr normVal = normSamp.getVals();
 	size_t normCnt = normVal->size();
 
+	size_t triCnt = 0;
+	size_t faceCnt = faceCnts->size();
+	for (size_t fi = 0; fi < faceCnt; ++fi) {
+		assert((*faceCnts)[fi] > 2);
+		triCnt += ((*faceCnts)[fi] - 2);
+	}
+	outMesh.mFaces.resize(triCnt);
+
 	if ((normParam.getScope() == Alembic::AbcGeom::kVertexScope || 
 		normParam.getScope() == Alembic::AbcGeom::kVaryingScope) &&
 		normCnt == vertPos->size() ) {
+
 		// This mesh has per-vertex normal
+		outMesh.mVertPN.resize( normCnt );
 		for (size_t i = 0; i < normCnt; ++i) {
-			(*normVal)[i].x;
+			outMesh.mVertPN[i].pos[0] = (*vertPos)[i].x;
+			outMesh.mVertPN[i].pos[1] = (*vertPos)[i].y;
+			outMesh.mVertPN[i].pos[2] = (*vertPos)[i].z;
+
+			outMesh.mVertPN[i].nor[0] = (*normVal)[i].x;
+			outMesh.mVertPN[i].nor[1] = (*normVal)[i].y;
+			outMesh.mVertPN[i].nor[2] = (*normVal)[i].z;
+		}
+
+		size_t triIter = 0;
+		size_t fiIter = 0;
+		for (size_t fi = 0; fi < faceCnt; ++fi) {
+			for (int vi = 1; vi < (*faceCnts)[fi] - 1; ++vi) {
+				outMesh.mFaces[triIter].pn_idx[0] = (*faceIdx)[fiIter];
+				outMesh.mFaces[triIter].pn_idx[1] = (*faceIdx)[fiIter + vi];
+				outMesh.mFaces[triIter].pn_idx[2] = (*faceIdx)[fiIter + vi + 1];
+				++triIter;
+			}
+			fiIter += (*faceCnts)[fi];
 		}
 
 	}
-	else if (normCnt == faceCnt->size() &&
+	else if (normCnt == faceCnt &&
 		normParam.getScope() == Alembic::AbcGeom::kFacevaryingScope) {
 		// This mesh has per-face normal
+		outMesh.mVertPN.resize( triCnt*3 );
+		size_t triIter = 0;
+		size_t fiIter = 0;
+		size_t viIter = 0;
+		for (size_t fi = 0; fi < faceCnt; ++fi) {
+			for (int vi = 1; vi < (*faceCnts)[fi] - 1; ++vi) {
+				int v0 = (*faceIdx)[fiIter];
+				int v1  = (*faceIdx)[fiIter + vi];
+				int v2  = (*faceIdx)[fiIter + vi + 1];
+				++triIter;
 
+				outMesh.mVertPN[viIter].pos[0] = (*vertPos)[v0].x;
+				outMesh.mVertPN[viIter].nor[0] = (*normVal)[fi].x;
+				outMesh.mFaces[triIter].pn_idx[0] = viIter++;
+
+				outMesh.mVertPN[viIter].pos[1] = (*vertPos)[v0].y;
+				outMesh.mVertPN[viIter].nor[1] = (*normVal)[fi].y;
+				outMesh.mFaces[triIter].pn_idx[1] = viIter++;
+
+				outMesh.mVertPN[viIter].pos[2] = (*vertPos)[v0].z;
+				outMesh.mVertPN[viIter].nor[2] = (*normVal)[fi].z;
+				outMesh.mFaces[triIter].pn_idx[2] = viIter++;
+			}
+			fiIter += (*faceCnts)[fi];
+		}
 	}
 
 	// Now for UV data
@@ -247,7 +299,7 @@ bool AbcLoader::ConvertStaticMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::
 	Alembic::Abc::UInt32ArraySamplePtr uvIdxVal = uvSamp.getIndices();
 
 	size_t uvCnt = uvIdxVal->size();
-	if (uvCnt == faces->size()) {
+	if (uvCnt == faceIdx->size()) {
 		// per-vertex uv
 
 	}
