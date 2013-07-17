@@ -342,7 +342,7 @@ void KKDBBoxScene::GetKDBuildTimeStatistics(KRT_SceneStatistic& sceneStat) const
 	sceneStat.actual_triangle_count = 0;
 	sceneStat.leaf_triangle_count = 0;
 	for (size_t i = 0; i < mpKDScenes.size(); ++i) {
-		KKDTreeScene* pScene = mpKDScenes[mKDSceneNodes[i].kd_scene_idx];
+		KKDTreeScene* pScene = mpKDScenes[i];
 		sceneStat.leaf_triangle_count += pScene->mTotalLeafTriCnt;
 		sceneStat.kd_node_count += pScene->GetKDNodeCnt();
 		sceneStat.kd_leaf_count += pScene->GetKDLeafCnt();
@@ -367,11 +367,12 @@ bool KKDBBoxScene::SceneNode_BuildAccelData(bool force)
 
 	// Now build all KD scenes
 	for (std::list<UINT32>::iterator it = mGeomDirtiedScenes.begin(); it != mGeomDirtiedScenes.end(); ++it) {
+
 		// build the accellerating data strcuture for each KD scene
 		mpKDScenes[*it]->InitAccelData();
 
 		// update the scene epsilon(which is be used later for ray intersection)
-		float cur_epsilon = mpKDScenes[mKDSceneNodes[*it].kd_scene_idx]->GetSceneEpsilon();
+		float cur_epsilon = mpKDScenes[*it]->GetSceneEpsilon();
 		if (mSceneEpsilon > cur_epsilon)
 			mSceneEpsilon = cur_epsilon;
 

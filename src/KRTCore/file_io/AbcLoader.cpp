@@ -159,11 +159,14 @@ KKDTreeScene* AbcLoader::GetXformStaticScene(const Abc::IObject& obj, KMatrix4& 
 			for (size_t i = 0; i < sceneNodeFrames.size(); ++i)
 				mpScene->SceneNodeTM_AddFrame(sceneNodeIdx, sceneNodeFrames[i]);
 		}
+		else {
+			// Create the default node with identify transform.
+			mpScene->SceneNode_Create(sceneIdx);
+		}
 
 	}
 
-	for (int i = 0; i < 16; ++i)
-		((float*)&mat)[i] = (float)localMat.getValue()[i];
+	ConvertMatrix(localMat, mat);
 	KKDTreeScene* xformScene = mXformNodes[animNode];
 	return xformScene;
 }
@@ -174,8 +177,15 @@ void AbcLoader::ProcessMesh(const AbcG::IPolyMesh& mesh)
 	KKDTreeScene* pScene = GetXformStaticScene(mesh, localMat);
 	assert(pScene);
 
-	KTriMesh* pMesh = pScene->GetMesh(pScene->AddMesh());
+	UINT32 meshIdx = pScene->AddMesh();
+	KTriMesh* pMesh = pScene->GetMesh(meshIdx);
 	assert(pMesh);
+
+	UINT32 nodeIdx = pScene->AddNode();
+	KNode* pNode = pScene->GetNode(nodeIdx);
+	pNode->mMesh.push_back(meshIdx);
+	pScene->SetNodeTM(nodeIdx, localMat);
+	pNode->mpSurfShader = NULL;
 
 	ConvertStaticMesh(mesh.getSchema(), mCurTime, *pMesh);
 	/*if (mesh.getSchema().isConstant()) {
@@ -210,6 +220,14 @@ bool AbcLoader::ConvertStaticMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::
     Abc::Int32ArraySamplePtr faceIdx = meshSample.getFaceIndices();
     Abc::Int32ArraySamplePtr faceCnts = meshSample.getFaceCounts();
 
+	// Calculate the triangle count
+	size_t triCnt = 0;
+	size_t faceCnt = faceCnts->size();
+	for (size_t fi = 0; fi < faceCnt; ++fi) {
+		assert((*faceCnts)[fi] > 2);
+		triCnt += ((*faceCnts)[fi] - 2);
+	}
+	outMesh.mFaces.resize(triCnt);
 
 	//
 	// Now for normal data
@@ -230,14 +248,6 @@ bool AbcLoader::ConvertStaticMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::
 		normParam.getExpanded(normSamp); // TODO: need to consider the time
 		Alembic::Abc::N3fArraySamplePtr normVal = normSamp.getVals();
 		size_t normCnt = normVal->size();
-
-		size_t triCnt = 0;
-		size_t faceCnt = faceCnts->size();
-		for (size_t fi = 0; fi < faceCnt; ++fi) {
-			assert((*faceCnts)[fi] > 2);
-			triCnt += ((*faceCnts)[fi] - 2);
-		}
-		outMesh.mFaces.resize(triCnt);
 
 		if ((normParam.getScope() == Alembic::AbcGeom::kVertexScope || 
 			normParam.getScope() == Alembic::AbcGeom::kVaryingScope) &&
@@ -310,7 +320,6 @@ bool AbcLoader::ConvertStaticMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::
 			averagedNormals[i] = KVec3(0,0,0);
 		}
 
-		size_t faceCnt = faceCnts->size();
 		size_t fiIter = 0;
 		for (size_t fi = 0; fi < faceCnt; ++fi) {
 			assert((*faceCnts)[fi] > 2);
@@ -327,6 +336,7 @@ bool AbcLoader::ConvertStaticMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::
 			Imath::V3f vert2 = (*vertPos)[v2];
 			Imath::V3f normTmp = (vert1 - vert0).cross(vert2 - vert0);
 			KVec3 norm = KVec3(normTmp.x, normTmp.y, normTmp.z);
+			norm.normalize();
 			
 			for (int vi = 0; vi < (*faceCnts)[fi]; ++vi) {
 				averagedNormals[vi] += norm;
@@ -346,7 +356,7 @@ bool AbcLoader::ConvertStaticMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::
 			outMesh.mVertPN[i].pos[1] = (*vertPos)[i].y;
 			outMesh.mVertPN[i].pos[2] = (*vertPos)[i].z;
 
-			outMesh.mVertPN[i].nor = averagedNormals[i];
+			outMesh.mVertPN[i].nor = -averagedNormals[i];
 		}
 
 		size_t triIter = 0;
@@ -366,23 +376,25 @@ bool AbcLoader::ConvertStaticMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::
 	// Now for UV data
 	//
 	AbcG::IV2fGeomParam uvParam = meshSchema.getUVsParam();
-	Alembic::AbcGeom::IV2fGeomParam::Sample uvSamp;
-	uvParam.getIndexed(uvSamp);  // TODO: need to consider the time
-	Alembic::AbcGeom::V2fArraySamplePtr uvVal = uvSamp.getVals();
-	Alembic::Abc::UInt32ArraySamplePtr uvIdxVal = uvSamp.getIndices();
+	if (uvParam.getNumSamples() > 0) {
+		Alembic::AbcGeom::IV2fGeomParam::Sample uvSamp;
+		uvParam.getIndexed(uvSamp);  // TODO: need to consider the time
+		Alembic::AbcGeom::V2fArraySamplePtr uvVal = uvSamp.getVals();
+		Alembic::Abc::UInt32ArraySamplePtr uvIdxVal = uvSamp.getIndices();
 
-	size_t uvCnt = uvIdxVal->size();
-	if (uvCnt == faceIdx->size()) {
-		// per-vertex uv
+		size_t uvCnt = uvIdxVal->size();
+		if (uvCnt == faceIdx->size()) {
+			// per-vertex uv
 
-	}
-	else if (uvCnt != vertPos->size() ) {
-		// per-polygon per-vertex uv
+		}
+		else if (uvCnt != vertPos->size() ) {
+			// per-polygon per-vertex uv
 
-	}
-	else {
-		std::cout << " UVs aren't per-vertex or per-polygon per-vertex, skipping mesh: " << meshSchema.getName() << std::endl;
-		return false;
+		}
+		else {
+			std::cout << " UVs aren't per-vertex or per-polygon per-vertex, skipping mesh: " << meshSchema.getName() << std::endl;
+			return false;
+		}
 	}
 
 	return true;
