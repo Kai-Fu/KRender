@@ -175,8 +175,10 @@ void AbcLoader::ProcessMesh(const AbcG::IPolyMesh& mesh)
 	assert(pScene);
 
 	KTriMesh* pMesh = pScene->GetMesh(pScene->AddMesh());
+	assert(pMesh);
 
-	if (mesh.getSchema().isConstant()) {
+	ConvertStaticMesh(mesh.getSchema(), mCurTime, *pMesh);
+	/*if (mesh.getSchema().isConstant()) {
 		// static mesh
 		AbcG::IPolyMeshSchema::Sample psamp;
 		mesh.getSchema().get(psamp);
@@ -187,7 +189,7 @@ void AbcLoader::ProcessMesh(const AbcG::IPolyMesh& mesh)
 		for (int i = 0; i < mDeformSampleCnt; ++i) {
 
 		}
-	}
+	}*/
 }
 
 void AbcLoader::ConvertMatrix(const Imath::M44d& ilmMat, KMatrix4& mat)
@@ -208,47 +210,147 @@ bool AbcLoader::ConvertStaticMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::
     Abc::Int32ArraySamplePtr faceIdx = meshSample.getFaceIndices();
     Abc::Int32ArraySamplePtr faceCnts = meshSample.getFaceCounts();
 
+
+	//
 	// Now for normal data
 	//
 	AbcG::IN3fGeomParam normParam = meshSchema.getNormalsParam();
-	if (normParam.getScope() != Alembic::AbcGeom::kVertexScope &&
-		normParam.getScope() != Alembic::AbcGeom::kVaryingScope &&
-		normParam.getScope() != Alembic::AbcGeom::kFacevaryingScope){
-		std::cout << "Normal vector has an unsupported scope, skipping mesh: " << meshSchema.getName() << std::endl;
-		return false;
+	if (normParam.getNumSamples() > 0) { 
+
+		// There is at least one normal sample, so take use of it
+
+		if (normParam.getScope() != Alembic::AbcGeom::kVertexScope &&
+			normParam.getScope() != Alembic::AbcGeom::kVaryingScope &&
+			normParam.getScope() != Alembic::AbcGeom::kFacevaryingScope ){
+			std::cout << "Normal vector has an unsupported scope, skipping mesh: " << meshSchema.getName() << std::endl;
+			return false;
+		}
+
+		Alembic::AbcGeom::IN3fGeomParam::Sample normSamp;
+		normParam.getExpanded(normSamp); // TODO: need to consider the time
+		Alembic::Abc::N3fArraySamplePtr normVal = normSamp.getVals();
+		size_t normCnt = normVal->size();
+
+		size_t triCnt = 0;
+		size_t faceCnt = faceCnts->size();
+		for (size_t fi = 0; fi < faceCnt; ++fi) {
+			assert((*faceCnts)[fi] > 2);
+			triCnt += ((*faceCnts)[fi] - 2);
+		}
+		outMesh.mFaces.resize(triCnt);
+
+		if ((normParam.getScope() == Alembic::AbcGeom::kVertexScope || 
+			normParam.getScope() == Alembic::AbcGeom::kVaryingScope) &&
+			normCnt == vertPos->size() ) {
+
+			// This mesh has per-vertex normal
+			outMesh.mVertPN.resize( normCnt );
+			for (size_t i = 0; i < normCnt; ++i) {
+				outMesh.mVertPN[i].pos[0] = (*vertPos)[i].x;
+				outMesh.mVertPN[i].pos[1] = (*vertPos)[i].y;
+				outMesh.mVertPN[i].pos[2] = (*vertPos)[i].z;
+
+				outMesh.mVertPN[i].nor[0] = (*normVal)[i].x;
+				outMesh.mVertPN[i].nor[1] = (*normVal)[i].y;
+				outMesh.mVertPN[i].nor[2] = (*normVal)[i].z;
+			}
+
+			size_t triIter = 0;
+			size_t fiIter = 0;
+			for (size_t fi = 0; fi < faceCnt; ++fi) {
+				for (int vi = 1; vi < (*faceCnts)[fi] - 1; ++vi) {
+					outMesh.mFaces[triIter].pn_idx[0] = (*faceIdx)[fiIter];
+					outMesh.mFaces[triIter].pn_idx[1] = (*faceIdx)[fiIter + vi];
+					outMesh.mFaces[triIter].pn_idx[2] = (*faceIdx)[fiIter + vi + 1];
+					++triIter;
+				}
+				fiIter += (*faceCnts)[fi];
+			}
+
+		}
+		else if (normCnt == faceCnt &&
+			normParam.getScope() == Alembic::AbcGeom::kFacevaryingScope) {
+			// This mesh has per-face normal
+			outMesh.mVertPN.resize( triCnt*3 );
+			size_t triIter = 0;
+			size_t fiIter = 0;
+			size_t viIter = 0;
+			for (size_t fi = 0; fi < faceCnt; ++fi) {
+				for (int vi = 1; vi < (*faceCnts)[fi] - 1; ++vi) {
+					int v0 = (*faceIdx)[fiIter];
+					int v1  = (*faceIdx)[fiIter + vi];
+					int v2  = (*faceIdx)[fiIter + vi + 1];
+					++triIter;
+
+					outMesh.mVertPN[viIter].pos[0] = (*vertPos)[v0].x;
+					outMesh.mVertPN[viIter].nor[0] = (*normVal)[fi].x;
+					outMesh.mFaces[triIter].pn_idx[0] = viIter++;
+
+					outMesh.mVertPN[viIter].pos[1] = (*vertPos)[v0].y;
+					outMesh.mVertPN[viIter].nor[1] = (*normVal)[fi].y;
+					outMesh.mFaces[triIter].pn_idx[1] = viIter++;
+
+					outMesh.mVertPN[viIter].pos[2] = (*vertPos)[v0].z;
+					outMesh.mVertPN[viIter].nor[2] = (*normVal)[fi].z;
+					outMesh.mFaces[triIter].pn_idx[2] = viIter++;
+				}
+				fiIter += (*faceCnts)[fi];
+			}
+		}
 	}
+	else {
 
-	Alembic::AbcGeom::IN3fGeomParam::Sample normSamp;
-	normParam.getExpanded(normSamp); // TODO: need to consider the time
-	Alembic::Abc::N3fArraySamplePtr normVal = normSamp.getVals();
-	size_t normCnt = normVal->size();
+		// There's no normal sample, I need to calcuate the normal from faces and the topology(shared vertices)
 
-	size_t triCnt = 0;
-	size_t faceCnt = faceCnts->size();
-	for (size_t fi = 0; fi < faceCnt; ++fi) {
-		assert((*faceCnts)[fi] > 2);
-		triCnt += ((*faceCnts)[fi] - 2);
-	}
-	outMesh.mFaces.resize(triCnt);
+		size_t vertCnt = vertPos->size();
+		std::vector<unsigned int> sharedCnts(vertCnt);
+		std::vector<KVec3> averagedNormals(vertCnt);
+		for (size_t i = 0; i < vertCnt; ++i) {
+			sharedCnts[i] = 0;
+			averagedNormals[i] = KVec3(0,0,0);
+		}
 
-	if ((normParam.getScope() == Alembic::AbcGeom::kVertexScope || 
-		normParam.getScope() == Alembic::AbcGeom::kVaryingScope) &&
-		normCnt == vertPos->size() ) {
+		size_t faceCnt = faceCnts->size();
+		size_t fiIter = 0;
+		for (size_t fi = 0; fi < faceCnt; ++fi) {
+			assert((*faceCnts)[fi] > 2);
+			int v0 = (*faceIdx)[fiIter];
+			int v1  = (*faceIdx)[fiIter + 1];
+			int v2  = (*faceIdx)[fiIter + 2];
 
-		// This mesh has per-vertex normal
-		outMesh.mVertPN.resize( normCnt );
-		for (size_t i = 0; i < normCnt; ++i) {
+			sharedCnts[v0]++;
+			sharedCnts[v1]++;
+			sharedCnts[v2]++;
+
+			Imath::V3f vert0 = (*vertPos)[v0];
+			Imath::V3f vert1 = (*vertPos)[v1];
+			Imath::V3f vert2 = (*vertPos)[v2];
+			Imath::V3f normTmp = (vert1 - vert0).cross(vert2 - vert0);
+			KVec3 norm = KVec3(normTmp.x, normTmp.y, normTmp.z);
+			
+			for (int vi = 0; vi < (*faceCnts)[fi]; ++vi) {
+				averagedNormals[vi] += norm;
+			}
+			fiIter += (*faceCnts)[fi];
+		}
+
+		for (size_t i = 0; i < vertCnt; ++i) {
+			if (sharedCnts[i] > 1)
+				averagedNormals[i] /= (float)sharedCnts[i];
+		}
+
+		// Now fill the data to KTriMesh object
+		outMesh.mVertPN.resize( vertCnt );
+		for (size_t i = 0; i < vertCnt; ++i) {
 			outMesh.mVertPN[i].pos[0] = (*vertPos)[i].x;
 			outMesh.mVertPN[i].pos[1] = (*vertPos)[i].y;
 			outMesh.mVertPN[i].pos[2] = (*vertPos)[i].z;
 
-			outMesh.mVertPN[i].nor[0] = (*normVal)[i].x;
-			outMesh.mVertPN[i].nor[1] = (*normVal)[i].y;
-			outMesh.mVertPN[i].nor[2] = (*normVal)[i].z;
+			outMesh.mVertPN[i].nor = averagedNormals[i];
 		}
 
 		size_t triIter = 0;
-		size_t fiIter = 0;
+		fiIter = 0;
 		for (size_t fi = 0; fi < faceCnt; ++fi) {
 			for (int vi = 1; vi < (*faceCnts)[fi] - 1; ++vi) {
 				outMesh.mFaces[triIter].pn_idx[0] = (*faceIdx)[fiIter];
@@ -258,38 +360,9 @@ bool AbcLoader::ConvertStaticMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::
 			}
 			fiIter += (*faceCnts)[fi];
 		}
-
-	}
-	else if (normCnt == faceCnt &&
-		normParam.getScope() == Alembic::AbcGeom::kFacevaryingScope) {
-		// This mesh has per-face normal
-		outMesh.mVertPN.resize( triCnt*3 );
-		size_t triIter = 0;
-		size_t fiIter = 0;
-		size_t viIter = 0;
-		for (size_t fi = 0; fi < faceCnt; ++fi) {
-			for (int vi = 1; vi < (*faceCnts)[fi] - 1; ++vi) {
-				int v0 = (*faceIdx)[fiIter];
-				int v1  = (*faceIdx)[fiIter + vi];
-				int v2  = (*faceIdx)[fiIter + vi + 1];
-				++triIter;
-
-				outMesh.mVertPN[viIter].pos[0] = (*vertPos)[v0].x;
-				outMesh.mVertPN[viIter].nor[0] = (*normVal)[fi].x;
-				outMesh.mFaces[triIter].pn_idx[0] = viIter++;
-
-				outMesh.mVertPN[viIter].pos[1] = (*vertPos)[v0].y;
-				outMesh.mVertPN[viIter].nor[1] = (*normVal)[fi].y;
-				outMesh.mFaces[triIter].pn_idx[1] = viIter++;
-
-				outMesh.mVertPN[viIter].pos[2] = (*vertPos)[v0].z;
-				outMesh.mVertPN[viIter].nor[2] = (*normVal)[fi].z;
-				outMesh.mFaces[triIter].pn_idx[2] = viIter++;
-			}
-			fiIter += (*faceCnts)[fi];
-		}
 	}
 
+	//
 	// Now for UV data
 	//
 	AbcG::IV2fGeomParam uvParam = meshSchema.getUVsParam();
