@@ -333,9 +333,7 @@ bool AbcLoader::ConvertStaticMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::
 			int v1  = (*faceIdx)[fiIter + 1];
 			int v2  = (*faceIdx)[fiIter + 2];
 
-			sharedCnts[v0]++;
-			sharedCnts[v1]++;
-			sharedCnts[v2]++;
+			
 
 			Imath::V3f vert0 = (*vertPos)[v0];
 			Imath::V3f vert1 = (*vertPos)[v1];
@@ -345,7 +343,9 @@ bool AbcLoader::ConvertStaticMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::
 			norm.normalize();
 			
 			for (int vi = 0; vi < (*faceCnts)[fi]; ++vi) {
-				averagedNormals[vi] += norm;
+				size_t vIdx = (*faceIdx)[fiIter + vi];
+				averagedNormals[vIdx] += norm;
+				sharedCnts[vIdx]++;
 			}
 			fiIter += (*faceCnts)[fi];
 		}
