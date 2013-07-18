@@ -130,15 +130,14 @@ KKDTreeScene* AbcLoader::GetXformStaticScene(const Abc::IObject& obj, KMatrix4& 
 {
 	Imath::M44d localMat;
 	localMat.makeIdentity();
-	AbcA::ObjectReader* animNode = NULL;
+	AbcA::ObjectReaderPtr animNode;
 	for (Abc::IObject node = obj; node.valid(); node = node.getParent()) {
 
 		if (AbcG::IXform::matches(node.getHeader())) {
 			AbcG::IXform xform(node, Abc::kWrapExisting);
 			
 			if (!xform.getSchema().isConstant()) {
-				AbcA::ObjectReaderPtr ptr = xform.getPtr();
-				animNode = ptr.get();
+				animNode = xform.getPtr();
 				break;
 			}
 			localMat *= xform.getSchema().getValue().getMatrix();
@@ -146,12 +145,12 @@ KKDTreeScene* AbcLoader::GetXformStaticScene(const Abc::IObject& obj, KMatrix4& 
 	}
 
 
-	if (mXformNodes.find(animNode) == mXformNodes.end()) {
+	if (mXformNodes.find(animNode.get()) == mXformNodes.end()) {
 		UINT32 sceneIdx;
 		KKDTreeScene* xformScene = mpScene->AddKDScene(sceneIdx);
-		mXformNodes[animNode] = xformScene;
-		if (animNode) {
-			AbcG::IXform xform(AbcA::ObjectReaderPtr(animNode), Abc::kWrapExisting);
+		mXformNodes[animNode.get()] = xformScene;
+		if (animNode.get()) {
+			AbcG::IXform xform(animNode, Abc::kWrapExisting);
 			std::vector<KMatrix4> sceneNodeFrames;
 			GetXformWorldTransform(xform, sceneNodeFrames);
 			UINT32 sceneNodeIdx = mpScene->SceneNode_Create(sceneIdx);
@@ -167,7 +166,7 @@ KKDTreeScene* AbcLoader::GetXformStaticScene(const Abc::IObject& obj, KMatrix4& 
 	}
 
 	ConvertMatrix(localMat, mat);
-	KKDTreeScene* xformScene = mXformNodes[animNode];
+	KKDTreeScene* xformScene = mXformNodes[animNode.get()];
 	return xformScene;
 }
 
@@ -223,9 +222,12 @@ bool AbcLoader::ConvertStaticMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::
 	// Calculate the triangle count
 	size_t triCnt = 0;
 	size_t faceCnt = faceCnts->size();
+	size_t polyVertCnt = 0;
 	for (size_t fi = 0; fi < faceCnt; ++fi) {
 		assert((*faceCnts)[fi] > 2);
 		triCnt += ((*faceCnts)[fi] - 2);
+
+		polyVertCnt += (*faceCnts)[fi];
 	}
 	outMesh.mFaces.resize(triCnt);
 
@@ -270,15 +272,15 @@ bool AbcLoader::ConvertStaticMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::
 			for (size_t fi = 0; fi < faceCnt; ++fi) {
 				for (int vi = 1; vi < (*faceCnts)[fi] - 1; ++vi) {
 					outMesh.mFaces[triIter].pn_idx[0] = (*faceIdx)[fiIter];
-					outMesh.mFaces[triIter].pn_idx[1] = (*faceIdx)[fiIter + vi];
-					outMesh.mFaces[triIter].pn_idx[2] = (*faceIdx)[fiIter + vi + 1];
+					outMesh.mFaces[triIter].pn_idx[2] = (*faceIdx)[fiIter + vi];
+					outMesh.mFaces[triIter].pn_idx[1] = (*faceIdx)[fiIter + vi + 1];
 					++triIter;
 				}
 				fiIter += (*faceCnts)[fi];
 			}
 
 		}
-		else if (normCnt == faceCnt &&
+		else if (normCnt == polyVertCnt &&
 			normParam.getScope() == Alembic::AbcGeom::kFacevaryingScope) {
 			// This mesh has per-face normal
 			outMesh.mVertPN.resize( triCnt*3 );
@@ -290,19 +292,23 @@ bool AbcLoader::ConvertStaticMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::
 					int v0 = (*faceIdx)[fiIter];
 					int v1  = (*faceIdx)[fiIter + vi];
 					int v2  = (*faceIdx)[fiIter + vi + 1];
+
+					int v[] = {v0, v1, v2};
+					outMesh.mFaces[triIter].pn_idx[0] = (UINT32)viIter;
+					outMesh.mFaces[triIter].pn_idx[2] = (UINT32)viIter + 1;
+					outMesh.mFaces[triIter].pn_idx[1] = (UINT32)viIter + 2;
+					for (int ii = 0; ii < 3; ++ii) {
+						outMesh.mVertPN[viIter].pos[0] = (*vertPos)[v[ii]].x;
+						outMesh.mVertPN[viIter].pos[1] = (*vertPos)[v[ii]].y;
+						outMesh.mVertPN[viIter].pos[2] = (*vertPos)[v[ii]].z;
+
+						outMesh.mVertPN[viIter].nor[0] = (*normVal)[viIter].x;
+						outMesh.mVertPN[viIter].nor[1] = (*normVal)[viIter].y;
+						outMesh.mVertPN[viIter].nor[2] = (*normVal)[viIter].z;
+
+						viIter++;
+					}
 					++triIter;
-
-					outMesh.mVertPN[viIter].pos[0] = (*vertPos)[v0].x;
-					outMesh.mVertPN[viIter].nor[0] = (*normVal)[fi].x;
-					outMesh.mFaces[triIter].pn_idx[0] = viIter++;
-
-					outMesh.mVertPN[viIter].pos[1] = (*vertPos)[v0].y;
-					outMesh.mVertPN[viIter].nor[1] = (*normVal)[fi].y;
-					outMesh.mFaces[triIter].pn_idx[1] = viIter++;
-
-					outMesh.mVertPN[viIter].pos[2] = (*vertPos)[v0].z;
-					outMesh.mVertPN[viIter].nor[2] = (*normVal)[fi].z;
-					outMesh.mFaces[triIter].pn_idx[2] = viIter++;
 				}
 				fiIter += (*faceCnts)[fi];
 			}
@@ -364,8 +370,8 @@ bool AbcLoader::ConvertStaticMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::
 		for (size_t fi = 0; fi < faceCnt; ++fi) {
 			for (int vi = 1; vi < (*faceCnts)[fi] - 1; ++vi) {
 				outMesh.mFaces[triIter].pn_idx[0] = (*faceIdx)[fiIter];
-				outMesh.mFaces[triIter].pn_idx[1] = (*faceIdx)[fiIter + vi];
-				outMesh.mFaces[triIter].pn_idx[2] = (*faceIdx)[fiIter + vi + 1];
+				outMesh.mFaces[triIter].pn_idx[2] = (*faceIdx)[fiIter + vi];
+				outMesh.mFaces[triIter].pn_idx[1] = (*faceIdx)[fiIter + vi + 1];
 				++triIter;
 			}
 			fiIter += (*faceCnts)[fi];

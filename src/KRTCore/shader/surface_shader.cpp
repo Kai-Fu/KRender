@@ -65,6 +65,12 @@ bool CalcuShadingByRay(TracingInstance* pLocalData, const KRay& ray, KColor& out
 			pLightScheme->Shade(pLocalData, shadingCtx, hit_ctx, out_clr);
 			res = true;
 		}
+		else {
+			// No surface shader? just output its normal
+			out_clr.r = shadingCtx.normal[0] * 0.5f + 0.5f;
+			out_clr.g = shadingCtx.normal[1] * 0.5f + 0.5f;
+			out_clr.b = shadingCtx.normal[2] * 0.5f + 0.5f;
+		}
 	}
 	else {
 		// This ray hits nothing, so it should evaluate the environment shader to determine current color of the ray sample.
