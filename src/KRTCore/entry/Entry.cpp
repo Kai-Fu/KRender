@@ -271,7 +271,7 @@ bool KRT_LoadScene(const char* fileName, KRT_SceneStatistic& statistic)
 {
 	bool ret = KRayTracer::g_pRoot->LoadScene(fileName);
 	if (ret)
-		KRayTracer::g_pRoot->mpSceneLoader->mpScene->GetKDBuildTimeStatistics(statistic);
+		KRayTracer::g_pRoot->mpSceneLoader->mpAccelData->GetKDBuildTimeStatistics(statistic);
 
 	return ret;
 }
@@ -429,15 +429,15 @@ void KRT_AddNodeToSubScene(SubSceneHandle subScene, const char* nodeName, unsign
 
 unsigned KRT_AddSubScene(TopSceneHandle scene)
 {
-	KKDBBoxScene* pScene = (KKDBBoxScene*)scene;
+	KSceneSet* pScene = (KSceneSet*)scene;
 	UINT32 newSceneIdx = 0;
-	KKDTreeScene* pSubScene = pScene->AddKDScene(newSceneIdx);
+	KScene* pSubScene = pScene->AddKDScene(newSceneIdx);
 	return newSceneIdx;
 }
 
 unsigned KRT_AddNodeToScene(TopSceneHandle scene, unsigned sceneIdx, float* matrix)
 {
-	KKDBBoxScene* pScene = (KKDBBoxScene*)scene;
+	KSceneSet* pScene = (KSceneSet*)scene;
 	UINT32 nodeIdx = pScene->SceneNode_Create(sceneIdx);
 	pScene->SceneNodeTM_ResetFrame(sceneIdx);
 	pScene->SceneNodeTM_AddFrame(sceneIdx, *(KMatrix4*)matrix);
@@ -446,19 +446,19 @@ unsigned KRT_AddNodeToScene(TopSceneHandle scene, unsigned sceneIdx, float* matr
 
 SubSceneHandle KRT_GetSubSceneByIndex(TopSceneHandle scene, unsigned idx)
 {
-	KKDBBoxScene* pScene = (KKDBBoxScene*)scene;
+	KSceneSet* pScene = (KSceneSet*)scene;
 	return pScene->GetKDScene(idx);
 }
 
 void KRT_AddSubSceneNodeFrame(TopSceneHandle scene, unsigned nodeIdx, float* matrix)
 {
-	KKDBBoxScene* pScene = (KKDBBoxScene*)scene;
+	KSceneSet* pScene = (KSceneSet*)scene;
 	pScene->SceneNodeTM_AddFrame(nodeIdx, *(KMatrix4*)matrix);
 }
 
 void KRT_ResetSubSceneNodeTransform(TopSceneHandle scene, unsigned nodeIdx)
 {
-	KKDBBoxScene* pScene = (KKDBBoxScene*)scene;
+	KSceneSet* pScene = (KSceneSet*)scene;
 	pScene->SceneNodeTM_ResetFrame(nodeIdx);
 }
 
@@ -487,7 +487,7 @@ static KNode* _GetSceneNode(const char* nodeName)
 		std::map<std::string, KRayTracer::SceneLoader::NodeId>::iterator it = KRayTracer::g_pRoot->mpSceneLoader->mNodeIDs.find(nodeName);
 		if (it != KRayTracer::g_pRoot->mpSceneLoader->mNodeIDs.end()) {
 			if (it->second.sceneIdx < KRayTracer::g_pRoot->mpSceneLoader->mpScene->GetKDSceneCnt()) {
-				KKDTreeScene* pScene = KRayTracer::g_pRoot->mpSceneLoader->mpScene->GetKDScene(it->second.sceneIdx);
+				KScene* pScene = KRayTracer::g_pRoot->mpSceneLoader->mpScene->GetKDScene(it->second.sceneIdx);
 				if (it->second.nodeIdx < pScene->GetNodeCnt()) {
 					KNode* pNode = pScene->GetNode(it->second.nodeIdx);
 					return pNode;

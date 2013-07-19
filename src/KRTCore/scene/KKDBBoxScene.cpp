@@ -4,31 +4,51 @@
 #include <common/math/Trafo.h>
 #include "../util/HelperFunc.h"
 
-KAccelTriangleOpt1r4t* KKDTreeScene::s_pGeomBuffer = NULL;
-size_t KKDTreeScene::s_geomBufferTriCnt = 0;
+KAccelTriangleOpt1r4t* KAccelStruct_KDTree::s_pGeomBuffer = NULL;
+size_t KAccelStruct_KDTree::s_geomBufferTriCnt = 0;
 
 KKDBBoxScene::KKDBBoxScene()
 {
 	mRootNode = INVALID_INDEX;
-	KKDTreeScene::s_pGeomBuffer = NULL;
+	KAccelStruct_KDTree::s_pGeomBuffer = NULL;
 
+	mpSceneSet = NULL;
 	mIsNodeTMDirty = true;
 }
 
 KKDBBoxScene::~KKDBBoxScene()
 {
-	Reset();
 }
 
-void KKDBBoxScene::Reset()
+void KKDBBoxScene::SetSource(const KSceneSet& sceneSet)
 {
-	if (KKDTreeScene::s_pGeomBuffer) {
-		Aligned_Free(KKDTreeScene::s_pGeomBuffer);
-		KKDTreeScene::s_pGeomBuffer = NULL;
+	if (KAccelStruct_KDTree::s_pGeomBuffer) {
+		Aligned_Free(KAccelStruct_KDTree::s_pGeomBuffer);
+		KAccelStruct_KDTree::s_pGeomBuffer = NULL;
 	}
 
 	mBBoxNode.clear();
 	mBBoxLeaf.clear();
+	mpSceneSet = &sceneSet;
+}
+
+const KSceneSet* KKDBBoxScene::GetSource() const
+{
+	return mpSceneSet;
+}
+
+KSceneSet::KSceneSet()
+{
+
+}
+
+KSceneSet::~KSceneSet()
+{
+
+}
+
+void KSceneSet::Reset()
+{
 	mKDSceneNodes.clear();
 	for (size_t i = 0; i < mpKDScenes.size(); ++i) {
 		delete mpKDScenes[i];
@@ -36,14 +56,14 @@ void KKDBBoxScene::Reset()
 	mpKDScenes.clear();
 }
 
-void KKDBBoxScene::TransformRay(KRay& out_ray, const KRay& in_ray, const KD_SCENE_LEAF& scene_info, float t)
+void KKDBBoxScene::TransformRay(KRay& out_ray, const KRay& in_ray, const KSceneSet::KD_SCENE_LEAF& scene_info, float t)
 {
 	KAnimation::LocalTRSFrame::LclTRS trs;
 	scene_info.scene_trs.Interpolate(t, trs);
 	KAnimation::LocalTRSFrame::TransformRay(out_ray, in_ray, trs);
 }
 
-UINT32 KKDBBoxScene::SceneNode_Create(UINT32 scene_idx)
+UINT32 KSceneSet::SceneNode_Create(UINT32 scene_idx)
 {
 	KD_SCENE_LEAF leaf;
 	leaf.kd_scene_idx = scene_idx;
@@ -52,12 +72,12 @@ UINT32 KKDBBoxScene::SceneNode_Create(UINT32 scene_idx)
 	return UINT32(mKDSceneNodes.size() - 1);
 }
 
-void KKDBBoxScene::SceneNodeTM_ResetFrame(UINT32 node_idx)
+void KSceneSet::SceneNodeTM_ResetFrame(UINT32 node_idx)
 {
 	mKDSceneNodes[node_idx].scene_trs.Reset();
 }
 
-void KKDBBoxScene::SceneNodeTM_AddFrame(UINT32 node_idx, const KMatrix4& node_tm)
+void KSceneSet::SceneNodeTM_AddFrame(UINT32 node_idx, const KMatrix4& node_tm)
 {
 	mKDSceneNodes[node_idx].scene_trs.AddKeyFrame(node_tm);
 }
@@ -154,17 +174,17 @@ bool KKDBBoxScene::IntersectBBoxLeaf(const KRay& ray, UINT32 idx, IntersectConte
 		
 		for (int i = 0; i < scene_cnt; ++i) {
 			UINT32 scene_node_idx = mBBoxLeaf[cur_idx].scene_node_idx[hit_scene[scene_order[i]]];
-			UINT32 scene_idx = mKDSceneNodes[scene_node_idx].kd_scene_idx;
+			UINT32 scene_idx = mpSceneSet->GetNodeSceneIndex(scene_node_idx);
 
 			// transform the ray
 			KRay transRay;
-			TransformRay(transRay, ray, mKDSceneNodes[scene_node_idx], t);
+			TransformRay(transRay, ray, mpSceneSet->mKDSceneNodes[scene_node_idx], t);
 			if (scene_idx == ray.mExcludeBBoxNode)
 				ctx.self_tri_id = ray.mExcludeTriID;
 			else
 				ctx.self_tri_id = INVALID_INDEX;
 
-			if (mpKDScenes[scene_idx]->IntersectRay_KDTree(transRay, ctx)) {
+			if (mpAccelStructs[scene_idx]->IntersectRay_KDTree(transRay, ctx)) {
 				ret = true;
 				ctx.bbox_node_idx = scene_node_idx;
 			}
@@ -194,8 +214,8 @@ bool KKDBBoxScene::IntersectRay_KDTree(const KRay& ray, IntersectContext& ctx, f
 
 const KAccelTriangle* KKDBBoxScene::GetAccelTriData(UINT32 scene_node_idx, UINT32 tri_idx) const
 {
-	UINT32 scene_idx = mKDSceneNodes[scene_node_idx].kd_scene_idx;
-	return mpKDScenes[scene_idx]->GetAccelTriData(tri_idx);
+	UINT32 scene_idx = mpSceneSet->mKDSceneNodes[scene_node_idx].kd_scene_idx;
+	return mpAccelStructs[scene_idx]->GetAccelTriData(tri_idx);
 }
 
 
@@ -205,10 +225,10 @@ UINT32 KKDBBoxScene::SplitBBoxScene(UINT32* pKDSceneIdx, const KBBox* clampBox, 
 	UINT32 ret = INVALID_INDEX;
 
 	if (NULL == pKDSceneIdx) {
-		for (size_t i = 0; i < mKDSceneNodes.size(); ++i) {
+		for (size_t i = 0; i < mpAccelStructs.size(); ++i) {
 			bbox.Add(mKDSceneBBox[i]);
 		}
-		cnt = (UINT32)mKDSceneNodes.size();
+		cnt = (UINT32)mpAccelStructs.size();
 	}
 	else {
 		for (size_t i = 0; i < cnt; ++i) {
@@ -334,18 +354,19 @@ void KKDBBoxScene::GetKDBuildTimeStatistics(KRT_SceneStatistic& sceneStat) const
 	sceneStat.gen_accel_geom_time = m_buildAccelTriTime;
 	sceneStat.kd_finialize_time = m_kdFinializingTime;
 
-	sceneStat.bbox_leaf_count = (UINT32)mKDSceneNodes.size();
+	sceneStat.bbox_leaf_count = (UINT32)mpAccelStructs.size();
 	sceneStat.bbox_node_count = (UINT32)mBBoxNode.size();
 
 	sceneStat.kd_node_count = 0;
 	sceneStat.kd_leaf_count = 0;
 	sceneStat.actual_triangle_count = 0;
 	sceneStat.leaf_triangle_count = 0;
-	for (size_t i = 0; i < mpKDScenes.size(); ++i) {
-		KKDTreeScene* pScene = mpKDScenes[i];
-		sceneStat.leaf_triangle_count += pScene->mTotalLeafTriCnt;
-		sceneStat.kd_node_count += pScene->GetKDNodeCnt();
-		sceneStat.kd_leaf_count += pScene->GetKDLeafCnt();
+	for (size_t i = 0; i < mpAccelStructs.size(); ++i) {
+		KAccelStruct* pAccel = mpAccelStructs[i];
+		KScene* pScene = mpSceneSet->mpKDScenes[i];
+		sceneStat.leaf_triangle_count += pAccel->GetAccelLeafTriCnt();
+		sceneStat.kd_node_count += pAccel->GetAccelNodeCnt();
+		sceneStat.kd_leaf_count += pAccel->GetAccelLeafCnt();
 		sceneStat.actual_triangle_count += pScene->GetTriangleCnt();
 	}
 }
@@ -361,24 +382,32 @@ bool KKDBBoxScene::SceneNode_BuildAccelData(bool force)
 
 	if (force) {
 		// if it's forced to update, all the accellerating structures will be re-computed.
-		for (UINT32 i = 0; i < mpKDScenes.size(); ++i)
+		for (size_t i = 0; i < mpAccelStructs.size(); ++i) {
+			delete mpAccelStructs[i];
+		}
+		mpAccelStructs.resize(mpSceneSet->mpKDScenes.size());
+		for (UINT32 i = 0; i < mpSceneSet->mpKDScenes.size(); ++i) {
+			KAccelStruct_KDTree* pAccel = new KAccelStruct_KDTree();
+			mpAccelStructs[i] = pAccel;
+			pAccel->SetSource(*mpSceneSet->mpKDScenes[i]);
 			mGeomDirtiedScenes.push_back(i);
+		}
 	}
 
 	// Now build all KD scenes
 	for (std::list<UINT32>::iterator it = mGeomDirtiedScenes.begin(); it != mGeomDirtiedScenes.end(); ++it) {
 
 		// build the accellerating data strcuture for each KD scene
-		mpKDScenes[*it]->InitAccelData();
+		mpAccelStructs[*it]->InitAccelData();
 
 		// update the scene epsilon(which is be used later for ray intersection)
-		float cur_epsilon = mpKDScenes[*it]->GetSceneEpsilon();
+		float cur_epsilon = mpAccelStructs[*it]->GetSceneEpsilon();
 		if (mSceneEpsilon > cur_epsilon)
 			mSceneEpsilon = cur_epsilon;
 
 		// keep track of the time spent on building accellerating data
 		DWORD kd_build, gen_accel;
-		mpKDScenes[*it]->GetKDBuildTimeStatistics(kd_build, gen_accel);
+		mpAccelStructs[*it]->GetKDBuildTimeStatistics(kd_build, gen_accel);
 		m_kdBuildTime += kd_build;
 		m_buildAccelTriTime += gen_accel;
 	}
@@ -386,11 +415,11 @@ bool KKDBBoxScene::SceneNode_BuildAccelData(bool force)
 	// Now compute the scene epsilon
 	if (mIsNodeTMDirty || !mGeomDirtiedScenes.empty()) {
 		mSceneEpsilon = FLT_MAX;
-		mKDSceneBBox.resize(mKDSceneNodes.size());
+		mKDSceneBBox.resize(mpSceneSet->mKDSceneNodes.size());
 		for (size_t i = 0; i < mKDSceneBBox.size(); ++i) {
-			mKDSceneNodes[i].scene_trs.ComputeTotalBBox(mpKDScenes[mKDSceneNodes[i].kd_scene_idx]->GetSceneBBox(), mKDSceneBBox[i]);
+			mpSceneSet->mKDSceneNodes[i].scene_trs.ComputeTotalBBox(mpAccelStructs[mpSceneSet->mKDSceneNodes[i].kd_scene_idx]->GetSceneBBox(), mKDSceneBBox[i]);
 			mSceneBBox.Add(mKDSceneBBox[i]);
-			float cur_epsilon = mpKDScenes[mKDSceneNodes[i].kd_scene_idx]->GetSceneEpsilon();
+			float cur_epsilon = mpAccelStructs[mpSceneSet->mKDSceneNodes[i].kd_scene_idx]->GetSceneEpsilon();
 			if (mSceneEpsilon > cur_epsilon)
 				mSceneEpsilon = cur_epsilon;
 		}
@@ -405,24 +434,24 @@ bool KKDBBoxScene::SceneNode_BuildAccelData(bool force)
 		KTimer stop_watch(true);
 		std::vector<size_t> nodeGeomBufSize;
 		size_t totalGeomBufferSize = 0;
-		nodeGeomBufSize.resize(mpKDScenes.size());
-		for (size_t i = 0; i < mpKDScenes.size(); ++i) {
-			nodeGeomBufSize[i] = mpKDScenes[i]->CalcGeomDataSize();
+		nodeGeomBufSize.resize(mpSceneSet->mpKDScenes.size());
+		for (size_t i = 0; i < mpSceneSet->mpKDScenes.size(); ++i) {
+			nodeGeomBufSize[i] = mpAccelStructs[i]->CalcGeomDataSize();
 			totalGeomBufferSize += nodeGeomBufSize[i];
 		}
 
 		if (totalGeomBufferSize > 0) {
-			KKDTreeScene::s_pGeomBuffer = 
+			KAccelStruct_KDTree::s_pGeomBuffer = 
 				(KAccelTriangleOpt1r4t*)Aligned_Malloc(totalGeomBufferSize * sizeof(KAccelTriangleOpt1r4t), 16);
-			if (!KKDTreeScene::s_pGeomBuffer) {
+			if (!KAccelStruct_KDTree::s_pGeomBuffer) {
 				printf("Out of memory, exit now...\n");
 				exit(0);
 			}
-			KKDTreeScene::s_geomBufferTriCnt = totalGeomBufferSize;
+			KAccelStruct_KDTree::s_geomBufferTriCnt = totalGeomBufferSize;
 		}
 		size_t fill_offset = 0;
-		for (size_t i = 0; i < mpKDScenes.size(); ++i) {
-			mpKDScenes[i]->FinalizeKDTree(fill_offset);
+		for (size_t i = 0; i < mpAccelStructs.size(); ++i) {
+			mpAccelStructs[i]->FinalizeKDTree(fill_offset);
 			fill_offset += nodeGeomBufSize[i];
 		}
 
@@ -433,48 +462,52 @@ bool KKDBBoxScene::SceneNode_BuildAccelData(bool force)
 	return true;
 }
 
-
-
-const KScene* KKDBBoxScene::GetNodeKDScene(UINT32 scene_node_idx) const
+const KScene* KSceneSet::GetNodeKDScene(UINT32 scene_node_idx) const
 {
 	UINT32 scene_idx = mKDSceneNodes[scene_node_idx].kd_scene_idx;
 	return  mpKDScenes[scene_idx]; 
 }
 
-void KKDBBoxScene::GetNodeTransform(KAnimation::LocalTRSFrame::LclTRS& out_trs, UINT32 scene_node_idx, float t) const
+UINT32 KSceneSet::GetNodeSceneIndex(UINT32 scene_node_idx) const
+{
+	UINT32 scene_idx = mKDSceneNodes[scene_node_idx].kd_scene_idx;
+	return scene_idx;
+}
+
+void KSceneSet::GetNodeTransform(KAnimation::LocalTRSFrame::LclTRS& out_trs, UINT32 scene_node_idx, float t) const
 {
 	mKDSceneNodes[scene_node_idx].scene_trs.Interpolate(t, out_trs);
 }
 
-void KKDBBoxScene::SetKDSceneCnt(UINT32 cnt)
+void KSceneSet::SetKDSceneCnt(UINT32 cnt)
 {
 	Reset();
 	mpKDScenes.resize(cnt);
 	for (size_t i = 0; i < mpKDScenes.size(); ++i) {
-		mpKDScenes[i] = new KKDTreeScene();
+		mpKDScenes[i] = new KScene();
 	}
 }
 
-UINT32 KKDBBoxScene::GetKDSceneCnt() const
+UINT32 KSceneSet::GetKDSceneCnt() const
 {
 	return (UINT32)mpKDScenes.size();
 }
 
-KKDTreeScene* KKDBBoxScene::GetKDScene(UINT32 idx)
+KScene* KSceneSet::GetKDScene(UINT32 idx)
 {
 	return  mpKDScenes[idx];
 }
 
-const KKDTreeScene* KKDBBoxScene::GetKDScene(UINT32 idx) const
+const KScene* KSceneSet::GetKDScene(UINT32 idx) const
 {
 	return  mpKDScenes[idx];
 }
 
-KKDTreeScene* KKDBBoxScene::AddKDScene(UINT32& newIdx)
+KScene* KSceneSet::AddKDScene(UINT32& newIdx)
 {
 	mpKDScenes.resize(mpKDScenes.size() + 1);
 	newIdx = (UINT32)mpKDScenes.size() - 1;
-	mpKDScenes[newIdx] = new KKDTreeScene();
+	mpKDScenes[newIdx] = new KScene();
 	return mpKDScenes[newIdx];
 }
 
@@ -490,128 +523,21 @@ void KKDBBoxScene::SceneNode_ResetAccelData()
 
 bool KKDBBoxScene::SceneNode_LoadUpdates(FILE* pFile)
 {
-	std::string srcTypeName;
-	std::string dstTypeName = "Scene updates"; 
-
-	if (!LoadArrayFromFile(srcTypeName, pFile))
-		return false;
-	if (srcTypeName.compare(dstTypeName) != 0)
-		return false;
-
-	mGeomDirtiedScenes.clear();
-
-	std::vector<UINT32> animated_nodes;
-	if (!LoadArrayFromFile(animated_nodes, pFile))
-		return false;
-	for (size_t i = 0; i < animated_nodes.size(); ++i) {
-		UINT32 idx = animated_nodes[i];
-		if (!LoadTypeFromFile(mKDSceneNodes[idx].kd_scene_idx, pFile))
-			return false;
-		if (!mKDSceneNodes[idx].scene_trs.Load(pFile))
-			return false;
-	}
-
-	std::vector<UINT32> animated_scenes;
-	if (!LoadArrayFromFile(animated_scenes, pFile))
-		return false;
-	for (size_t i = 0; i < animated_scenes.size(); ++i) {
-		UINT32 idx = animated_scenes[i];
-		if (!mpKDScenes[mKDSceneNodes[idx].kd_scene_idx]->LoadFromFile(pFile))
-			return false;
-		mGeomDirtiedScenes.push_back(idx);
-	}
-
-	SceneNode_BuildAccelData(false);
 	return true;
 }
 
 bool KKDBBoxScene::SceneNode_SaveUpdates(const std::vector<UINT32>& animated_nodes, const std::vector<UINT32>& animated_scenes, FILE* pFile) const
 {
-	std::string typeName = "Scene updates";
-
-	if (!SaveArrayToFile(typeName, pFile))
-		return false;
-
-	if (!SaveArrayToFile(animated_nodes, pFile))
-		return false;
-	for (std::vector<UINT32>::const_iterator it = animated_nodes.begin(); it != animated_nodes.end(); ++it) {
-		if (!SaveTypeToFile(mKDSceneNodes[*it].kd_scene_idx, pFile))
-			return false;
-		if (!mKDSceneNodes[*it].scene_trs.Save(pFile))
-			return false;
-	}
-
-	if (!SaveArrayToFile(animated_scenes, pFile))
-		return false;
-	for (std::vector<UINT32>::const_iterator it = animated_scenes.begin(); it != animated_scenes.end(); ++it) {
-		if (!mpKDScenes[mKDSceneNodes[*it].kd_scene_idx]->SaveToFile(pFile))
-			return false;
-	}
-
 	return true;
 }
 
 bool KKDBBoxScene::SaveToFile(FILE* pFile)
 {
-	std::string typeName = "KKDBBoxScene";
-
-	if (!SaveArrayToFile(typeName, pFile))
-		return false;
-
-	UINT64 sceneCnt = mpKDScenes.size();
-	if (!SaveTypeToFile(sceneCnt, pFile))
-		return false;
-	for (UINT32 i = 0; i < sceneCnt; ++i) {
-		if (!mpKDScenes[i]->SaveToFile(pFile))
-			return false;
-	}
-
-	UINT64 nodeCnt = mKDSceneNodes.size();
-	if (!SaveTypeToFile(nodeCnt, pFile))
-		return false;
-	for (UINT32 i = 0; i < nodeCnt; ++i) {
-		if (!SaveTypeToFile(mKDSceneNodes[i].kd_scene_idx, pFile))
-			return false;
-		if (!mKDSceneNodes[i].scene_trs.Save(pFile))
-			return false;
-	}
-
 	return true;
 }
 
 bool KKDBBoxScene::LoadFromFile(FILE* pFile)
 {
-	Reset();
-	std::string srcTypeName;
-	std::string dstTypeName = "KKDBBoxScene"; 
-
-	if (!LoadArrayFromFile(srcTypeName, pFile))
-		return false;
-	if (srcTypeName.compare(dstTypeName) != 0)
-		return false;
-
-	UINT64 sceneCnt;
-	if (!LoadTypeFromFile(sceneCnt, pFile))
-		return false;
-	mpKDScenes.resize((size_t)sceneCnt);
-
-	for (UINT32 i = 0; i < sceneCnt; ++i) {
-		mpKDScenes[i] = new KKDTreeScene;
-		if (!mpKDScenes[i]->LoadFromFile(pFile))
-			return false;
-	}
-	
-	UINT64 nodeCnt;
-	if (!LoadTypeFromFile(nodeCnt, pFile))
-		return false;
-	mKDSceneNodes.resize((size_t)nodeCnt);
-	for (UINT32 i = 0; i < nodeCnt; ++i) {
-		if (!LoadTypeFromFile(mKDSceneNodes[i].kd_scene_idx, pFile))
-			return false;
-		if (!mKDSceneNodes[i].scene_trs.Load(pFile))
-			return false;
-	}
-
 	return true;
 }
 

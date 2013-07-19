@@ -115,11 +115,11 @@ void KScene::SetNodeTM(UINT32 nodeIdx, const KMatrix4& tm)
 	}
 }
 
-void KScene::InitAccelTriangleCache()
+void KScene::InitAccelTriangleCache(std::vector<KAccelTriangle>& triCache) const
 {
 	// 1.caculate the total triangle count, instanced mesh will be taken into acount
 	UINT32 totalTriCnt = 0; 
-	for (std::vector<KNode*>::iterator it = mpNode.begin(); it != mpNode.end(); ++it) {
+	for (std::vector<KNode*>::const_iterator it = mpNode.begin(); it != mpNode.end(); ++it) {
 		for (std::vector<UINT32>::iterator it_mesh = (*it)->mMesh.begin(); 
 			it_mesh != (*it)->mMesh.end(); ++it_mesh) {
 			
@@ -127,7 +127,7 @@ void KScene::InitAccelTriangleCache()
 		}
 	}
 	// 2. pre-allocate the memory for KAccelTriangle array
-	mAccelTriangle.resize(totalTriCnt);
+	triCache.resize(totalTriCnt);
 
 	// 3. fill the data of each KAccelTriangle objects
 	UINT32 fillPos = 0;
@@ -136,12 +136,12 @@ void KScene::InitAccelTriangleCache()
 			it_mesh != mpNode[i_node]->mMesh.end(); ++it_mesh) {
 			if (mpMesh[*it_mesh]->FaceCount() == 0)
 				continue;
-			fillPos += GenAccelTriangle(i_node, *it_mesh, &mAccelTriangle[fillPos]);
+			fillPos += GenAccelTriangle(i_node, *it_mesh, &triCache[fillPos]);
 		}
 	}
 }
 
-UINT32 KScene::GenAccelTriangle(UINT32 nodeIdx, UINT32 subMeshIdx, KAccelTriangle* accelTri)
+UINT32 KScene::GenAccelTriangle(UINT32 nodeIdx, UINT32 subMeshIdx, KAccelTriangle* accelTri) const
 {
 	KNode* pNode = mpNode[nodeIdx];
 	KTriMesh* pMesh = mpMesh[subMeshIdx];
@@ -169,22 +169,6 @@ void KScene::GetAccelTriPos(const KAccelTriangle& tri, KAccleTriVertPos& triPos)
 		triPos.mVertPos[i_vert][2] = out_pos[2] / out_pos[3];
 				
 	}
-}
-
-
-bool KScene::IntersectRay_BruteForce(const KRay& ray, IntersectContext& ctx)
-{
-	bool ret = false;
-	for (UINT32 i = 0; i < mAccelTriangle.size(); ++i) {
-		KAccleTriVertPos triPos;
-		GetAccelTriPos(mAccelTriangle[i], triPos);
-
-		if (RayIntersect(ray, triPos, i, ctx)) {
-			ctx.tri_id = i;
-			ret = true;
-		}
-	}
-	return ret;
 }
 
 UINT32 KScene::AddMesh()
@@ -230,7 +214,6 @@ void KScene::Clean()
 void KScene::ResetScene()
 {
 	Clean();
-	mAccelTriangle.clear();
 }
 
 

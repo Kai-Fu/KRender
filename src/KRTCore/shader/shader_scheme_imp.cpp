@@ -10,8 +10,8 @@ extern UINT32 AREA_LIGHT_SAMP_CNT;
 void LightScheme::AdjustHitPos(TracingInstance* pLocalData, const IntersectContext& hit_ctx, const ShadingContext& shadingCtx, KVec3& in_out_pos) const
 {
 	const KKDBBoxScene* pScene = pLocalData->GetScenePtr();
-	const KScene* pKDScene = pScene->GetNodeKDScene(hit_ctx.bbox_node_idx);
-	const KAccelTriangle* pTri = pKDScene->GetAccelTriData(hit_ctx.tri_id);
+	const KScene* pKDScene = pScene->GetSource()->GetNodeKDScene(hit_ctx.bbox_node_idx);
+	const KAccelTriangle* pTri = pScene->GetAccelTriData(hit_ctx.bbox_node_idx, hit_ctx.tri_id);
 	UINT32 mesh_idx = pTri->GetMeshIdx();
 	UINT32 tri_idx = pTri->mTriIdx;
 	const KTriMesh* pMesh = pKDScene->GetMesh(mesh_idx);
@@ -134,7 +134,7 @@ void LightScheme::Shade(TracingInstance* pLocalData,
 						KColor& out_color) const
 {
 	const KKDBBoxScene* pScene = pLocalData->GetScenePtr();
-	const KScene* pKDScene = pScene->GetNodeKDScene(hit_ctx.bbox_node_idx);
+	const KScene* pKDScene = pScene->GetSource()->GetNodeKDScene(hit_ctx.bbox_node_idx);
 
 	SurfaceContext& surfaceCtx = pLocalData->GetCurrentSurfaceCtxStorage();
 	pLocalData->ConvertToSurfaceContext(hit_ctx, shadingCtx, surfaceCtx);

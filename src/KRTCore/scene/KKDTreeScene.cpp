@@ -1,4 +1,4 @@
-#include "KKDTreeScene.h"
+#include "KKdTreeScene.h"
 #include "../intersection/intersect_tri_bbox.h"
 #include "../intersection/intersect_ray_tri.h"
 #include "../intersection/intersect_ray_bbox.h"
@@ -9,24 +9,34 @@
 #include "../entry/Constants.h"
 
 
-KKDTreeScene::KKDTreeScene(void)
+KAccelStruct_KDTree::KAccelStruct_KDTree(void)
 {
 	m_kdBuildTime = 0;
 	m_buildAccelTriTime = 0;
 	mProcessorCnt = GetConfigedThreadCount();
+	mpSourceScene = NULL;
 	ResetScene();
 }
 
-KKDTreeScene::~KKDTreeScene(void)
+KAccelStruct_KDTree::~KAccelStruct_KDTree(void)
 {
 	ResetScene();
 }
 
+void KAccelStruct_KDTree::SetSource(const KScene& scene)
+{
+	mpSourceScene = &scene;
+}
+
+const KScene* KAccelStruct_KDTree::GetSource() const
+{
+	return mpSourceScene;
+}
 
 void SceneSplitTask::Execute()
 {
 	bool isLeaf = false;
-	KKDTreeScene::SplitData splitData;
+	KAccelStruct_KDTree::SplitData splitData;
 	splitData.in_splitThreadIdx = splitThreadIdx;
 	UINT32 ret_value = pKDScene->SplitScene(
 		triangles, cnt, 
@@ -36,13 +46,13 @@ void SceneSplitTask::Execute()
 		depth, isLeaf);
 
 	pKDScene->SetKNodeChild(destIndex, ret_value, 
-		(split_flag & KKDTreeScene::eLeftChild) ? true : false, 
+		(split_flag & KAccelStruct_KDTree::eLeftChild) ? true : false, 
 		isLeaf);
 	pKDScene->mTempDataForKD->NotifySplitThreadComplete(splitThreadIdx);
 }
 
 
-UINT32 KKDTreeScene::SplitScene(UINT32* triangles, UINT32 cnt, 
+UINT32 KAccelStruct_KDTree::SplitScene(UINT32* triangles, UINT32 cnt, 
 								int needBBox,
 								const KBBox* clamp_box, 
 								const SplitData& splitData,
@@ -73,7 +83,7 @@ UINT32 KKDTreeScene::SplitScene(UINT32* triangles, UINT32 cnt,
 				while (i < cnt) {
 					UINT32 idx = triangles[i];
 					KAccleTriVertPos triPos;
-					GetAccelTriPos(mAccelTriangle[idx], triPos);
+					mpSourceScene->GetAccelTriPos(mAccelTriangle[idx], triPos);
 					if (TriIntersectBBox(triPos, *clamp_box)) {
 						bbox.Add(mTempDataForKD->mTriBBox[idx]);
 					}
@@ -336,7 +346,7 @@ FORCE_LEAF_NODE:
 	return ret;
 }
 
-void KKDTreeScene::AddKDNode(const KD_Node& node, UINT32& out_idx)
+void KAccelStruct_KDTree::AddKDNode(const KD_Node& node, UINT32& out_idx)
 {
 	EnterSpinLockCriticalSection(mTempDataForKD->mNodeAddingCS);
 
@@ -349,7 +359,7 @@ void KKDTreeScene::AddKDNode(const KD_Node& node, UINT32& out_idx)
 	LeaveSpinLockCriticalSection(mTempDataForKD->mNodeAddingCS);
 }
 
-void KKDTreeScene::SetKNodeChild(UINT32 nodeIdx, UINT32 childIdx, bool left_or_right, bool isLeaf)
+void KAccelStruct_KDTree::SetKNodeChild(UINT32 nodeIdx, UINT32 childIdx, bool left_or_right, bool isLeaf)
 {	
 	EnterSpinLockCriticalSection(mTempDataForKD->mNodeAddingCS);
 	KD_Node& node = *(KD_Node*)&mSceneNode[nodeIdx];
@@ -363,18 +373,18 @@ void KKDTreeScene::SetKNodeChild(UINT32 nodeIdx, UINT32 childIdx, bool left_or_r
 	LeaveSpinLockCriticalSection(mTempDataForKD->mNodeAddingCS);
 }
 
-void KKDTreeScene::PrecomputeTriangleBBox()
+void KAccelStruct_KDTree::PrecomputeTriangleBBox()
 {
 	KAccleTriVertPos triVertPos;
 	mTempDataForKD->mTriBBox.resize(mAccelTriangle.size());
 	for (size_t i = 0; i < mAccelTriangle.size(); ++i) {
-		GetAccelTriPos(mAccelTriangle[i], triVertPos);
+		mpSourceScene->GetAccelTriPos(mAccelTriangle[i], triVertPos);
 		KBBox bbox(triVertPos);
 		mTempDataForKD->mTriBBox[i] = bbox;
 	}
 }
 
-int KKDTreeScene::PrepareKDTree()
+int KAccelStruct_KDTree::PrepareKDTree()
 {
 	// Start build kd-tree...
 	mTotalLeafTriCnt = 0;
@@ -382,7 +392,7 @@ int KKDTreeScene::PrepareKDTree()
 	double time_elapse;
 
 	KTimer stop_watch(true);
-	InitAccelTriangleCache();
+	mpSourceScene->InitAccelTriangleCache(mAccelTriangle);
 	time_elapse = stop_watch.Stop();
 	m_buildAccelTriTime = DWORD(time_elapse*1000.0);
 
@@ -434,13 +444,13 @@ int KKDTreeScene::PrepareKDTree()
 	return mRootNode;
 }
 
-size_t KKDTreeScene::CalcGeomDataSize()
+size_t KAccelStruct_KDTree::CalcGeomDataSize() const
 {
 #ifdef USE_PACKED_PRIMITIVE
 	// First calculate the total geometry buffer's size
 	size_t geomBufferSize = 0;
 	for (UINT32 leaf_i = 0; leaf_i < mKDLeafData.size(); ++leaf_i) {
-		KD_LeafData& leafData = mKDLeafData[leaf_i];
+		const KD_LeafData& leafData = mKDLeafData[leaf_i];
 		UINT32 total_size = leafData.tri_cnt + 3;
 		geomBufferSize += (total_size >> 2);
 	}
@@ -450,7 +460,7 @@ size_t KKDTreeScene::CalcGeomDataSize()
 #endif
 }
 
-void KKDTreeScene::FinalizeKDTree(size_t buffer_offset)
+void KAccelStruct_KDTree::FinalizeKDTree(size_t buffer_offset)
 {
 
 #ifdef USE_PACKED_PRIMITIVE
@@ -470,7 +480,7 @@ void KKDTreeScene::FinalizeKDTree(size_t buffer_offset)
 			UINT32 idx = leafData.tri_list.leaf_triangles[tri_i];
 			KAccelTriangleOpt accelTriOpt;
 			KAccleTriVertPos triPos;
-			GetAccelTriPos(mAccelTriangle[idx], triPos);
+			mpSourceScene->GetAccelTriPos(mAccelTriangle[idx], triPos);
 			PrecomputeAccelTri(triPos,idx, accelTriOpt);
 			kuv_tri[accelTriOpt.k].push_back(accelTriOpt);
 		}
@@ -527,7 +537,7 @@ void KKDTreeScene::FinalizeKDTree(size_t buffer_offset)
 	
 }
 
-void KKDTreeScene::FillAccelTri1r4t(const std::vector<KAccelTriangleOpt>& kuv_tri, KAccelTriangleOpt1r4t* acc_tri, UINT32 offset_tri4, bool pad_end) const
+void KAccelStruct_KDTree::FillAccelTri1r4t(const std::vector<KAccelTriangleOpt>& kuv_tri, KAccelTriangleOpt1r4t* acc_tri, UINT32 offset_tri4, bool pad_end) const
 {
 	if (kuv_tri.empty())
 		return;
@@ -567,7 +577,7 @@ void KKDTreeScene::FillAccelTri1r4t(const std::vector<KAccelTriangleOpt>& kuv_tr
 
 }
 
-bool KKDTreeScene::IntersectLeaf(UINT32 idx, const KRay& ray, IntersectContext& ctx) const
+bool KAccelStruct_KDTree::IntersectLeaf(UINT32 idx, const KRay& ray, IntersectContext& ctx) const
 {
 	const KD_LeafData& leafData = mKDLeafData[idx];
 	bool ret = false;
@@ -616,7 +626,7 @@ bool KKDTreeScene::IntersectLeaf(UINT32 idx, const KRay& ray, IntersectContext& 
 	return ret;
 }
 
-bool KKDTreeScene::IntersectNode(UINT32 idx, const KRay& ray, IntersectContext& ctx) const
+bool KAccelStruct_KDTree::IntersectNode(UINT32 idx, const KRay& ray, IntersectContext& ctx) const
 {
 	float t0 = 0, t1 = FLT_MAX;
 	bool bUpdateWalk = false;
@@ -684,7 +694,7 @@ bool KKDTreeScene::IntersectNode(UINT32 idx, const KRay& ray, IntersectContext& 
 	return false;
 }
 
-bool KKDTreeScene::IntersectRay_KDTree(const KRay& ray, IntersectContext& ctx) const
+bool KAccelStruct_KDTree::IntersectRay_KDTree(const KRay& ray, IntersectContext& ctx) const
 {
 	ctx.walkVec = ray.GetOrg();
 	if (mRootNode != INVALID_INDEX) {
@@ -698,12 +708,27 @@ bool KKDTreeScene::IntersectRay_KDTree(const KRay& ray, IntersectContext& ctx) c
 }
 
 
-void KKDTreeScene::InitAccelData()
+bool KAccelStruct_KDTree::IntersectRay_BruteForce(const KRay& ray, IntersectContext& ctx) const
+{
+	bool ret = false;
+	for (UINT32 i = 0; i < mAccelTriangle.size(); ++i) {
+		KAccleTriVertPos triPos;
+		mpSourceScene->GetAccelTriPos(mAccelTriangle[i], triPos);
+
+		if (RayIntersect(ray, triPos, i, ctx)) {
+			ctx.tri_id = i;
+			ret = true;
+		}
+	}
+	return ret;
+}
+
+void KAccelStruct_KDTree::InitAccelData()
 {
 	PrepareKDTree();
 }
 
-void KKDTreeScene::ResetScene()
+void KAccelStruct_KDTree::ResetScene()
 {
 	mNodeSplitThreshhold = 0.6f;
 	mLeafTriCnt = LEAF_TRIANGLE_CNT;
@@ -718,16 +743,20 @@ void KKDTreeScene::ResetScene()
 
 	mKDLeafData.clear();
 	mSceneNode.clear();
-	KScene::ResetScene();
 }
 
-void KKDTreeScene::GetKDBuildTimeStatistics(DWORD& kd_build, DWORD& gen_accel) const
+const KAccelTriangle* KAccelStruct::GetAccelTriData(UINT32 tri_idx) const
+{
+	return &mAccelTriangle[tri_idx];
+}
+
+void KAccelStruct_KDTree::GetKDBuildTimeStatistics(DWORD& kd_build, DWORD& gen_accel) const
 {
 	kd_build = m_kdBuildTime;
 	gen_accel = m_buildAccelTriTime;
 }
 
-KKDTreeScene::DATA_FOR_KD_BUILD::DATA_FOR_KD_BUILD() 
+KAccelStruct_KDTree::DATA_FOR_KD_BUILD::DATA_FOR_KD_BUILD() 
 {
 	mNodeAddingCS = 0; 
 	mLeafAddingCS = 0; 
@@ -760,21 +789,21 @@ KKDTreeScene::DATA_FOR_KD_BUILD::DATA_FOR_KD_BUILD()
 	}
 }
 
-KKDTreeScene::DATA_FOR_KD_BUILD::~DATA_FOR_KD_BUILD() 
+KAccelStruct_KDTree::DATA_FOR_KD_BUILD::~DATA_FOR_KD_BUILD() 
 {
 }
 
-void KKDTreeScene::DATA_FOR_KD_BUILD::NotifySplitThreadAdded()
+void KAccelStruct_KDTree::DATA_FOR_KD_BUILD::NotifySplitThreadAdded()
 {
 	atomic_increment(&mActiveSplitThreadCnt);
 }
 
-void KKDTreeScene::DATA_FOR_KD_BUILD::NotifySplitThreadComplete(UINT32 thread_idx)
+void KAccelStruct_KDTree::DATA_FOR_KD_BUILD::NotifySplitThreadComplete(UINT32 thread_idx)
 {
 	atomic_decrement(&mActiveSplitThreadCnt);
 }
 
-UINT32* KKDTreeScene::DATA_FOR_KD_BUILD::AcquireTempTriIdxBuf(UINT32 threadIdx, int depth, UINT32 cnt)
+UINT32* KAccelStruct_KDTree::DATA_FOR_KD_BUILD::AcquireTempTriIdxBuf(UINT32 threadIdx, int depth, UINT32 cnt)
 {
 	TRI_IDX_ARRAY& tempBuf = mSplitThreadTriArrayLevel[threadIdx][depth];
 	if (cnt > 0) {

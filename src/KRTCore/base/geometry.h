@@ -321,9 +321,6 @@ class KScene
 protected:
 	std::vector<KTriMesh*>	mpMesh;
 	std::vector<KNode*>		mpNode;
-	std::vector<KAccelTriangle>	mAccelTriangle;
-
-	float				mSceneEpsilon;
 
 public:
 	KScene();
@@ -340,15 +337,11 @@ public:
 	UINT32 GetNodeCnt() const {return (UINT32)mpNode.size();}
 	UINT32 GetMeshCnt() const {return (UINT32)mpMesh.size();}
 	void SetNodeTM(UINT32 nodeIdx, const KMatrix4& tm);
-	const KAccelTriangle* GetAccelTriData(UINT32 idx) const {return &mAccelTriangle[idx];}
-	float GetSceneEpsilon() const {return mSceneEpsilon;}
 	void GetAccelTriPos(const KAccelTriangle& tri, KAccleTriVertPos& triPos) const;
 
 	// Functions used to calculate accelerated data structure for ray tracing
-	void InitAccelTriangleCache();
+	void InitAccelTriangleCache(std::vector<KAccelTriangle>& triCache) const;
 
-	// Functions to do the ray tracing
-	bool IntersectRay_BruteForce(const KRay& ray, IntersectContext& ctx);
 
 	virtual void InitAccelData() {};
 	virtual void ResetScene();
@@ -357,7 +350,7 @@ public:
 	bool LoadFromFile(FILE* pFile);
 
 private:
-	UINT32 GenAccelTriangle(UINT32 nodeIdx, UINT32 subMeshIdx, KAccelTriangle* accelTri);
+	UINT32 GenAccelTriangle(UINT32 nodeIdx, UINT32 subMeshIdx, KAccelTriangle* accelTri) const;
 };
 
 void Vec3TransformCoord(KVec3& res, const KVec3& v, const KMatrix4& mat);

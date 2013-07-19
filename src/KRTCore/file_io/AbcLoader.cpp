@@ -26,7 +26,7 @@ AbcLoader::~AbcLoader()
 
 }
 
-bool AbcLoader::Load(const char* filename, KKDBBoxScene& scene)
+bool AbcLoader::Load(const char* filename, KSceneSet& scene)
 {
 	mpScene = &scene;
 	Abc::IArchive archive(Alembic::AbcCoreHDF5::ReadArchive(), filename);
@@ -126,7 +126,7 @@ void AbcLoader::ProcessNode(const Abc::IObject& obj, int treeDepth)
 }
 
 
-KKDTreeScene* AbcLoader::GetXformStaticScene(const Abc::IObject& obj, KMatrix4& mat)
+KScene* AbcLoader::GetXformStaticScene(const Abc::IObject& obj, KMatrix4& mat)
 {
 	Imath::M44d localMat;
 	localMat.makeIdentity();
@@ -147,7 +147,7 @@ KKDTreeScene* AbcLoader::GetXformStaticScene(const Abc::IObject& obj, KMatrix4& 
 
 	if (mXformNodes.find(animNode.get()) == mXformNodes.end()) {
 		UINT32 sceneIdx;
-		KKDTreeScene* xformScene = mpScene->AddKDScene(sceneIdx);
+		KScene* xformScene = mpScene->AddKDScene(sceneIdx);
 		mXformNodes[animNode.get()] = xformScene;
 		if (animNode.get()) {
 			AbcG::IXform xform(animNode, Abc::kWrapExisting);
@@ -166,14 +166,14 @@ KKDTreeScene* AbcLoader::GetXformStaticScene(const Abc::IObject& obj, KMatrix4& 
 	}
 
 	ConvertMatrix(localMat, mat);
-	KKDTreeScene* xformScene = mXformNodes[animNode.get()];
+	KScene* xformScene = mXformNodes[animNode.get()];
 	return xformScene;
 }
 
 void AbcLoader::ProcessMesh(const AbcG::IPolyMesh& mesh)
 {
 	KMatrix4 localMat;
-	KKDTreeScene* pScene = GetXformStaticScene(mesh, localMat);
+	KScene* pScene = GetXformStaticScene(mesh, localMat);
 	assert(pScene);
 
 	UINT32 meshIdx = pScene->AddMesh();

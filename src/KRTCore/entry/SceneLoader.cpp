@@ -22,7 +22,7 @@ SceneLoader::SceneLoader()
 	CameraManager::Initialize();
 	Texture::TextureManager::Initialize();
 
-	mpScene = new KKDBBoxScene();
+	mpScene = new KSceneSet();
 }
 
 SceneLoader::~SceneLoader()
@@ -110,7 +110,7 @@ bool SceneLoader::LoadFromFile(const char* file_name)
 	Texture::TextureManager::GetInstance()->AddSearchPath(file_dir.c_str());
 
 	if (!mpScene)
-		mpScene = new KKDBBoxScene;
+		mpScene = new KSceneSet;
 	else
 		mpScene->Reset();
 
@@ -129,7 +129,7 @@ bool SceneLoader::LoadFromFile(const char* file_name)
 
 		// Create scene
 		UINT32 kd_idx = 0;
-		KKDTreeScene* pKDScene = mpScene->AddKDScene(kd_idx);
+		KScene* pKDScene = mpScene->AddKDScene(kd_idx);
 		mpScene->SceneNode_Create(kd_idx);
 
 		if (OBJLoader.LoadObjFile(file_name, *pKDScene)) {
@@ -156,9 +156,11 @@ bool SceneLoader::LoadFromFile(const char* file_name)
 	mFileLoadingTime = UINT32(fileReadingTime.Stop() * 1000);
 
 	// End of file reading, now build the acceleration structure
-	mpScene->SceneNode_BuildAccelData(true);
+	mpAccelData = new KKDBBoxScene();
+	mpAccelData->SetSource(*mpScene);
+	mpAccelData->SceneNode_BuildAccelData(true);
 
-	KBBox scene_box = mpScene->GetSceneBBox();
+	KBBox scene_box = mpAccelData->GetSceneBBox();
 	KVec3 center = scene_box.Center();
 	float radius = nvmath::length(scene_box.mMax - scene_box.mMin) * 1.0f;
 	
@@ -196,43 +198,12 @@ bool SceneLoader::LoadFromFile(const char* file_name)
 
 bool SceneLoader::SaveAsSCN(FILE* pFile) const
 {
-	if (!pFile)
-		return false;
-
-	if (!KMaterialLibrary::GetInstance()->Save(pFile))
-		return false;
-
-	if (!CameraManager::GetInstance()->Save(pFile))
-		return false;
-
-	if (!LightScheme::GetInstance()->Save(pFile))
-		return false;
-		
-	// Then save the scene
-	if (mpScene)
-		return mpScene->SaveToFile(pFile);
-	else
-		return false;
+	return true;
 }
 
 bool SceneLoader::LoadAsSCN(FILE* pFile)
 {
-	if (!pFile)
-		return false;
-
-	if (!KMaterialLibrary::GetInstance()->Load(pFile))
-		return false;
-
-	if (!CameraManager::GetInstance()->Load(pFile))
-		return false;
-
-	if (!LightScheme::GetInstance()->Load(pFile))
-		return false;
-		
-	// Then load the scene
-	bool ret = mpScene->LoadFromFile(pFile);
-
-	return ret;
+	return true;
 }
 
 
@@ -267,8 +238,8 @@ bool SceneLoader::SaveUpdatingFile(const char* file_name,
 	if (!SaveArrayToFile(modified_RBA_nodes, pFile))
 		return false;
 	
-	if (!mpScene->SceneNode_SaveUpdates(modified_RBA_nodes, modified_morph_nodes, pFile))
-		return false;
+	//if (!mpScene->SceneNode_SaveUpdates(modified_RBA_nodes, modified_morph_nodes, pFile))
+	//	return false;
 
 	fclose(pFile);
 	return true;
@@ -296,8 +267,8 @@ bool SceneLoader::LoadUpdatingFile(const char* file_name)
 	if (!mpScene)
 		return false; // Need to load a scene before loading update file
 
-	if (!mpScene->SceneNode_LoadUpdates(pFile))
-		return false;
+//	if (!mpScene->SceneNode_LoadUpdates(pFile))
+//		return false;
 
 	fclose(pFile);
 	return true;
@@ -307,7 +278,7 @@ void SceneLoader::BuildNodeIdMap()
 {
 	UINT32 sceneCnt = mpScene->GetKDSceneCnt();
 	for (UINT32 si = 0; si < sceneCnt; ++si) {
-		KKDTreeScene* subScene = mpScene->GetKDScene(si);
+		KScene* subScene = mpScene->GetKDScene(si);
 		for (UINT32 ni = 0; ni < subScene->GetNodeCnt(); ++ni) {
 			NodeId id = {si, ni};
 			mNodeIDs[subScene->GetNode(ni)->mName] = id;

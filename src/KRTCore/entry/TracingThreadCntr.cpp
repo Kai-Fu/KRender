@@ -49,7 +49,7 @@ bool SamplingThreadContainer::Render(
 	for (UINT32 i = 0; i < mImageSamplerThreads.size(); ++i) {
 		mImageSamplerThreads[i].mpRenderParam = &mRenderParam;
 		mImageSamplerThreads[i].mpInputData = &mRenderInputData;
-		mImageSamplerThreads[i].mTracingThreadData.reset(new TracingInstance(mRenderInputData.pScene->mpScene, mRenderInputData.pRenderBuffers));
+		mImageSamplerThreads[i].mTracingThreadData.reset(new TracingInstance(mRenderInputData.pScene->mpAccelData, mRenderInputData.pRenderBuffers));
 		mpSharedThreadBucket->SetThreadTask(i, &mImageSamplerThreads[i]);
 	}
 

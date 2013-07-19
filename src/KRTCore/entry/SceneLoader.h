@@ -29,7 +29,8 @@ namespace KRayTracer {
 		void BuildNodeIdMap();
 
 	public:
-		KKDBBoxScene* mpScene;
+		KSceneSet* mpScene;
+		KKDBBoxScene* mpAccelData;
 		double mLoadingTime;
 		UINT32 mFileLoadingTime;
 

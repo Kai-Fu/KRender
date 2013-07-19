@@ -8,12 +8,12 @@
 #include "../util/memory_pool.h"
 #include <memory>
 
-class KKDTreeScene;
+class KAccelStruct_KDTree;
 
 class SceneSplitTask : public ThreadModel::IThreadTask 
 {
 public:
-	KKDTreeScene* pKDScene;
+	KAccelStruct_KDTree* pKDScene;
 	UINT32* triangles;
 	UINT32 cnt;
 	UINT32 split_flag;
@@ -26,12 +26,34 @@ public:
 	virtual void Execute();
 };
 
-class KKDTreeScene : public KScene
+class KAccelStruct
 {
 public:
-	KKDTreeScene(void);
-	virtual ~KKDTreeScene(void);
+	virtual bool IntersectRay_KDTree(const KRay& ray, IntersectContext& ctx) const {return false;}
+	virtual bool IntersectRay_BruteForce(const KRay& ray, IntersectContext& ctx) const {return false;}
+	virtual unsigned long long GetAccelLeafTriCnt() const = 0;
+	virtual unsigned long long GetAccelNodeCnt() const = 0;
+	virtual unsigned long long GetAccelLeafCnt() const = 0;
+	virtual void InitAccelData() = 0;
+	virtual float GetSceneEpsilon() const = 0;
+	virtual void GetKDBuildTimeStatistics(DWORD& kd_build, DWORD& gen_accel) const = 0;
+	virtual const KBBox& GetSceneBBox() const = 0;
+	virtual size_t CalcGeomDataSize() const = 0;
+	virtual void FinalizeKDTree(size_t buffer_offset) = 0;
 
+	const KAccelTriangle* GetAccelTriData(UINT32 tri_idx) const;
+protected:
+	std::vector<KAccelTriangle>	mAccelTriangle;
+};
+
+class KAccelStruct_KDTree : public KAccelStruct
+{
+public:
+	KAccelStruct_KDTree(void);
+	virtual ~KAccelStruct_KDTree(void);
+
+	void SetSource(const KScene& scene);
+	const KScene* GetSource() const;
 public:
 	friend class SceneSplitTask;
 	typedef struct _KD_LeafData {
@@ -84,6 +106,9 @@ public:
 protected:
 	
 	// All the kd node data is stored here
+	const KScene* mpSourceScene;
+	float mSceneEpsilon;
+
 	KVectorA16<KD_Node_NoBBox>	mSceneNode;
 	std::vector<KD_LeafData> mKDLeafData;
 	GlowableMemPool mLeafIdxMemPool;
@@ -159,15 +184,20 @@ public:
 	virtual void ResetScene();
 
 	bool IntersectRay_KDTree(const KRay& ray, IntersectContext& ctx) const;
+	bool IntersectRay_BruteForce(const KRay& ray, IntersectContext& ctx) const;
 
-	UINT32 GetKDNodeCnt() const {return (UINT32)mSceneNode.size();}
-	UINT32 GetKDLeafCnt() const {return (UINT32)mKDLeafData.size();}
-	const KBBox& GetSceneBBox() const {return mSceneBBox;}
-	void GetKDBuildTimeStatistics(DWORD& kd_build, DWORD& gen_accel) const;
+	const KAccelTriangle* GetAccelTriData(UINT32 tri_idx) const {return &mAccelTriangle[tri_idx];} 
+
+	virtual float GetSceneEpsilon() const {return mSceneEpsilon;}
+	virtual unsigned long long GetAccelLeafTriCnt() const {return mTotalLeafTriCnt;}
+	virtual unsigned long long GetAccelNodeCnt() const {return mSceneNode.size();}
+	virtual unsigned long long GetAccelLeafCnt() const {return mKDLeafData.size();}
+	virtual const KBBox& GetSceneBBox() const {return mSceneBBox;}
+	virtual void GetKDBuildTimeStatistics(DWORD& kd_build, DWORD& gen_accel) const;
+	virtual size_t CalcGeomDataSize() const;
+	virtual void FinalizeKDTree(size_t buffer_offset);
 	
 	// These functions will modify scene, BE CAREFUL!!!
 	void AddKDNode(const KD_Node& node, UINT32& out_idx);
 	void SetKNodeChild(UINT32 nodeIdx, UINT32 childIdx, bool left_or_right, bool isLeaf);
-	size_t CalcGeomDataSize();
-	void FinalizeKDTree(size_t buffer_offset);
 };

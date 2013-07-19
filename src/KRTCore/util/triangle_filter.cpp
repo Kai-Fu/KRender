@@ -17,7 +17,7 @@ public:
 	// output
 	KBBox bbox;
 
-	const KScene* pscene;
+	const KAccelStruct_KDTree* pscene;
 	const KBBox* clamp_box;
 	const KBBox* triBBox;
 
@@ -29,7 +29,7 @@ public:
 			UINT32 idx = ptri_idx[i];
 			const KAccelTriangle* pAccelTri = pscene->GetAccelTriData(idx);
 			KAccleTriVertPos triPos;
-			pscene->GetAccelTriPos(*pAccelTri, triPos);
+			pscene->GetSource()->GetAccelTriPos(*pAccelTri, triPos);
 			if (TriIntersectBBox(triPos, *clamp_box)) {
 				bbox.Add(triBBox[idx]);
 			}
@@ -70,7 +70,7 @@ public:
 void FilterByBBox(UINT32* ptri_idx, UINT32& cnt, KBBox& out_bbox, 
 				  ThreadModel::ThreadBucket& thread_bucket, 
 				  const KBBox* pTriBBox,
-				  const KScene* pscene, const KBBox* clamp_box)
+				  const KAccelStruct_KDTree* pscene, const KBBox* clamp_box)
 {
 	std::vector<FilterByBBoxTask> tasks;
 	UINT32 thread_cnt = thread_bucket.GetThreadCnt();
@@ -120,7 +120,7 @@ public:
 	// output
 	KBBox bbox;
 
-	const KScene* pscene;
+	const KAccelStruct_KDTree* pscene;
 	const KBBox* triBBox;
 
 	virtual void Execute()
@@ -142,7 +142,7 @@ public:
 void CalcuTriangleArrayBBox(const UINT32* ptri_idx, UINT32 cnt, KBBox& out_bbox, 
 							ThreadModel::ThreadBucket& thread_bucket, 
 							const KBBox* pTriBBox,
-							const KScene* pscene)
+							const KAccelStruct_KDTree* pscene)
 {
 	std::vector<CalcuTriBBoxTask> tasks;
 	UINT32 thread_cnt = thread_bucket.GetThreadCnt();

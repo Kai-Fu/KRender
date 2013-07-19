@@ -10,7 +10,7 @@
 namespace Abc = Alembic::Abc::ALEMBIC_VERSION_NS;
 namespace AbcG = Alembic::AbcGeom::ALEMBIC_VERSION_NS;
 namespace AbcA = ::Alembic::AbcCoreAbstract::ALEMBIC_VERSION_NS;
-class KKDBBoxScene;
+class KSceneSet;
 
 
 
@@ -20,7 +20,7 @@ public:
 	AbcLoader();
 	~AbcLoader();
 
-	bool Load(const char* filename, KKDBBoxScene& scene);
+	bool Load(const char* filename, KSceneSet& scene);
 
 private:
 	void ProcessNode(const Abc::IObject& obj, int treeDepth = 0);
@@ -31,7 +31,7 @@ private:
 	void ProcessCamera(const AbcG::ICamera& camera);
 
 	void GetXformWorldTransform(const AbcG::IXform& xform, std::vector<KMatrix4>& frames);
-	KKDTreeScene* GetXformStaticScene(const Abc::IObject& obj, KMatrix4& mat);
+	KScene* GetXformStaticScene(const Abc::IObject& obj, KMatrix4& mat);
 
 	static void ConvertMatrix(const Imath::M44d& ilmMat, KMatrix4& mat);
 	static bool ConvertStaticMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::chrono_t t, KTriMesh& outMesh);
@@ -41,7 +41,7 @@ private:
 	int mXformSampleCnt;
 	int mDeformSampleCnt;
 
-	KKDBBoxScene* mpScene;
-	std::hash_map<AbcA::ObjectReader*, KKDTreeScene*> mXformNodes;
+	KSceneSet* mpScene;
+	std::hash_map<AbcA::ObjectReader*, KScene*> mXformNodes;
 
 };
