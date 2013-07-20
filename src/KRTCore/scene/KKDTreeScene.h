@@ -49,10 +49,9 @@ protected:
 class KAccelStruct_KDTree : public KAccelStruct
 {
 public:
-	KAccelStruct_KDTree(void);
-	virtual ~KAccelStruct_KDTree(void);
+	KAccelStruct_KDTree(const KScene* scene);
+	virtual ~KAccelStruct_KDTree();
 
-	void SetSource(const KScene& scene);
 	const KScene* GetSource() const;
 public:
 	friend class SceneSplitTask;

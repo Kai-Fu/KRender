@@ -57,7 +57,7 @@ bool BuildStaticGeometry(std::list<FbxNode*>& static_nodes, FbxNode* pRootNode, 
 
 /**
   Build the static instanced nodes specified by the input parameter instanced_nodes, the scene
-  info will be stored in the input KKDBBoxScene.
+  info will be stored in the input KAccelStruct_BVH.
 **/
 bool BuildStaticInstanceGeometry(std::list<FbxNode*>& instanced_nodes, TopSceneHandle bbox_scene);
 

@@ -30,7 +30,7 @@ namespace KRayTracer {
 
 	public:
 		KSceneSet* mpScene;
-		KKDBBoxScene* mpAccelData;
+		KAccelStruct_BVH* mpAccelData;
 		double mLoadingTime;
 		UINT32 mFileLoadingTime;
 

@@ -683,7 +683,7 @@ void BuildCameras(const std::list<FbxNode*>& camera_nodes)
 
 
 /************************************************************************/
-// Compile the FBX scene into KKDBBoxScene
+// Compile the FBX scene into KAccelStruct_BVH
 /************************************************************************/
 void CompileNodeIntoScene(FbxNode* node, TopSceneHandle bbox_scene, std::list<FbxNode*>& out_anim_nodes) 
 {

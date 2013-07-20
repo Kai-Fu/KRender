@@ -183,7 +183,7 @@ const BitmapObject* RenderBuffers::GetOutputImagePtr() const
 	return output_image.get();
 }
 
-TracingInstance::TracingInstance(const KKDBBoxScene* scene, const RenderBuffers* pBuffers)
+TracingInstance::TracingInstance(const KAccelStruct_BVH* scene, const RenderBuffers* pBuffers)
 {
 	mpScene = scene;
 	mpRenderBuffers = pBuffers;
@@ -226,7 +226,7 @@ TransContext& TracingInstance::GetCurrentTransCtxStorage()
 	return mTransContexts[mBounceDepth - 1];
 }
 
-const KKDBBoxScene* TracingInstance::GetScenePtr() const
+const KAccelStruct_BVH* TracingInstance::GetScenePtr() const
 {
 	return mpScene;
 }

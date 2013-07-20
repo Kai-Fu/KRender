@@ -9,7 +9,7 @@ extern UINT32 AREA_LIGHT_SAMP_CNT;
 
 void LightScheme::AdjustHitPos(TracingInstance* pLocalData, const IntersectContext& hit_ctx, const ShadingContext& shadingCtx, KVec3& in_out_pos) const
 {
-	const KKDBBoxScene* pScene = pLocalData->GetScenePtr();
+	const KAccelStruct_BVH* pScene = pLocalData->GetScenePtr();
 	const KScene* pKDScene = pScene->GetSource()->GetNodeKDScene(hit_ctx.bbox_node_idx);
 	const KAccelTriangle* pTri = pScene->GetAccelTriData(hit_ctx.bbox_node_idx, hit_ctx.tri_id);
 	UINT32 mesh_idx = pTri->GetMeshIdx();
@@ -133,7 +133,7 @@ void LightScheme::Shade(TracingInstance* pLocalData,
 						const IntersectContext& hit_ctx, 
 						KColor& out_color) const
 {
-	const KKDBBoxScene* pScene = pLocalData->GetScenePtr();
+	const KAccelStruct_BVH* pScene = pLocalData->GetScenePtr();
 	const KScene* pKDScene = pScene->GetSource()->GetNodeKDScene(hit_ctx.bbox_node_idx);
 
 	SurfaceContext& surfaceCtx = pLocalData->GetCurrentSurfaceCtxStorage();

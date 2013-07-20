@@ -9,7 +9,7 @@
 bool CalcuShadingByRay(TracingInstance* pLocalData, const KRay& ray, KColor& out_clr, IntersectContext* out_ctx/* = NULL*/)
 {
 	const LightScheme* pLightScheme = LightScheme::GetInstance();
-	const KKDBBoxScene* pScene = pLocalData->GetScenePtr();
+	const KAccelStruct_BVH* pScene = pLocalData->GetScenePtr();
 	UINT32 rayBounceDepth = pLocalData->GetBoundDepth();
 	// Check the maximum bounce depth
 	if (rayBounceDepth >= MAX_REFLECTION_BOUNCE) {

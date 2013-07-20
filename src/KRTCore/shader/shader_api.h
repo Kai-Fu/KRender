@@ -106,17 +106,17 @@ struct ShadingContext
 };
 
 
-class KKDBBoxScene;
+class KAccelStruct_BVH;
 class RenderBuffers;
 struct LightIterator;
 
 class TracingInstance
 {
 public:
-	TracingInstance(const KKDBBoxScene* scene, const RenderBuffers* pBuffers);
+	TracingInstance(const KAccelStruct_BVH* scene, const RenderBuffers* pBuffers);
 	~TracingInstance();
 
-	const KKDBBoxScene* GetScenePtr() const;
+	const KAccelStruct_BVH* GetScenePtr() const;
 	KVec2 GetAreaLightSample(UINT32 lightIdx, UINT32 sampleIdx) const;
 	void SetCurrentPixel(UINT32 x, UINT32 y);
 	void IncBounceDepth();
@@ -140,7 +140,7 @@ public:
 	KCamera::EvalContext mCameraContext;
 
 private:
-	const KKDBBoxScene* mpScene;
+	const KAccelStruct_BVH* mpScene;
 	const RenderBuffers* mpRenderBuffers;
 	std::vector<SurfaceContext> mSurfaceContexts;
 	std::vector<TransContext> mTransContexts;

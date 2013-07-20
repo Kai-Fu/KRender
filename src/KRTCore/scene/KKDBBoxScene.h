@@ -38,13 +38,12 @@ public:
 };
 
 
-class KKDBBoxScene
+class KAccelStruct_BVH
 {
 public:
-	KKDBBoxScene();
-	~KKDBBoxScene();
+	KAccelStruct_BVH(const KSceneSet* sceneSet);
+	~KAccelStruct_BVH();
 
-	void SetSource(const KSceneSet& sceneSet);
 	const KSceneSet* GetSource() const;
 
 	void SceneNode_ResetAccelData();

@@ -23,6 +23,7 @@ SceneLoader::SceneLoader()
 	Texture::TextureManager::Initialize();
 
 	mpScene = new KSceneSet();
+	mpAccelData = NULL;
 }
 
 SceneLoader::~SceneLoader()
@@ -34,6 +35,9 @@ SceneLoader::~SceneLoader()
 
 	if (mpScene)
 		delete mpScene;
+
+	if (mpAccelData)
+		delete mpAccelData;
 }
 
 
@@ -156,8 +160,7 @@ bool SceneLoader::LoadFromFile(const char* file_name)
 	mFileLoadingTime = UINT32(fileReadingTime.Stop() * 1000);
 
 	// End of file reading, now build the acceleration structure
-	mpAccelData = new KKDBBoxScene();
-	mpAccelData->SetSource(*mpScene);
+	mpAccelData = new KAccelStruct_BVH(mpScene);
 	mpAccelData->SceneNode_BuildAccelData(true);
 
 	KBBox scene_box = mpAccelData->GetSceneBBox();

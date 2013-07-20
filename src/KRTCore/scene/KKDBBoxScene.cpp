@@ -7,32 +7,27 @@
 KAccelTriangleOpt1r4t* KAccelStruct_KDTree::s_pGeomBuffer = NULL;
 size_t KAccelStruct_KDTree::s_geomBufferTriCnt = 0;
 
-KKDBBoxScene::KKDBBoxScene()
+KAccelStruct_BVH::KAccelStruct_BVH(const KSceneSet* sceneSet)
 {
 	mRootNode = INVALID_INDEX;
 	KAccelStruct_KDTree::s_pGeomBuffer = NULL;
 
 	mpSceneSet = NULL;
 	mIsNodeTMDirty = true;
-}
 
-KKDBBoxScene::~KKDBBoxScene()
-{
-}
-
-void KKDBBoxScene::SetSource(const KSceneSet& sceneSet)
-{
 	if (KAccelStruct_KDTree::s_pGeomBuffer) {
 		Aligned_Free(KAccelStruct_KDTree::s_pGeomBuffer);
 		KAccelStruct_KDTree::s_pGeomBuffer = NULL;
 	}
 
-	mBBoxNode.clear();
-	mBBoxLeaf.clear();
-	mpSceneSet = &sceneSet;
+	mpSceneSet = sceneSet;
 }
 
-const KSceneSet* KKDBBoxScene::GetSource() const
+KAccelStruct_BVH::~KAccelStruct_BVH()
+{
+}
+
+const KSceneSet* KAccelStruct_BVH::GetSource() const
 {
 	return mpSceneSet;
 }
@@ -56,7 +51,7 @@ void KSceneSet::Reset()
 	mpKDScenes.clear();
 }
 
-void KKDBBoxScene::TransformRay(KRay& out_ray, const KRay& in_ray, const KSceneSet::KD_SCENE_LEAF& scene_info, float t)
+void KAccelStruct_BVH::TransformRay(KRay& out_ray, const KRay& in_ray, const KSceneSet::KD_SCENE_LEAF& scene_info, float t)
 {
 	KAnimation::LocalTRSFrame::LclTRS trs;
 	scene_info.scene_trs.Interpolate(t, trs);
@@ -83,7 +78,7 @@ void KSceneSet::SceneNodeTM_AddFrame(UINT32 node_idx, const KMatrix4& node_tm)
 }
 
 
-bool KKDBBoxScene::IntersectBBoxNode(const KRay& ray, UINT32 idx, IntersectContext& ctx, float t) const
+bool KAccelStruct_BVH::IntersectBBoxNode(const KRay& ray, UINT32 idx, IntersectContext& ctx, float t) const
 {
 	bool res = false;
 	if (!mBBoxNode.empty()) {
@@ -131,7 +126,7 @@ bool KKDBBoxScene::IntersectBBoxNode(const KRay& ray, UINT32 idx, IntersectConte
 	return res;
 }
 
-bool KKDBBoxScene::IntersectBBoxLeaf(const KRay& ray, UINT32 idx, IntersectContext& ctx, float t) const
+bool KAccelStruct_BVH::IntersectBBoxLeaf(const KRay& ray, UINT32 idx, IntersectContext& ctx, float t) const
 {
 	UINT32 cur_idx = idx;
 	vec4f t0;
@@ -197,7 +192,7 @@ bool KKDBBoxScene::IntersectBBoxLeaf(const KRay& ray, UINT32 idx, IntersectConte
 }
 
 
-bool KKDBBoxScene::IntersectRay_KDTree(const KRay& ray, IntersectContext& ctx, float t) const
+bool KAccelStruct_BVH::IntersectRay_KDTree(const KRay& ray, IntersectContext& ctx, float t) const
 {
 	UINT32 nearestHitBBoxScene = INVALID_INDEX;
 	if (mRootNode != INVALID_INDEX) {
@@ -212,14 +207,14 @@ bool KKDBBoxScene::IntersectRay_KDTree(const KRay& ray, IntersectContext& ctx, f
 }
 
 
-const KAccelTriangle* KKDBBoxScene::GetAccelTriData(UINT32 scene_node_idx, UINT32 tri_idx) const
+const KAccelTriangle* KAccelStruct_BVH::GetAccelTriData(UINT32 scene_node_idx, UINT32 tri_idx) const
 {
 	UINT32 scene_idx = mpSceneSet->mKDSceneNodes[scene_node_idx].kd_scene_idx;
 	return mpAccelStructs[scene_idx]->GetAccelTriData(tri_idx);
 }
 
 
-UINT32 KKDBBoxScene::SplitBBoxScene(UINT32* pKDSceneIdx, const KBBox* clampBox, UINT32 cnt, UINT32 depth)
+UINT32 KAccelStruct_BVH::SplitBBoxScene(UINT32* pKDSceneIdx, const KBBox* clampBox, UINT32 cnt, UINT32 depth)
 {
 	KBBox bbox;
 	UINT32 ret = INVALID_INDEX;
@@ -348,7 +343,7 @@ UINT32 KKDBBoxScene::SplitBBoxScene(UINT32* pKDSceneIdx, const KBBox* clampBox, 
 	return ret;
 }
 
-void KKDBBoxScene::GetKDBuildTimeStatistics(KRT_SceneStatistic& sceneStat) const
+void KAccelStruct_BVH::GetKDBuildTimeStatistics(KRT_SceneStatistic& sceneStat) const
 {
 	sceneStat.kd_build_time = m_kdBuildTime;
 	sceneStat.gen_accel_geom_time = m_buildAccelTriTime;
@@ -372,7 +367,7 @@ void KKDBBoxScene::GetKDBuildTimeStatistics(KRT_SceneStatistic& sceneStat) const
 }
 
 
-bool KKDBBoxScene::SceneNode_BuildAccelData(bool force)
+bool KAccelStruct_BVH::SceneNode_BuildAccelData(bool force)
 {
 	mSceneBBox.SetEmpty();
 	mSceneEpsilon = FLT_MAX;
@@ -387,9 +382,8 @@ bool KKDBBoxScene::SceneNode_BuildAccelData(bool force)
 		}
 		mpAccelStructs.resize(mpSceneSet->mpKDScenes.size());
 		for (UINT32 i = 0; i < mpSceneSet->mpKDScenes.size(); ++i) {
-			KAccelStruct_KDTree* pAccel = new KAccelStruct_KDTree();
+			KAccelStruct_KDTree* pAccel = new KAccelStruct_KDTree(mpSceneSet->mpKDScenes[i]);
 			mpAccelStructs[i] = pAccel;
-			pAccel->SetSource(*mpSceneSet->mpKDScenes[i]);
 			mGeomDirtiedScenes.push_back(i);
 		}
 	}
@@ -511,32 +505,32 @@ KScene* KSceneSet::AddKDScene(UINT32& newIdx)
 	return mpKDScenes[newIdx];
 }
 
-const KBBox& KKDBBoxScene::GetSceneBBox() const
+const KBBox& KAccelStruct_BVH::GetSceneBBox() const
 {
 	return mSceneBBox;
 }
 
-void KKDBBoxScene::SceneNode_ResetAccelData()
+void KAccelStruct_BVH::SceneNode_ResetAccelData()
 {
 	mIsNodeTMDirty = true;
 }
 
-bool KKDBBoxScene::SceneNode_LoadUpdates(FILE* pFile)
+bool KAccelStruct_BVH::SceneNode_LoadUpdates(FILE* pFile)
 {
 	return true;
 }
 
-bool KKDBBoxScene::SceneNode_SaveUpdates(const std::vector<UINT32>& animated_nodes, const std::vector<UINT32>& animated_scenes, FILE* pFile) const
+bool KAccelStruct_BVH::SceneNode_SaveUpdates(const std::vector<UINT32>& animated_nodes, const std::vector<UINT32>& animated_scenes, FILE* pFile) const
 {
 	return true;
 }
 
-bool KKDBBoxScene::SaveToFile(FILE* pFile)
+bool KAccelStruct_BVH::SaveToFile(FILE* pFile)
 {
 	return true;
 }
 
-bool KKDBBoxScene::LoadFromFile(FILE* pFile)
+bool KAccelStruct_BVH::LoadFromFile(FILE* pFile)
 {
 	return true;
 }

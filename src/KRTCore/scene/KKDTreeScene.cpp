@@ -9,23 +9,19 @@
 #include "../entry/Constants.h"
 
 
-KAccelStruct_KDTree::KAccelStruct_KDTree(void)
+KAccelStruct_KDTree::KAccelStruct_KDTree(const KScene* scene)
 {
 	m_kdBuildTime = 0;
 	m_buildAccelTriTime = 0;
 	mProcessorCnt = GetConfigedThreadCount();
 	mpSourceScene = NULL;
+	mpSourceScene = scene;
 	ResetScene();
 }
 
-KAccelStruct_KDTree::~KAccelStruct_KDTree(void)
+KAccelStruct_KDTree::~KAccelStruct_KDTree()
 {
 	ResetScene();
-}
-
-void KAccelStruct_KDTree::SetSource(const KScene& scene)
-{
-	mpSourceScene = &scene;
 }
 
 const KScene* KAccelStruct_KDTree::GetSource() const
