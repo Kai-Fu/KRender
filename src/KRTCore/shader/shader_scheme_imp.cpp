@@ -18,9 +18,9 @@ void LightScheme::AdjustHitPos(TracingInstance* pLocalData, const IntersectConte
 	const UINT32* nor_idx = pMesh->mFaces[tri_idx].pn_idx;
 	
 	KVec3 temp_vec = 
-		pMesh->mVertPN[nor_idx[0]].nor +
-		pMesh->mVertPN[nor_idx[1]].nor +
-		pMesh->mVertPN[nor_idx[2]].nor;
+		pMesh->ComputeVertNor(nor_idx[0], pLocalData->mCameraContext.inMotionTime) +
+		pMesh->ComputeVertNor(nor_idx[1], pLocalData->mCameraContext.inMotionTime) +
+		pMesh->ComputeVertNor(nor_idx[2], pLocalData->mCameraContext.inMotionTime);
 	float offset_scale = 3.0f - nvmath::length(temp_vec);
 
 	float u = hit_ctx.u;

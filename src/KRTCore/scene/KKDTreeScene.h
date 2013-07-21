@@ -39,7 +39,7 @@ public:
 	virtual void GetKDBuildTimeStatistics(DWORD& kd_build, DWORD& gen_accel) const = 0;
 	virtual const KBBox& GetSceneBBox() const = 0;
 	virtual size_t CalcGeomDataSize() const = 0;
-	virtual void FinalizeKDTree(size_t buffer_offset) = 0;
+	virtual void FinalizeKDTree(KAccelTriangleOpt1r4t* pGeomBuffer) = 0;
 
 	const KAccelTriangle* GetAccelTriData(UINT32 tri_idx) const;
 protected:
@@ -98,9 +98,6 @@ public:
 	KBBox mSceneBBox;
 	DWORD m_kdBuildTime;
 	DWORD m_buildAccelTriTime;
-
-	static KAccelTriangleOpt1r4t* s_pGeomBuffer; 
-	static size_t s_geomBufferTriCnt;
 
 protected:
 	
@@ -194,7 +191,7 @@ public:
 	virtual const KBBox& GetSceneBBox() const {return mSceneBBox;}
 	virtual void GetKDBuildTimeStatistics(DWORD& kd_build, DWORD& gen_accel) const;
 	virtual size_t CalcGeomDataSize() const;
-	virtual void FinalizeKDTree(size_t buffer_offset);
+	virtual void FinalizeKDTree(KAccelTriangleOpt1r4t* pGeomBuffer);
 	
 	// These functions will modify scene, BE CAREFUL!!!
 	void AddKDNode(const KD_Node& node, UINT32& out_idx);

@@ -256,15 +256,15 @@ bool AbcLoader::ConvertStaticMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::
 			normCnt == vertPos->size() ) {
 
 			// This mesh has per-vertex normal
-			outMesh.mVertPN.resize( normCnt );
+				outMesh.SetupPN(normCnt, 1);
 			for (size_t i = 0; i < normCnt; ++i) {
-				outMesh.mVertPN[i].pos[0] = (*vertPos)[i].x;
-				outMesh.mVertPN[i].pos[1] = (*vertPos)[i].y;
-				outMesh.mVertPN[i].pos[2] = (*vertPos)[i].z;
+				outMesh.GetVertPN(i)->pos[0] = (*vertPos)[i].x;
+				outMesh.GetVertPN(i)->pos[1] = (*vertPos)[i].y;
+				outMesh.GetVertPN(i)->pos[2] = (*vertPos)[i].z;
 
-				outMesh.mVertPN[i].nor[0] = (*normVal)[i].x;
-				outMesh.mVertPN[i].nor[1] = (*normVal)[i].y;
-				outMesh.mVertPN[i].nor[2] = (*normVal)[i].z;
+				outMesh.GetVertPN(i)->nor[0] = (*normVal)[i].x;
+				outMesh.GetVertPN(i)->nor[1] = (*normVal)[i].y;
+				outMesh.GetVertPN(i)->nor[2] = (*normVal)[i].z;
 			}
 
 			size_t triIter = 0;
@@ -283,7 +283,7 @@ bool AbcLoader::ConvertStaticMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::
 		else if (normCnt == polyVertCnt &&
 			normParam.getScope() == Alembic::AbcGeom::kFacevaryingScope) {
 			// This mesh has per-face normal
-			outMesh.mVertPN.resize( triCnt*3 );
+			outMesh.SetupPN(triCnt*3, 1);
 			size_t triIter = 0;
 			size_t fiIter = 0;
 			size_t viIter = 0;
@@ -298,13 +298,13 @@ bool AbcLoader::ConvertStaticMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::
 					outMesh.mFaces[triIter].pn_idx[2] = (UINT32)viIter + 1;
 					outMesh.mFaces[triIter].pn_idx[1] = (UINT32)viIter + 2;
 					for (int ii = 0; ii < 3; ++ii) {
-						outMesh.mVertPN[viIter].pos[0] = (*vertPos)[v[ii]].x;
-						outMesh.mVertPN[viIter].pos[1] = (*vertPos)[v[ii]].y;
-						outMesh.mVertPN[viIter].pos[2] = (*vertPos)[v[ii]].z;
+						outMesh.GetVertPN(viIter)->pos[0] = (*vertPos)[v[ii]].x;
+						outMesh.GetVertPN(viIter)->pos[1] = (*vertPos)[v[ii]].y;
+						outMesh.GetVertPN(viIter)->pos[2] = (*vertPos)[v[ii]].z;
 
-						outMesh.mVertPN[viIter].nor[0] = (*normVal)[viIter].x;
-						outMesh.mVertPN[viIter].nor[1] = (*normVal)[viIter].y;
-						outMesh.mVertPN[viIter].nor[2] = (*normVal)[viIter].z;
+						outMesh.GetVertPN(viIter)->nor[0] = (*normVal)[viIter].x;
+						outMesh.GetVertPN(viIter)->nor[1] = (*normVal)[viIter].y;
+						outMesh.GetVertPN(viIter)->nor[2] = (*normVal)[viIter].z;
 
 						viIter++;
 					}
@@ -356,13 +356,13 @@ bool AbcLoader::ConvertStaticMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::
 		}
 
 		// Now fill the data to KTriMesh object
-		outMesh.mVertPN.resize( vertCnt );
+		outMesh.SetupPN(vertCnt, 1);
 		for (size_t i = 0; i < vertCnt; ++i) {
-			outMesh.mVertPN[i].pos[0] = (*vertPos)[i].x;
-			outMesh.mVertPN[i].pos[1] = (*vertPos)[i].y;
-			outMesh.mVertPN[i].pos[2] = (*vertPos)[i].z;
+			outMesh.GetVertPN(i)->pos[0] = (*vertPos)[i].x;
+			outMesh.GetVertPN(i)->pos[1] = (*vertPos)[i].y;
+			outMesh.GetVertPN(i)->pos[2] = (*vertPos)[i].z;
 
-			outMesh.mVertPN[i].nor = -averagedNormals[i];
+			outMesh.GetVertPN(i)->nor = -averagedNormals[i];
 		}
 
 		size_t triIter = 0;

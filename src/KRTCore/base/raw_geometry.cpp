@@ -365,7 +365,7 @@ namespace Geom {
 		}
 
 		// PN data array
-		out_mesh.mVertPN.resize(pn_index);
+		out_mesh.SetupPN(pn_index, 1);
 		for (size_t i = 0; i < pn_data.size(); ++i) {
 
 			const SortablePN& pos_it = pn_data[i];
@@ -376,7 +376,7 @@ namespace Geom {
 			while (nor_it != NULL) {
 				KTriMesh::PN_Data pn = {pos_it.pos, nor_it->data.vec};
 				//assert(nor_it->data.idx < pn_index);
-				out_mesh.mVertPN[nor_it->data.idx] = pn;
+				*out_mesh.GetVertPN(nor_it->data.idx) = pn;
 				nor_it = nor_it->next;
 				--pn_index;
 			}
@@ -476,7 +476,7 @@ namespace Geom {
 		}
 
 		// Fill the uv & tangent data array
-		out_mesh.mVertTT.resize(tt_index);
+		out_mesh.SetupTT(tt_index, 1);
 		for (size_t i = 0; i < tt_data.size(); ++i) {
 
 			const SortableTT* tt_it = &tt_data[i];
@@ -487,7 +487,7 @@ namespace Geom {
 			while (nt_it != NULL) {
 				KTriMesh::TT_Data tt = {tt_it->uv, nt_it->data.tangent, nt_it->data.binormal};
 				assert(nt_it->data.buf_idx < tt_index);
-				out_mesh.mVertTT[nt_it->data.buf_idx] = tt;
+				*out_mesh.GetVertTT(nt_it->data.buf_idx) = tt;
 				nt_it = nt_it->next;
 			}
 		}

@@ -25,3 +25,6 @@ private:
 
 void GetPathDir(const char* path, std::string& out_dir);
 void IntToStr(int val, char* buf, int base);
+
+
+float ComputeWeightAndIndex(UINT32 frameCnt, float cur_t, UINT32& floorIdx, UINT32& ceilingIdx);

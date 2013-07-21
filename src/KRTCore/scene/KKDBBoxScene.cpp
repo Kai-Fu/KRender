@@ -4,27 +4,24 @@
 #include <common/math/Trafo.h>
 #include "../util/HelperFunc.h"
 
-KAccelTriangleOpt1r4t* KAccelStruct_KDTree::s_pGeomBuffer = NULL;
-size_t KAccelStruct_KDTree::s_geomBufferTriCnt = 0;
 
 KAccelStruct_BVH::KAccelStruct_BVH(const KSceneSet* sceneSet)
 {
 	mRootNode = INVALID_INDEX;
-	KAccelStruct_KDTree::s_pGeomBuffer = NULL;
 
 	mpSceneSet = NULL;
 	mIsNodeTMDirty = true;
-
-	if (KAccelStruct_KDTree::s_pGeomBuffer) {
-		Aligned_Free(KAccelStruct_KDTree::s_pGeomBuffer);
-		KAccelStruct_KDTree::s_pGeomBuffer = NULL;
-	}
-
+	mpAccelGeomBuffer = NULL;
 	mpSceneSet = sceneSet;
 }
 
 KAccelStruct_BVH::~KAccelStruct_BVH()
 {
+	if (mpAccelGeomBuffer) {
+		Aligned_Free(mpAccelGeomBuffer);
+		mpAccelGeomBuffer = NULL;
+	}
+
 }
 
 const KSceneSet* KAccelStruct_BVH::GetSource() const
@@ -435,17 +432,16 @@ bool KAccelStruct_BVH::SceneNode_BuildAccelData(bool force)
 		}
 
 		if (totalGeomBufferSize > 0) {
-			KAccelStruct_KDTree::s_pGeomBuffer = 
+			mpAccelGeomBuffer = 
 				(KAccelTriangleOpt1r4t*)Aligned_Malloc(totalGeomBufferSize * sizeof(KAccelTriangleOpt1r4t), 16);
-			if (!KAccelStruct_KDTree::s_pGeomBuffer) {
+			if (!mpAccelGeomBuffer) {
 				printf("Out of memory, exit now...\n");
 				exit(0);
 			}
-			KAccelStruct_KDTree::s_geomBufferTriCnt = totalGeomBufferSize;
 		}
 		size_t fill_offset = 0;
 		for (size_t i = 0; i < mpAccelStructs.size(); ++i) {
-			mpAccelStructs[i]->FinalizeKDTree(fill_offset);
+			mpAccelStructs[i]->FinalizeKDTree(mpAccelGeomBuffer + fill_offset);
 			fill_offset += nodeGeomBufSize[i];
 		}
 

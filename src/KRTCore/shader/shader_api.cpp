@@ -293,15 +293,14 @@ void TracingInstance::CalcuShadingContext(const KRay& hitRay, const IntersectCon
 	assert(out_shading_ctx.excluding_bbox < NOT_HIT_INDEX);
 	assert(out_shading_ctx.excluding_tri < NOT_HIT_INDEX);
 	
-	const KVec3* vert_pos[3] = {
-		&pMesh->mVertPN[pMesh->mFaces[tri_idx].pn_idx[0]].pos,
-		&pMesh->mVertPN[pMesh->mFaces[tri_idx].pn_idx[1]].pos,
-		&pMesh->mVertPN[pMesh->mFaces[tri_idx].pn_idx[2]].pos
-	};
+	KTriMesh::PN_Data pn_vert[3];
+	pMesh->ComputePN_Data(pn_vert[0], pMesh->mFaces[tri_idx].pn_idx[0], mCameraContext.inMotionTime);
+	pMesh->ComputePN_Data(pn_vert[1], pMesh->mFaces[tri_idx].pn_idx[1], mCameraContext.inMotionTime);
+	pMesh->ComputePN_Data(pn_vert[2], pMesh->mFaces[tri_idx].pn_idx[2], mCameraContext.inMotionTime);
 
-	if (!pMesh->mVertTT.empty()) {
+	if (!pMesh->mTexFaces.empty()) {
 		KTriMesh::TT_Data tt_data;
-		pMesh->InterpolateTT(tri_idx, hit_ctx, tt_data);
+		pMesh->InterpolateTT(tri_idx, hit_ctx, tt_data, mCameraContext.inMotionTime);
 		out_shading_ctx.uv.uv = tt_data.texcoord;
 		out_shading_ctx.tangent.tangent = tt_data.tangent;
 		out_shading_ctx.tangent.binormal = tt_data.binormal;
@@ -312,9 +311,9 @@ void TracingInstance::CalcuShadingContext(const KRay& hitRay, const IntersectCon
 
 	KVec3 temp_vec;
 	// interpolate the normal
-	temp_vec =	pMesh->mVertPN[pn_idx[0]].nor * hit_ctx.w +
-				pMesh->mVertPN[pn_idx[1]].nor * hit_ctx.u +
-				pMesh->mVertPN[pn_idx[2]].nor * hit_ctx.v;
+	temp_vec =	pn_vert[0].nor * hit_ctx.w +
+				pn_vert[1].nor * hit_ctx.u +
+				pn_vert[2].nor * hit_ctx.v;
 	out_shading_ctx.normal = temp_vec * pNode->GetObjectRot();
 	temp_vec = out_shading_ctx.normal * scene_rot;
 	out_shading_ctx.normal = temp_vec;
@@ -322,17 +321,17 @@ void TracingInstance::CalcuShadingContext(const KRay& hitRay, const IntersectCon
 	out_shading_ctx.normal *= rcp_len_nor;
 
 	// interpolate the position
-	out_shading_ctx.position = pMesh->mVertPN[pn_idx[0]].pos * hit_ctx.w +
-						 pMesh->mVertPN[pn_idx[1]].pos * hit_ctx.u +
-						 pMesh->mVertPN[pn_idx[2]].pos * hit_ctx.v;
+	out_shading_ctx.position = pn_vert[0].pos * hit_ctx.w +
+						 pn_vert[1].pos * hit_ctx.u +
+						 pn_vert[2].pos * hit_ctx.v;
 	Vec3TransformCoord(temp_vec, out_shading_ctx.position, pNode->GetObjectTM());
 	Vec3TransformCoord(out_shading_ctx.position, temp_vec, nodeTRS.node_tm);
 	
 	const nvmath::Quatf world_rot = pNode->GetObjectRot() * scene_rot;
 	KVec3 edge[3];
-	edge[0] = (*vert_pos[1] - *vert_pos[0]) * world_rot;
-	edge[1] = (*vert_pos[2] - *vert_pos[1]) * world_rot;
-	edge[2] = (*vert_pos[0] - *vert_pos[2]) * world_rot;
+	edge[0] = (pn_vert[1].pos - pn_vert[0].pos) * world_rot;
+	edge[1] = (pn_vert[2].pos - pn_vert[1].pos) * world_rot;
+	edge[2] = (pn_vert[0].pos - pn_vert[2].pos) * world_rot;
 	float edge_len_sqr[3];
 	edge_len_sqr[0] = nvmath::lengthSquared(edge[0]);
 	edge_len_sqr[1] = nvmath::lengthSquared(edge[1]);
@@ -354,76 +353,6 @@ void TracingInstance::CalcuShadingContext(const KRay& hitRay, const IntersectCon
 
 	KVec3 rayDir = hitRay.GetDir();
 	rayDir.normalize(); // Normalize the ray direction because it's not normalized
-
-#if 0
-	// Calculate the ddx and ddy
-	if (out_shading_ctx.is_primary_ray && out_shading_ctx.hasUV) {
-
-		KVec3 u_dir, v_dir;
-		float rayCoverage = 1.0f;
-
-		float det = fabs(rayDir * out_shading_ctx.face_normal);
-		if (det < 0.98f) {
-			v_dir = rayDir ^ out_shading_ctx.face_normal;
-			v_dir *= (rayCoverage * 2.0f);
-			u_dir = v_dir ^ out_shading_ctx.face_normal;
-			if (det < 0.0001f) det = 0.0001f;
-			u_dir /= det;
-		}
-		else {
-			u_dir = mCameraContext.mEyeRayGen.mHorizonVec * rayCoverage * 2.0f;
-			v_dir = mCameraContext.mEyeRayGen.mViewUp * rayCoverage * 2.0f;
-		}
-
-		const KVec2* uv_pos[3];
-		pMesh->GetUV(tri_idx, uv_pos);
-		const KVec2* uv_crd[3] = {(const KVec2*)uv_pos[0], (const KVec2*)uv_pos[1], (const KVec2*)uv_pos[2]};
-		KVec2 uv_edge[3];
-		uv_edge[0] = *uv_crd[1] - *uv_crd[0];
-		uv_edge[1] = *uv_crd[2] - *uv_crd[1];
-		uv_edge[2] = *uv_crd[0] - *uv_crd[2];
-		float uv_edge_len[3];
-		uv_edge_len[0] = nvmath::lengthSquared(uv_edge[0]) / edge_len_sqr[0];
-		uv_edge_len[1] = nvmath::lengthSquared(uv_edge[1]) / edge_len_sqr[1];
-		uv_edge_len[2] = nvmath::lengthSquared(uv_edge[2]) / edge_len_sqr[2];
-		int det_edge;
-		if (uv_edge_len[0] >= uv_edge_len[1] && uv_edge_len[0] >= uv_edge_len[2])
-			det_edge = 0;
-		else if (uv_edge_len[1] >= uv_edge_len[0] && uv_edge_len[1] >= uv_edge_len[2])
-			det_edge = 1;
-		else 
-			det_edge = 2;
-		
-		int edge_idx0 = (det_edge + 2) % 3;
-		int edge_idx1 = (det_edge + 1) % 3;
-		float tu[2];
-		tu[0] = (edge[edge_idx0] * u_dir) * uv_edge_len[edge_idx0];
-		tu[1] = (edge[edge_idx1] * u_dir) * uv_edge_len[edge_idx1];
-		float tv[2];
-		tv[0] = (edge[edge_idx0] * v_dir) * uv_edge_len[edge_idx0];
-		tv[1] = (edge[edge_idx1] * v_dir) * uv_edge_len[edge_idx1];
-
-		float* out_du = (float*)&out_shading_ctx.uv.du;
-		float* out_dv = (float*)&out_shading_ctx.uv.dv;
-		float div_value = (uv_edge[edge_idx0][0]*uv_edge[edge_idx1][1]) - (uv_edge[edge_idx1][0]*uv_edge[edge_idx0][1]);
-		if (fabs(div_value) > 0.001f) {
-			float scale_value = 0.5f / div_value;
-			out_du[0] = (tu[0]*uv_edge[edge_idx1][1] - tu[1]*uv_edge[edge_idx0][1]) * scale_value;
-			out_du[1] = -(tu[0]*uv_edge[edge_idx1][0] - tu[1]*uv_edge[edge_idx0][0]) * scale_value;
-
-			out_dv[0] = (tv[0]*uv_edge[edge_idx1][1] - tv[1]*uv_edge[edge_idx0][1]) * scale_value;
-			out_dv[1] = -(tv[0]*uv_edge[edge_idx1][0] - tv[1]*uv_edge[edge_idx0][0]) * scale_value;
-		}
-		else {
-			out_du[0] = 0.0001f;
-			out_du[1] = 0.0f;
-
-			out_dv[0] = 0.0f;
-			out_dv[1] = 0.0001f;
-		}
-
-	}
-#endif
 
 	// Get the surface shader
 	ISurfaceShader* pSurfShader = pNode->mpSurfShader;
@@ -455,33 +384,31 @@ void TracingInstance::CalcuHitInfo(const IntersectContext& hit_ctx, IntersectInf
 	UINT32 tri_idx = pTri->mTriIdx;
 	const KTriMesh* pMesh = pKDScene->GetMesh(mesh_idx);
 	const KNode* pNode = pKDScene->GetNode(node_idx);
-	const UINT32* nor_idx = pMesh->mFaces[tri_idx].pn_idx;
-	const UINT32* pos_idx = pMesh->mFaces[tri_idx].pn_idx;
 	const nvmath::Quatf world_rot = pNode->GetObjectRot() * scene_rot;
 
-	out_info.pos = pMesh->mVertPN[pos_idx[0]].pos * hit_ctx.w +
-		pMesh->mVertPN[pos_idx[1]].pos * hit_ctx.u +
-		pMesh->mVertPN[pos_idx[2]].pos * hit_ctx.v;
+	KTriMesh::PN_Data pn_vert[3];
+	pMesh->ComputePN_Data(pn_vert[0], pMesh->mFaces[tri_idx].pn_idx[0], mCameraContext.inMotionTime);
+	pMesh->ComputePN_Data(pn_vert[1], pMesh->mFaces[tri_idx].pn_idx[1], mCameraContext.inMotionTime);
+	pMesh->ComputePN_Data(pn_vert[2], pMesh->mFaces[tri_idx].pn_idx[2], mCameraContext.inMotionTime);
+
+	out_info.pos = pn_vert[0].pos * hit_ctx.w +
+		pn_vert[1].pos * hit_ctx.u +
+		pn_vert[2].pos * hit_ctx.v;
 	KVec3 temp_vec;
 	Vec3TransformCoord(temp_vec, out_info.pos, pNode->GetObjectTM());
 	Vec3TransformCoord(out_info.pos, temp_vec, nodeTRS.node_tm);
 
 	// interpolate the normal
-	temp_vec =	pMesh->mVertPN[nor_idx[0]].nor * hit_ctx.w +
-		pMesh->mVertPN[nor_idx[1]].nor * hit_ctx.u +
-		pMesh->mVertPN[nor_idx[2]].nor * hit_ctx.v;
+	temp_vec =	pn_vert[0].nor * hit_ctx.w +
+		pn_vert[1].nor * hit_ctx.u +
+		pn_vert[2].nor * hit_ctx.v;
 	KVec3 normal = temp_vec * pNode->GetObjectRot();
 	out_info.nor = normal * scene_rot;
 	out_info.nor.normalize();
 
-	const KVec3* vert_pos[3] = {
-		&pMesh->mVertPN[pMesh->mFaces[tri_idx].pn_idx[0]].pos,
-		&pMesh->mVertPN[pMesh->mFaces[tri_idx].pn_idx[1]].pos,
-		&pMesh->mVertPN[pMesh->mFaces[tri_idx].pn_idx[2]].pos
-	};
 	KVec3 edge[3];
-	edge[0] = (*vert_pos[1] - *vert_pos[0]);
-	edge[1] = (*vert_pos[2] - *vert_pos[1]);
+	edge[0] = (pn_vert[1].pos - pn_vert[0].pos);
+	edge[1] = (pn_vert[2].pos - pn_vert[1].pos);
 	KVec3 nor;
 	nor = edge[0] ^ edge[1];
 	nor.normalize();

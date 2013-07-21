@@ -260,31 +260,52 @@ public:
 		KVec3 pos;
 		KVec3 nor;
 	};
-	std::vector<PN_Data> mVertPN;
 
 	struct TT_Data {
 		KVec2 texcoord;
 		KVec3 tangent;
 		KVec3 binormal;
 	};
-	std::vector<TT_Data> mVertTT;
+
+	UINT32 mPN_FrameCnt;
+	UINT32 mPN_VertCnt;
+
+	UINT32 mTT_FrameCnt;
+	UINT32 mTT_VertCnt;
+
+private:
+	std::vector<PN_Data> mVertPNData;
+	std::vector<TT_Data> mVertTTData;
+
 public:
+	KTriMesh();
+	void SetupPN(UINT32 pnCnt, UINT32 pnFrame);
+	void SetupTT(UINT32 ttCnt, UINT32 ttFrame);
 
-	UINT32 FaceCount() {return (UINT32)mFaces.size();}
-	UINT32 PNCount() {return (UINT32)mVertPN.size();}
+	PN_Data* GetVertPN(UINT32 vidx) {return &mVertPNData[vidx * mPN_FrameCnt];}
+	const PN_Data* GetVertPN(UINT32 vidx) const {return &mVertPNData[vidx * mPN_FrameCnt];}
 
-	float ComputeTriArea(UINT32 idx) const;
-	void ComputeBBox(KBBox& bbox) const;
+	TT_Data* GetVertTT(UINT32 vidx) {return &mVertTTData[vidx * mTT_FrameCnt];}
+	const TT_Data* GetVertTT(UINT32 vidx) const {return &mVertTTData[vidx * mTT_FrameCnt];}
+
+	UINT32 FaceCount() const {return (UINT32)mFaces.size();}
+
+
 	void ChangePivot(const KMatrix4& mat);
 
-	void ComputeFaceNormal(UINT32 idx, KVec3& out_nor) const;
+	// Following functions will compute the attributes regarding the current time
+	void ComputePN_Data(PN_Data& pnData, UINT32 vidx, float cur_t) const;
+	void ComputeTT_Data(TT_Data& ttData, UINT32 vidx, float cur_t) const;
+	KVec3 ComputeVertPos(UINT32 vidx, float cur_t) const;
+	KVec3 ComputeVertNor(UINT32 vidx, float cur_t) const;
+	KVec2 ComputeTexcrd(UINT32 vidx, float cur_t) const;
+	float ComputeTriArea(UINT32 idx, float cur_t) const;
+	void ComputeBBox(KBBox& bbox, float cur_t) const;
+	void ComputeFaceNormal(UINT32 idx, KVec3& out_nor, float cur_t) const;
+	void InterpolateTT(UINT32 faceIdx, const IntersectContext& ctx, TT_Data& out_tt, float cur_t) const;
 
-	void InterpolateTT(UINT32 faceIdx, const IntersectContext& ctx, TT_Data& out_tt) const;
-	void GetUV(UINT32 faceIdx, const KVec2* uv[3]) const;
-
-	bool SaveToFile(FILE* pFile);
-	bool LoadFromFile(FILE* pFile);
-
+	// this function computes the whole bounding box along all the frames
+	void ComputeBBoxAll(KBBox& bbox) const;
 };
 
 
@@ -345,9 +366,6 @@ public:
 
 	virtual void InitAccelData() {};
 	virtual void ResetScene();
-
-	bool SaveToFile(FILE* pFile);
-	bool LoadFromFile(FILE* pFile);
 
 private:
 	UINT32 GenAccelTriangle(UINT32 nodeIdx, UINT32 subMeshIdx, KAccelTriangle* accelTri) const;

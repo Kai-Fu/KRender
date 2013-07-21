@@ -171,7 +171,7 @@ bool KObjFileLoader::LoadObjFile(const char* filename, KScene& scene)
 void KObjFileLoader::GetNodeLocalMatrix(const char* nodeName, KTriMesh* pMesh, KMatrix4& outMat)
 {
 	KBBox bbox;
-	pMesh->ComputeBBox(bbox);
+	pMesh->ComputeBBoxAll(bbox);
 	KMatrix4 mat;
 	nvmath::setTransMat(mat, bbox.Center());
 	outMat = mat;

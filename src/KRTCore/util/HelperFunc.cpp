@@ -2,6 +2,7 @@
 #include "../os/api_wrapper.h"
 #include <string>
 #include <vector>
+#include <assert.h>
 
 float Rand_0_1()
 {
@@ -64,4 +65,22 @@ void IntToStr(int val, char* buf, int base)
 	for (int j = 0; j < i/2; ++j) 
 		std::swap(buf[j], buf[i-j-1]);
 	
+}
+
+
+float ComputeWeightAndIndex(UINT32 frameCnt, float cur_t, UINT32& floorIdx, UINT32& ceilingIdx)
+{
+	assert(cur_t >= 0 && cur_t <= 1.0f);
+	float fIdx = float(frameCnt - 1) * cur_t;
+	float fFloor = floor(fIdx);
+	floorIdx = (UINT32)fFloor;
+	ceilingIdx = (UINT32)ceil(fIdx);
+	assert(floorIdx < frameCnt);
+	if (ceilingIdx >= frameCnt) {
+		ceilingIdx = frameCnt - 1;
+		return 0;
+	}
+	else {
+		return fIdx - fFloor;
+	}
 }

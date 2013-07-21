@@ -89,6 +89,8 @@ protected:
 
 	const KSceneSet* mpSceneSet;
 	std::vector<KAccelStruct*> mpAccelStructs;
+	KAccelTriangleOpt1r4t* mpAccelGeomBuffer;
+
 	std::vector<KD_BBOX_NODE> mBBoxNode;
 	std::vector<KBBox> mKDSceneBBox;
 	

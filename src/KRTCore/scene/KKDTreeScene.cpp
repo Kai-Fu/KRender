@@ -456,12 +456,11 @@ size_t KAccelStruct_KDTree::CalcGeomDataSize() const
 #endif
 }
 
-void KAccelStruct_KDTree::FinalizeKDTree(size_t buffer_offset)
+void KAccelStruct_KDTree::FinalizeKDTree(KAccelTriangleOpt1r4t* pGeomBuffer)
 {
 
 #ifdef USE_PACKED_PRIMITIVE
 
-	KAccelTriangleOpt1r4t* pGeomBuffer = &s_pGeomBuffer[buffer_offset];
 	// Fill the geometry buffer
 	std::vector<KAccelTriangleOpt> kuv_tri[3];
 	size_t currentFillPos = 0;
