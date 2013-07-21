@@ -365,7 +365,7 @@ namespace Geom {
 		}
 
 		// PN data array
-		out_mesh.SetupPN(pn_index, 1);
+		out_mesh.SetupPN(pn_index, false);
 		for (size_t i = 0; i < pn_data.size(); ++i) {
 
 			const SortablePN& pos_it = pn_data[i];

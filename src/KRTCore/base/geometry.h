@@ -267,10 +267,10 @@ public:
 		KVec3 binormal;
 	};
 
-	UINT32 mPN_FrameCnt;
+	bool mHasPNAnim;
 	UINT32 mPN_VertCnt;
 
-	UINT32 mTT_FrameCnt;
+	bool mHasTTAnim;
 	UINT32 mTT_VertCnt;
 
 private:
@@ -279,14 +279,14 @@ private:
 
 public:
 	KTriMesh();
-	void SetupPN(UINT32 pnCnt, UINT32 pnFrame);
-	void SetupTT(UINT32 ttCnt, UINT32 ttFrame);
+	void SetupPN(UINT32 pnCnt, bool pnAnim);
+	void SetupTT(UINT32 ttCnt, bool ttAnim);
 
-	PN_Data* GetVertPN(UINT32 vidx) {return &mVertPNData[vidx * mPN_FrameCnt];}
-	const PN_Data* GetVertPN(UINT32 vidx) const {return &mVertPNData[vidx * mPN_FrameCnt];}
+	PN_Data* GetVertPN(UINT32 vidx) {return &mVertPNData[vidx * (mHasPNAnim ? 2 : 1)];}
+	const PN_Data* GetVertPN(UINT32 vidx) const {return &mVertPNData[vidx * (mHasPNAnim ? 2 : 1)];}
 
-	TT_Data* GetVertTT(UINT32 vidx) {return &mVertTTData[vidx * mTT_FrameCnt];}
-	const TT_Data* GetVertTT(UINT32 vidx) const {return &mVertTTData[vidx * mTT_FrameCnt];}
+	TT_Data* GetVertTT(UINT32 vidx) {return &mVertTTData[vidx * (mHasTTAnim ? 2 : 1)];}
+	const TT_Data* GetVertTT(UINT32 vidx) const {return &mVertTTData[vidx * (mHasTTAnim ? 2 : 1)];}
 
 	UINT32 FaceCount() const {return (UINT32)mFaces.size();}
 

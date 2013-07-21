@@ -162,7 +162,7 @@ void KScene::GetAccelTriPos(const KAccelTriangle& tri, KAccleTriVertPos& triPos)
 	KNode* pNode = mpNode[tri.GetNodeIdx()];
 	KTriMesh* pMesh = mpMesh[tri.GetMeshIdx()];
 	for (int i_vert = 0; i_vert < 3; ++i_vert) {
-		assert(pMesh->mPN_FrameCnt == 1);
+		assert(pMesh->mHasPNAnim == false);
 		KVec3& pos = pMesh->ComputeVertPos(pMesh->mFaces[tri.mTriIdx].pn_idx[i_vert], 0);
 		KVec4 out_pos;
 		out_pos = KVec4(pos, 1.0f) * pNode->GetObjectTM();
@@ -254,36 +254,35 @@ UINT32 KScene::GetTriangleCnt() const
 
 KTriMesh::KTriMesh()
 {
-	mPN_FrameCnt = 0;
+	mHasPNAnim = false;
 	mPN_VertCnt = 0;
 	
-	mTT_FrameCnt = 0;
+	mHasTTAnim = false;
 	mTT_VertCnt = 0;
 }
 
-void KTriMesh::SetupPN(UINT32 pnCnt, UINT32 pnFrame)
+void KTriMesh::SetupPN(UINT32 pnCnt, bool pnAnim)
 {
-	mVertPNData.resize(pnCnt * pnFrame);
-	mPN_FrameCnt = pnFrame;
+	mVertPNData.resize(pnCnt * (pnAnim ? 2 : 1));
+	mHasPNAnim = pnAnim;
 	mPN_VertCnt = pnCnt;
 	
 }
 
-void KTriMesh::SetupTT(UINT32 ttCnt, UINT32 ttFrame)
+void KTriMesh::SetupTT(UINT32 ttCnt, bool ttAnim)
 {
-	mVertTTData.resize(ttCnt * ttFrame);
-	mTT_FrameCnt = ttFrame;
+	mVertTTData.resize(ttCnt * (ttAnim ? 2 : 1));
+	mHasTTAnim = ttAnim;
 	mTT_VertCnt = ttCnt;
 }
 
 void KTriMesh::ComputePN_Data(PN_Data& pnData, UINT32 vidx, float cur_t) const
 {
 	if (mPN_VertCnt > 1) {
-		UINT32 floorIdx, ceilingIdx;
-		float alpha = ComputeWeightAndIndex(mPN_FrameCnt, cur_t, floorIdx, ceilingIdx);
+		float alpha = cur_t;
 		const PN_Data* pVert = GetVertPN(vidx);
-		pnData.pos = nvmath::lerp(alpha, pVert[floorIdx].pos, pVert[ceilingIdx].pos);
-		pnData.nor = nvmath::lerp(alpha, pVert[floorIdx].nor, pVert[ceilingIdx].nor);
+		pnData.pos = nvmath::lerp(alpha, pVert[0].pos, pVert[1].pos);
+		pnData.nor = nvmath::lerp(alpha, pVert[0].nor, pVert[1].nor);
 	}
 	else
 		pnData = mVertPNData[vidx];
@@ -292,12 +291,11 @@ void KTriMesh::ComputePN_Data(PN_Data& pnData, UINT32 vidx, float cur_t) const
 void KTriMesh::ComputeTT_Data(TT_Data& ttData, UINT32 vidx, float cur_t) const
 {
 	if (mTT_VertCnt > 1) {
-		UINT32 floorIdx, ceilingIdx;
-		float alpha = ComputeWeightAndIndex(mPN_FrameCnt, cur_t, floorIdx, ceilingIdx);
+		float alpha = cur_t;
 		const TT_Data* pVert = GetVertTT(vidx);
-		ttData.texcoord = nvmath::lerp(alpha, pVert[floorIdx].texcoord, pVert[ceilingIdx].texcoord);
-		ttData.tangent = nvmath::lerp(alpha, pVert[floorIdx].tangent, pVert[ceilingIdx].tangent);
-		ttData.binormal = nvmath::lerp(alpha, pVert[floorIdx].binormal, pVert[ceilingIdx].binormal);
+		ttData.texcoord = nvmath::lerp(alpha, pVert[0].texcoord, pVert[1].texcoord);
+		ttData.tangent = nvmath::lerp(alpha, pVert[0].tangent, pVert[1].tangent);
+		ttData.binormal = nvmath::lerp(alpha, pVert[0].binormal, pVert[1].binormal);
 	}
 	else
 		ttData = mVertTTData[vidx];
@@ -306,10 +304,9 @@ void KTriMesh::ComputeTT_Data(TT_Data& ttData, UINT32 vidx, float cur_t) const
 KVec3 KTriMesh::ComputeVertPos(UINT32 vidx, float cur_t) const
 {
 	if (mPN_VertCnt > 1) {
-		UINT32 floorIdx, ceilingIdx;
-		float alpha = ComputeWeightAndIndex(mPN_FrameCnt, cur_t, floorIdx, ceilingIdx);
+		float alpha = cur_t;
 		const PN_Data* pVert = GetVertPN(vidx);
-		return nvmath::lerp(alpha, pVert[floorIdx].pos, pVert[ceilingIdx].pos);
+		return nvmath::lerp(alpha, pVert[0].pos, pVert[1].pos);
 	}
 	else
 		return mVertPNData[vidx].pos;
@@ -318,10 +315,9 @@ KVec3 KTriMesh::ComputeVertPos(UINT32 vidx, float cur_t) const
 KVec3 KTriMesh::ComputeVertNor(UINT32 vidx, float cur_t) const
 {
 	if (mPN_VertCnt > 1) {
-		UINT32 floorIdx, ceilingIdx;
-		float alpha = ComputeWeightAndIndex(mPN_FrameCnt, cur_t, floorIdx, ceilingIdx);
+		float alpha = cur_t;
 		const PN_Data* pVert = GetVertPN(vidx);
-		return nvmath::lerp(alpha, pVert[floorIdx].nor, pVert[ceilingIdx].nor);
+		return nvmath::lerp(alpha, pVert[0].nor, pVert[1].nor);
 	}
 	else
 		return mVertPNData[vidx].nor;
@@ -330,10 +326,9 @@ KVec3 KTriMesh::ComputeVertNor(UINT32 vidx, float cur_t) const
 KVec2 KTriMesh::ComputeTexcrd(UINT32 vidx, float cur_t) const
 {
 	if (mTT_VertCnt > 1) {
-		UINT32 floorIdx, ceilingIdx;
-		float alpha = ComputeWeightAndIndex(mPN_FrameCnt, cur_t, floorIdx, ceilingIdx);
+		float alpha = cur_t;
 		const TT_Data* pVert = GetVertTT(vidx);
-		return nvmath::lerp(alpha, pVert[floorIdx].texcoord, pVert[ceilingIdx].texcoord);
+		return nvmath::lerp(alpha, pVert[0].texcoord, pVert[1].texcoord);
 	}
 	else
 		return mVertTTData[vidx].texcoord;
