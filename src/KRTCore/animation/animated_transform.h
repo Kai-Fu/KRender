@@ -17,22 +17,17 @@ public:
 		nvmath::Quatf node_rot;
 	};
 
-	// Clear the stored TRS
-	void Reset();
-	// Add one keyframe's transform matrix
-	void AddKeyFrame(const KMatrix4& mat);
-
+	void Reset(const KMatrix4& single_trans);
+	void Reset(const KMatrix4& starting, const KMatrix4& ending);
 	void ComputeTotalBBox(const KBBox& in_box, KBBox& out_box) const;
-	void Interpolate(float t, LclTRS& out_TRS) const;
+	void Interpolate(float cur_t, LclTRS& out_TRS) const;
 	static void TransformRay(KRay& out_ray, const KRay& in_ray, const LclTRS& trs);
 	static void Decompose(LclTRS& out_trs, const KMatrix4& mat);
 
-	bool Save(FILE* pFile) const;
-	bool Load(FILE* pFile);
-
 private:
-	
-	std::vector<LclTRS> mKeyFrameTrans;
+	bool mIsMoving;
+	LclTRS mStartingFrame;
+	LclTRS mEndingFrame;
 };
 
 }

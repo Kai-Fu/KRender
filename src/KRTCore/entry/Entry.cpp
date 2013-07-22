@@ -439,8 +439,7 @@ unsigned KRT_AddNodeToScene(TopSceneHandle scene, unsigned sceneIdx, float* matr
 {
 	KSceneSet* pScene = (KSceneSet*)scene;
 	UINT32 nodeIdx = pScene->SceneNode_Create(sceneIdx);
-	pScene->SceneNodeTM_ResetFrame(sceneIdx);
-	pScene->SceneNodeTM_AddFrame(sceneIdx, *(KMatrix4*)matrix);
+	pScene->SceneNodeTM_SetStaticNode(sceneIdx, *(KMatrix4*)matrix);
 	return nodeIdx;
 }
 
@@ -453,13 +452,13 @@ SubSceneHandle KRT_GetSubSceneByIndex(TopSceneHandle scene, unsigned idx)
 void KRT_AddSubSceneNodeFrame(TopSceneHandle scene, unsigned nodeIdx, float* matrix)
 {
 	KSceneSet* pScene = (KSceneSet*)scene;
-	pScene->SceneNodeTM_AddFrame(nodeIdx, *(KMatrix4*)matrix);
+	pScene->SceneNodeTM_SetStaticNode(nodeIdx, *(KMatrix4*)matrix);
 }
 
 void KRT_ResetSubSceneNodeTransform(TopSceneHandle scene, unsigned nodeIdx)
 {
 	KSceneSet* pScene = (KSceneSet*)scene;
-	pScene->SceneNodeTM_ResetFrame(nodeIdx);
+	pScene->SceneNodeTM_SetStaticNode(nodeIdx, nvmath::cIdentity44f);
 }
 
 TopSceneHandle KRT_GetScene()

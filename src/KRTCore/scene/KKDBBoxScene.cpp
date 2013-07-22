@@ -64,16 +64,15 @@ UINT32 KSceneSet::SceneNode_Create(UINT32 scene_idx)
 	return UINT32(mKDSceneNodes.size() - 1);
 }
 
-void KSceneSet::SceneNodeTM_ResetFrame(UINT32 node_idx)
+void KSceneSet::SceneNodeTM_SetStaticNode(UINT32 node_idx, const KMatrix4& trans)
 {
-	mKDSceneNodes[node_idx].scene_trs.Reset();
+	mKDSceneNodes[node_idx].scene_trs.Reset(trans);
 }
 
-void KSceneSet::SceneNodeTM_AddFrame(UINT32 node_idx, const KMatrix4& node_tm)
+void KSceneSet::SceneNodeTM_SetMovingNode(UINT32 node_idx, const KMatrix4& starting, const KMatrix4& ending)
 {
-	mKDSceneNodes[node_idx].scene_trs.AddKeyFrame(node_tm);
+	mKDSceneNodes[node_idx].scene_trs.Reset(starting, ending);
 }
-
 
 bool KAccelStruct_BVH::IntersectBBoxNode(const KRay& ray, UINT32 idx, IntersectContext& ctx, float t) const
 {

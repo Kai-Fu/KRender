@@ -4,75 +4,69 @@
 
 namespace KAnimation {
 
-void LocalTRSFrame::Reset()
+void LocalTRSFrame::Reset(const KMatrix4& single_trans)
 {
-	mKeyFrameTrans.clear();
-}
+	mIsMoving = false;
 
-void LocalTRSFrame::AddKeyFrame(const KMatrix4& mat)
-{
-	LclTRS trs;
-	trs.inv_node_tm = mat;
-	trs.node_tm = mat;
-	trs.inv_node_tm.invert();
-
+	mStartingFrame.inv_node_tm = single_trans;
+	mStartingFrame.node_tm = single_trans;
+	mStartingFrame.inv_node_tm.invert();
 	nvmath::Trafo trans_info;
-	trans_info.setMatrix(mat);
-	trs.node_rot = trans_info.getOrientation();
-
-	mKeyFrameTrans.push_back(trs);
+	trans_info.setMatrix(single_trans);
+	mStartingFrame.node_rot = trans_info.getOrientation();
 }
+
+void LocalTRSFrame::Reset(const KMatrix4& starting, const KMatrix4& ending)
+{
+	mIsMoving = true;
+
+	mStartingFrame.inv_node_tm = starting;
+	mStartingFrame.node_tm = starting;
+	mStartingFrame.inv_node_tm.invert();
+	nvmath::Trafo trans_info;
+	trans_info.setMatrix(starting);
+	mStartingFrame.node_rot = trans_info.getOrientation();
+
+	mEndingFrame.inv_node_tm = ending;
+	mEndingFrame.node_tm = ending;
+	mEndingFrame.inv_node_tm.invert();
+	trans_info.setMatrix(ending);
+	mEndingFrame.node_rot = trans_info.getOrientation();
+
+	if (starting == ending)
+		mIsMoving = false;
+}
+
 
 void LocalTRSFrame::ComputeTotalBBox(const KBBox& in_box, KBBox& out_box) const
 {
 	out_box.SetEmpty();
-	if (mKeyFrameTrans.size() > 0) {
-		for (unsigned int i = 0; i < mKeyFrameTrans.size(); ++i) {
-			KBBox frameBBox(in_box);
-			frameBBox.TransformByMatrix(mKeyFrameTrans[i].node_tm);
-			out_box.Add(frameBBox);
-		}
+
+	KBBox frameBBox(in_box);
+	frameBBox.TransformByMatrix(mStartingFrame.node_tm);
+	out_box.Add(frameBBox);
+
+	if (mIsMoving) {
+		KBBox frameBBox(in_box);
+		frameBBox.TransformByMatrix(mEndingFrame.node_tm);
+		out_box.Add(frameBBox);
 	}
-	else
-		out_box = in_box;
 }
 
-void LocalTRSFrame::Interpolate(float t, LocalTRSFrame::LclTRS& out_TRS) const
+void LocalTRSFrame::Interpolate(float cur_t, LocalTRSFrame::LclTRS& out_TRS) const
 {
-	if (mKeyFrameTrans.size() > 1) {
-		float interval = 1.0f / (float)(mKeyFrameTrans.size() - 1);
-		float slot = t / interval;
-		int i_slot = (int)slot;
-		float delta = slot - (float)i_slot;
+	if (mIsMoving) {
 
-		out_TRS.inv_node_tm = nvmath::lerp(delta, mKeyFrameTrans[i_slot].inv_node_tm, mKeyFrameTrans[i_slot + 1].inv_node_tm);
-		out_TRS.node_tm = nvmath::lerp(delta, mKeyFrameTrans[i_slot].node_tm, mKeyFrameTrans[i_slot + 1].node_tm);
-		out_TRS.node_rot = nvmath::lerp(delta, mKeyFrameTrans[i_slot].node_rot, mKeyFrameTrans[i_slot + 1].node_rot);
-	}
-	else if (mKeyFrameTrans.size() == 1)  {
-		out_TRS = mKeyFrameTrans[0];
+		out_TRS.inv_node_tm = nvmath::lerp(cur_t, mStartingFrame.inv_node_tm, mEndingFrame.inv_node_tm);
+		out_TRS.node_tm = nvmath::lerp(cur_t, mStartingFrame.node_tm, mEndingFrame.node_tm);
+		out_TRS.node_rot = nvmath::lerp(cur_t, mStartingFrame.node_rot, mEndingFrame.node_rot);
 	}
 	else {
-		out_TRS.node_tm = nvmath::cIdentity44f;
-		out_TRS.inv_node_tm = nvmath::cIdentity44f;
-		out_TRS.node_rot = KQuat(0,0,0,1);
+		out_TRS = mStartingFrame;
 	}
 }
 
 
-bool LocalTRSFrame::Save(FILE* pFile) const
-{
-	if (!SaveArrayToFile(mKeyFrameTrans, pFile))
-		return false;
-	return true;
-}
-
-bool LocalTRSFrame::Load(FILE* pFile)
-{
-	if (!LoadArrayFromFile(mKeyFrameTrans, pFile))
-		return false;
-	return true;
-}
 
 void LocalTRSFrame::TransformRay(KRay& out_ray, const KRay& in_ray, const LocalTRSFrame::LclTRS& trs)
 {

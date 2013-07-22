@@ -37,10 +37,6 @@ add_subdirectory( KRTCore )
 add_subdirectory( KRTConsole )
 
 
-# Executable module KFBXTranslator
-add_subdirectory( KFBXTranslator )
-
-
 # Shared module KShaderCompiler
 add_subdirectory( KShaderCompiler/src )
 

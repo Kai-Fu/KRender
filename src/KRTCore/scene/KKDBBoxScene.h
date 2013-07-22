@@ -13,8 +13,8 @@ public:
 	void Reset();
 
 	UINT32 SceneNode_Create(UINT32 scene_idx);
-	void SceneNodeTM_ResetFrame(UINT32 node_idx);
-	void SceneNodeTM_AddFrame(UINT32 node_idx, const KMatrix4& node_tm);
+	void SceneNodeTM_SetStaticNode(UINT32 node_idx, const KMatrix4& trans);
+	void SceneNodeTM_SetMovingNode(UINT32 node_idx, const KMatrix4& starting, const KMatrix4& ending);
 
 	void SetKDSceneCnt(UINT32 cnt);
 	UINT32 GetKDSceneCnt() const;

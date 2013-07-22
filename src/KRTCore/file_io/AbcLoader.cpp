@@ -17,8 +17,6 @@ AbcLoader::AbcLoader()
 	mCurTime = 0;
 	mpScene = NULL;
 	mSampleDuration = 1.0 / 24.0;
-	mXformSampleCnt = 12;
-	mDeformSampleCnt = 3;
 }
 
 AbcLoader::~AbcLoader()
@@ -151,16 +149,15 @@ KScene* AbcLoader::GetXformStaticScene(const Abc::IObject& obj, KMatrix4& mat)
 		mXformNodes[animNode.get()] = xformScene;
 		if (animNode.get()) {
 			AbcG::IXform xform(animNode, Abc::kWrapExisting);
-			std::vector<KMatrix4> sceneNodeFrames;
+			KMatrix4 sceneNodeFrames[2];
 			GetXformWorldTransform(xform, sceneNodeFrames);
 			UINT32 sceneNodeIdx = mpScene->SceneNode_Create(sceneIdx);
-			mpScene->SceneNodeTM_ResetFrame(sceneNodeIdx);
-			for (size_t i = 0; i < sceneNodeFrames.size(); ++i)
-				mpScene->SceneNodeTM_AddFrame(sceneNodeIdx, sceneNodeFrames[i]);
+			mpScene->SceneNodeTM_SetMovingNode(sceneNodeIdx, sceneNodeFrames[0], sceneNodeFrames[1]);
 		}
 		else {
 			// Create the default node with identify transform.
-			mpScene->SceneNode_Create(sceneIdx);
+			UINT32 sceneNodeIdx = mpScene->SceneNode_Create(sceneIdx);
+			mpScene->SceneNodeTM_SetStaticNode(sceneNodeIdx, nvmath::cIdentity44f);
 		}
 
 	}
@@ -406,7 +403,7 @@ bool AbcLoader::ConvertStaticMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::
 	return true;
 }
 
-void AbcLoader::GetXformWorldTransform(const AbcG::IXform& xform, std::vector<KMatrix4>& frames)
+void AbcLoader::GetXformWorldTransform(const AbcG::IXform& xform, KMatrix4 trans[2])
 {
 	bool isAniminated = false;
 	for (Abc::IObject node = xform; node.valid(); node = node.getParent()) {
@@ -421,11 +418,8 @@ void AbcLoader::GetXformWorldTransform(const AbcG::IXform& xform, std::vector<KM
 
 	if (isAniminated) {
 
-		double sampleStep = mSampleDuration / (double)mXformSampleCnt;
-		frames.resize(mXformSampleCnt);
-		for (int i = 0; i < mXformSampleCnt; ++i) 
-			frames[i] = nvmath::cIdentity44f;
-
+		trans[0] = nvmath::cIdentity44f;
+		trans[1] = nvmath::cIdentity44f;
 
 		for (Abc::IObject node = xform; node.valid(); node = node.getParent()) {
 			if (AbcG::IXform::matches(node.getHeader())) {
@@ -433,9 +427,9 @@ void AbcLoader::GetXformWorldTransform(const AbcG::IXform& xform, std::vector<KM
 
 				KMatrix4 localTransform;
 
-				for (int i = 0; i < mXformSampleCnt; ++i) {
+				for (int i = 0; i < 2; ++i) {
 					
-					Abc::chrono_t sampleTime = mCurTime + sampleStep * (double)i;
+					Abc::chrono_t sampleTime = mCurTime + mSampleDuration * (double)i;
 					// Do two samples, one with floor index and the other with ceiling index, then
 					// lerp between these two samples with the current time.
 					Abc::ISampleSelector ss0(sampleTime, Abc::ISampleSelector::kFloorIndex);
@@ -462,25 +456,26 @@ void AbcLoader::GetXformWorldTransform(const AbcG::IXform& xform, std::vector<KM
 						nvmath::lerp( float((sampleTime-t0)/(t1-t0)), kt0, kt1, localTransform);
 					}
 
-					frames[i] = localTransform * frames[i];
+					trans[i] = localTransform * trans[i];
 				}
 			}
 		}
 	}
 	else {
 		// For static xform...
-		frames.resize(1);
-		frames[0] = nvmath::cIdentity44f;
+		trans[0] = nvmath::cIdentity44f;
 		for (Abc::IObject node = xform; node.valid(); node = node.getParent()) {
 			if (AbcG::IXform::matches(node.getHeader())) {
 				AbcG::IXform xform(node, Abc::kWrapExisting);
 				Imath::M44d mat = xform.getSchema().getValue().getMatrix();
 				KMatrix4 localTransform;
 				ConvertMatrix(mat, localTransform);
-				frames[0] = localTransform * frames[0];
+				trans[0] = localTransform * trans[0];
 			}
 
 		}
+
+		trans[1] = trans[0];
 	}
 
 	

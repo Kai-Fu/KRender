@@ -30,7 +30,7 @@ private:
 	void ProcessMesh(const AbcG::IPolyMesh& mesh);
 	void ProcessCamera(const AbcG::ICamera& camera);
 
-	void GetXformWorldTransform(const AbcG::IXform& xform, std::vector<KMatrix4>& frames);
+	void GetXformWorldTransform(const AbcG::IXform& xform, KMatrix4 trans[2]);
 	KScene* GetXformStaticScene(const Abc::IObject& obj, KMatrix4& mat);
 
 	static void ConvertMatrix(const Imath::M44d& ilmMat, KMatrix4& mat);
@@ -38,8 +38,6 @@ private:
 private:
 	double mCurTime;
 	double mSampleDuration;
-	int mXformSampleCnt;
-	int mDeformSampleCnt;
 
 	KSceneSet* mpScene;
 	std::hash_map<AbcA::ObjectReader*, KScene*> mXformNodes;

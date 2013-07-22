@@ -97,7 +97,6 @@ extern "C" {
 	KRT_API SubSceneHandle KRT_GetSubSceneByIndex(TopSceneHandle scene, unsigned idx);
 	KRT_API unsigned KRT_AddNodeToScene(TopSceneHandle scene, unsigned sceneIdx, float* matrix);
 	KRT_API void KRT_ResetSubSceneNodeTransform(TopSceneHandle scene, unsigned nodeIdx);
-	KRT_API void KRT_AddSubSceneNodeFrame(TopSceneHandle scene, unsigned nodeIdx, float* matrix);
 
 	KRT_API TopSceneHandle KRT_GetScene();
 
