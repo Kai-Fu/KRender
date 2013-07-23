@@ -292,6 +292,7 @@ public:
 
 
 	void ChangePivot(const KMatrix4& mat);
+	void MakeAsStatic();
 
 	// Following functions will compute the attributes regarding the current time
 	void ComputePN_Data(PN_Data& pnData, UINT32 vidx, float cur_t) const;

@@ -33,8 +33,20 @@ private:
 	void GetXformWorldTransform(const AbcG::IXform& xform, KMatrix4 trans[2]);
 	KScene* GetXformStaticScene(const Abc::IObject& obj, KMatrix4& mat);
 
+	bool ConvertMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::chrono_t t, KTriMesh& outMesh);
+
 	static void ConvertMatrix(const Imath::M44d& ilmMat, KMatrix4& mat);
-	static bool ConvertStaticMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::chrono_t t, KTriMesh& outMesh);
+
+	template <typename ArrayType>
+	static bool CompareAbcArrary(const ArrayType& left, const ArrayType& right) {
+		if (left->size() != right->size())
+			return false;
+		for (size_t i = 0; i < left->size(); ++i) {
+			if ((*left)[i] != (*right)[i]) return false;
+		}
+		return true;
+	}
+
 private:
 	double mCurTime;
 	double mSampleDuration;

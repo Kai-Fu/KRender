@@ -242,6 +242,19 @@ void KTriMesh::InterpolateTT(UINT32 faceIdx, const IntersectContext& ctx, TT_Dat
 	out_tt.binormal  += tt2.binormal * ctx.v;
 }
 
+void KTriMesh::MakeAsStatic()
+{
+	for (size_t i = 0; i < mVertPNData.size(); ++i) {
+		mVertPNData[i] = mVertPNData[i*2];
+	}
+	mVertPNData.resize(mVertPNData.size() / 2);
+
+	for (size_t i = 0; i < mVertPNData.size(); ++i) {
+		mVertTTData[i] = mVertTTData[i*2];
+	}
+	mVertTTData.resize(mVertTTData.size() / 2);
+	mHasPNAnim = false;
+}
 
 UINT32 KScene::GetTriangleCnt() const
 {
@@ -256,7 +269,7 @@ KTriMesh::KTriMesh()
 {
 	mHasPNAnim = false;
 	mPN_VertCnt = 0;
-	
+
 	mHasTTAnim = false;
 	mTT_VertCnt = 0;
 }
