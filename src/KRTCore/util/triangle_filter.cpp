@@ -27,8 +27,8 @@ public:
 		output_cnt = input_cnt;
 		while (i < output_cnt) {
 			UINT32 idx = ptri_idx[i];
-			const KAccelTriangle* pAccelTri = pscene->GetAccelTriData(idx);
-			KAccleTriVertPos triPos;
+			const KTriDesc* pAccelTri = pscene->GetAccelTriData(idx);
+			KTriVertPos2 triPos;
 			pscene->GetSource()->GetAccelTriPos(*pAccelTri, triPos);
 			if (TriIntersectBBox(triPos, *clamp_box)) {
 				bbox.Add(triBBox[idx]);

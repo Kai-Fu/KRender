@@ -106,8 +106,8 @@ public:
 	const vec4& GetDirVec4() const {return mDir;}
 };
 
-class KAccelTriangle;
-struct KAccleTriVertPos;
+class KTriDesc;
+struct KTriVertPos2;
 class KBBoxOpt;
 
 class KBSphere
@@ -133,7 +133,7 @@ public:
 	KVec3 mMax;
 
 	KBBox();
-	KBBox(const KAccleTriVertPos& tri);
+	KBBox(const KTriVertPos2& tri);
 	const KVec3& operator[](int i) const {return i ? mMax : mMin;}
 	void Add(const KBBox& bbox);
 	void ContainVert(const KVec3& vert);
@@ -179,12 +179,19 @@ struct KTexTriangle {
 	UINT32 tt_idx[3];  // texcoord & tangent index
 };
 
-struct KAccleTriVertPos {
+struct KTriVertPos1 {
 	KVec3		mVertPos[3];
 };
 
+struct KTriVertPos2 
+{
+	KVec3		mVertPos[3];
+	KVec3		mVertPos_Ending[3];
+	bool		mIsMoving;
+};
+
 // Data structure to accelerate ray-triangle intersection
-class KAccelTriangle
+class KTriDesc
 {
 public:
 	UINT32	mNodeMeshIdx;
@@ -197,7 +204,7 @@ public:
 };
 
 
-// This is the optimized version of KAccelTriangle(four triangles and one ray)
+// This is the optimized version of KTriDesc(four triangles and one ray)
 class KAccelTriangleOpt
 {
 public:
@@ -222,7 +229,7 @@ public:
 	float E_F;	// data use to store the normal flag(sign bit) and the uv epsilon value
 };
 
-// This is the optimized version of KAccelTriangle(one triangle and four rays)
+// This is the optimized version of KTriDesc(one triangle and four rays)
 class KAccelTriangleOpt1r4t
 {
 public:
@@ -248,7 +255,7 @@ public:
 
 };
 
-void PrecomputeAccelTri(const KAccleTriVertPos& tri, UINT32 tri_id, KAccelTriangleOpt &triAccel);
+void PrecomputeAccelTri(const KTriVertPos1& tri, UINT32 tri_id, KAccelTriangleOpt &triAccel);
 
 class KTriMesh
 {
@@ -359,17 +366,17 @@ public:
 	UINT32 GetNodeCnt() const {return (UINT32)mpNode.size();}
 	UINT32 GetMeshCnt() const {return (UINT32)mpMesh.size();}
 	void SetNodeTM(UINT32 nodeIdx, const KMatrix4& tm);
-	void GetAccelTriPos(const KAccelTriangle& tri, KAccleTriVertPos& triPos) const;
+	void GetAccelTriPos(const KTriDesc& tri, KTriVertPos2& triPos) const;
 
 	// Functions used to calculate accelerated data structure for ray tracing
-	void InitAccelTriangleCache(std::vector<KAccelTriangle>& triCache) const;
+	void InitAccelTriangleCache(std::vector<KTriDesc>& triCache) const;
 
 
 	virtual void InitAccelData() {};
 	virtual void ResetScene();
 
 private:
-	UINT32 GenAccelTriangle(UINT32 nodeIdx, UINT32 subMeshIdx, KAccelTriangle* accelTri) const;
+	UINT32 GenAccelTriangle(UINT32 nodeIdx, UINT32 subMeshIdx, KTriDesc* accelTri) const;
 };
 
 void Vec3TransformCoord(KVec3& res, const KVec3& v, const KMatrix4& mat);

@@ -203,7 +203,7 @@ bool KAccelStruct_BVH::IntersectRay_KDTree(const KRay& ray, IntersectContext& ct
 }
 
 
-const KAccelTriangle* KAccelStruct_BVH::GetAccelTriData(UINT32 scene_node_idx, UINT32 tri_idx) const
+const KTriDesc* KAccelStruct_BVH::GetAccelTriData(UINT32 scene_node_idx, UINT32 tri_idx) const
 {
 	UINT32 scene_idx = mpSceneSet->mKDSceneNodes[scene_node_idx].kd_scene_idx;
 	return mpAccelStructs[scene_idx]->GetAccelTriData(tri_idx);

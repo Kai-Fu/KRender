@@ -41,9 +41,9 @@ public:
 	virtual size_t CalcGeomDataSize() const = 0;
 	virtual void FinalizeKDTree(KAccelTriangleOpt1r4t* pGeomBuffer) = 0;
 
-	const KAccelTriangle* GetAccelTriData(UINT32 tri_idx) const;
+	const KTriDesc* GetAccelTriData(UINT32 tri_idx) const;
 protected:
-	std::vector<KAccelTriangle>	mAccelTriangle;
+	std::vector<KTriDesc>	mAccelTriangle;
 };
 
 class KAccelStruct_KDTree : public KAccelStruct
@@ -182,7 +182,7 @@ public:
 	bool IntersectRay_KDTree(const KRay& ray, IntersectContext& ctx) const;
 	bool IntersectRay_BruteForce(const KRay& ray, IntersectContext& ctx) const;
 
-	const KAccelTriangle* GetAccelTriData(UINT32 tri_idx) const {return &mAccelTriangle[tri_idx];} 
+	const KTriDesc* GetAccelTriData(UINT32 tri_idx) const {return &mAccelTriangle[tri_idx];} 
 
 	virtual float GetSceneEpsilon() const {return mSceneEpsilon;}
 	virtual unsigned long long GetAccelLeafTriCnt() const {return mTotalLeafTriCnt;}

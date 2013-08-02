@@ -69,7 +69,7 @@ int intersect_triangle(const float* orig, const float* dir,
 
 
 
-bool RayIntersect(const KRay& ray, const KAccleTriVertPos& tri, UINT32 tri_id, IntersectContext& ctx)
+bool RayIntersect(const KRay& ray, const KTriVertPos1& tri, UINT32 tri_id, IntersectContext& ctx)
 {
 	float t = 0;
 	float u, v;
@@ -165,7 +165,7 @@ inline static bool intersect_one_ray(const KAccelTriangleOpt &acc, const KRay &r
 #define X 0
 #define Y 1
 #define Z 2
-void PrecomputeAccelTri(const KAccleTriVertPos& tri, UINT32 tri_id, KAccelTriangleOpt &triAccel)
+void PrecomputeAccelTri(const KTriVertPos1& tri, UINT32 tri_id, KAccelTriangleOpt &triAccel)
 {
 	// calculate triAccel-struture         
 	KVec3 c = tri.mVertPos[1] - tri.mVertPos[0];

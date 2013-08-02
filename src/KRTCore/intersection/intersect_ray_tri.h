@@ -2,7 +2,7 @@
 
 #include "../base/geometry.h"   
 
-bool RayIntersect(const KRay& ray, const KAccleTriVertPos& tri, UINT32 tri_id, IntersectContext& ctx);
+bool RayIntersect(const KRay& ray, const KTriVertPos1& tri, UINT32 tri_id, IntersectContext& ctx);
 bool RayIntersect(const KRay& ray, const KAccelTriangleOpt& tri, IntersectContext& ctx);
 bool RayIntersect4Tri(const KRay& ray, const KAccelTriangleOpt1r4t* tri, UINT32 tri4_cnt, IntersectContext& ctx);
 

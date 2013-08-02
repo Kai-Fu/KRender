@@ -78,7 +78,7 @@ UINT32 KAccelStruct_KDTree::SplitScene(UINT32* triangles, UINT32 cnt,
 				UINT32 i = 0;
 				while (i < cnt) {
 					UINT32 idx = triangles[i];
-					KAccleTriVertPos triPos;
+					KTriVertPos2 triPos;
 					mpSourceScene->GetAccelTriPos(mAccelTriangle[idx], triPos);
 					if (TriIntersectBBox(triPos, *clamp_box)) {
 						bbox.Add(mTempDataForKD->mTriBBox[idx]);
@@ -371,7 +371,7 @@ void KAccelStruct_KDTree::SetKNodeChild(UINT32 nodeIdx, UINT32 childIdx, bool le
 
 void KAccelStruct_KDTree::PrecomputeTriangleBBox()
 {
-	KAccleTriVertPos triVertPos;
+	KTriVertPos2 triVertPos;
 	mTempDataForKD->mTriBBox.resize(mAccelTriangle.size());
 	for (size_t i = 0; i < mAccelTriangle.size(); ++i) {
 		mpSourceScene->GetAccelTriPos(mAccelTriangle[i], triVertPos);
@@ -474,7 +474,7 @@ void KAccelStruct_KDTree::FinalizeKDTree(KAccelTriangleOpt1r4t* pGeomBuffer)
 		for (UINT32 tri_i = 0; tri_i < leafData.tri_cnt; ++tri_i) {
 			UINT32 idx = leafData.tri_list.leaf_triangles[tri_i];
 			KAccelTriangleOpt accelTriOpt;
-			KAccleTriVertPos triPos;
+			KTriVertPos2 triPos;
 			mpSourceScene->GetAccelTriPos(mAccelTriangle[idx], triPos);
 			PrecomputeAccelTri(triPos,idx, accelTriOpt);
 			kuv_tri[accelTriOpt.k].push_back(accelTriOpt);
@@ -707,7 +707,7 @@ bool KAccelStruct_KDTree::IntersectRay_BruteForce(const KRay& ray, IntersectCont
 {
 	bool ret = false;
 	for (UINT32 i = 0; i < mAccelTriangle.size(); ++i) {
-		KAccleTriVertPos triPos;
+		KTriVertPos2 triPos;
 		mpSourceScene->GetAccelTriPos(mAccelTriangle[i], triPos);
 
 		if (RayIntersect(ray, triPos, i, ctx)) {
@@ -740,7 +740,7 @@ void KAccelStruct_KDTree::ResetScene()
 	mSceneNode.clear();
 }
 
-const KAccelTriangle* KAccelStruct::GetAccelTriData(UINT32 tri_idx) const
+const KTriDesc* KAccelStruct::GetAccelTriData(UINT32 tri_idx) const
 {
 	return &mAccelTriangle[tri_idx];
 }

@@ -279,7 +279,7 @@ void TracingInstance::CalcuShadingContext(const KRay& hitRay, const IntersectCon
 	KAnimation::LocalTRSFrame::LclTRS nodeTRS;
 	pPlainScene->GetNodeTransform(nodeTRS, hit_ctx.bbox_node_idx, mCameraContext.inMotionTime);
 	const KQuat& scene_rot = nodeTRS.node_rot;
-	const KAccelTriangle* pTri = mpScene->GetAccelTriData(hit_ctx.bbox_node_idx, hit_ctx.tri_id);
+	const KTriDesc* pTri = mpScene->GetAccelTriData(hit_ctx.bbox_node_idx, hit_ctx.tri_id);
 	UINT32 mesh_idx = pTri->GetMeshIdx();
 	UINT32 node_idx = pTri->GetNodeIdx();
 	UINT32 tri_idx = pTri->mTriIdx;
@@ -365,7 +365,7 @@ const ISurfaceShader* TracingInstance::GetSurfaceShader(const IntersectContext& 
 {
 	const KSceneSet* pPlainScene = mpScene->GetSource();
 	const KScene* pKDScene = pPlainScene->GetNodeKDScene(hit_ctx.bbox_node_idx);
-	const KAccelTriangle* pTri = mpScene->GetAccelTriData(hit_ctx.bbox_node_idx, hit_ctx.tri_id);
+	const KTriDesc* pTri = mpScene->GetAccelTriData(hit_ctx.bbox_node_idx, hit_ctx.tri_id);
 	UINT32 node_idx = pTri->GetNodeIdx();
 	const KNode* pNode = pKDScene->GetNode(node_idx);
 	return pNode->mpSurfShader;
@@ -378,7 +378,7 @@ void TracingInstance::CalcuHitInfo(const IntersectContext& hit_ctx, IntersectInf
 	KAnimation::LocalTRSFrame::LclTRS nodeTRS;
 	pPlainScene->GetNodeTransform(nodeTRS, hit_ctx.bbox_node_idx, mCameraContext.inMotionTime);
 	const KQuat& scene_rot = nodeTRS.node_rot;
-	const KAccelTriangle* pTri = mpScene->GetAccelTriData(hit_ctx.bbox_node_idx, hit_ctx.tri_id);
+	const KTriDesc* pTri = mpScene->GetAccelTriData(hit_ctx.bbox_node_idx, hit_ctx.tri_id);
 	UINT32 mesh_idx = pTri->GetMeshIdx();
 	UINT32 node_idx = pTri->GetNodeIdx();
 	UINT32 tri_idx = pTri->mTriIdx;

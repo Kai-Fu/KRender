@@ -11,7 +11,7 @@ void LightScheme::AdjustHitPos(TracingInstance* pLocalData, const IntersectConte
 {
 	const KAccelStruct_BVH* pScene = pLocalData->GetScenePtr();
 	const KScene* pKDScene = pScene->GetSource()->GetNodeKDScene(hit_ctx.bbox_node_idx);
-	const KAccelTriangle* pTri = pScene->GetAccelTriData(hit_ctx.bbox_node_idx, hit_ctx.tri_id);
+	const KTriDesc* pTri = pScene->GetAccelTriData(hit_ctx.bbox_node_idx, hit_ctx.tri_id);
 	UINT32 mesh_idx = pTri->GetMeshIdx();
 	UINT32 tri_idx = pTri->mTriIdx;
 	const KTriMesh* pMesh = pKDScene->GetMesh(mesh_idx);

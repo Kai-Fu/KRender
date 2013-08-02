@@ -112,11 +112,16 @@ void KBBox::TransformByMatrix(const KMatrix4& mat)
 	(*this) = newBBox;
 }
 
-KBBox::KBBox(const KAccleTriVertPos& tri)
+KBBox::KBBox(const KTriVertPos2& tri)
 {
 	SetEmpty();
 	for (int i = 0; i < 3; ++i)
 		ContainVert(tri.mVertPos[i]);
+
+	if (tri.mIsMoving) {
+		for (int i = 0; i < 3; ++i)
+		ContainVert(tri.mVertPos_Ending[i]);
+	}
 
 	KVec3 diagnal(mMax - mMin);
 	float len = nvmath::length(diagnal);

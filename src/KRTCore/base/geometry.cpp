@@ -116,7 +116,7 @@ void KScene::SetNodeTM(UINT32 nodeIdx, const KMatrix4& tm)
 	}
 }
 
-void KScene::InitAccelTriangleCache(std::vector<KAccelTriangle>& triCache) const
+void KScene::InitAccelTriangleCache(std::vector<KTriDesc>& triCache) const
 {
 	// 1.caculate the total triangle count, instanced mesh will be taken into acount
 	UINT32 totalTriCnt = 0; 
@@ -127,10 +127,10 @@ void KScene::InitAccelTriangleCache(std::vector<KAccelTriangle>& triCache) const
 			totalTriCnt += mpMesh[*it_mesh]->FaceCount();
 		}
 	}
-	// 2. pre-allocate the memory for KAccelTriangle array
+	// 2. pre-allocate the memory for KTriDesc array
 	triCache.resize(totalTriCnt);
 
-	// 3. fill the data of each KAccelTriangle objects
+	// 3. fill the data of each KTriDesc objects
 	UINT32 fillPos = 0;
 	for (UINT32 i_node = 0; i_node < mpNode.size(); ++i_node) {
 		for (std::vector<UINT32>::iterator it_mesh = mpNode[i_node]->mMesh.begin(); 
@@ -142,7 +142,7 @@ void KScene::InitAccelTriangleCache(std::vector<KAccelTriangle>& triCache) const
 	}
 }
 
-UINT32 KScene::GenAccelTriangle(UINT32 nodeIdx, UINT32 subMeshIdx, KAccelTriangle* accelTri) const
+UINT32 KScene::GenAccelTriangle(UINT32 nodeIdx, UINT32 subMeshIdx, KTriDesc* accelTri) const
 {
 	KNode* pNode = mpNode[nodeIdx];
 	KTriMesh* pMesh = mpMesh[subMeshIdx];
@@ -157,18 +157,33 @@ UINT32 KScene::GenAccelTriangle(UINT32 nodeIdx, UINT32 subMeshIdx, KAccelTriangl
 	return faceCnt;
 }
 
-void KScene::GetAccelTriPos(const KAccelTriangle& tri, KAccleTriVertPos& triPos) const
+void KScene::GetAccelTriPos(const KTriDesc& tri, KTriVertPos2& triPos) const
 {
 	KNode* pNode = mpNode[tri.GetNodeIdx()];
 	KTriMesh* pMesh = mpMesh[tri.GetMeshIdx()];
+	triPos.mIsMoving = pMesh->mHasPNAnim;
+
 	for (int i_vert = 0; i_vert < 3; ++i_vert) {
-		assert(pMesh->mHasPNAnim == false);
-		KVec3& pos = pMesh->ComputeVertPos(pMesh->mFaces[tri.mTriIdx].pn_idx[i_vert], 0);
+
+		const KTriMesh::PN_Data* pPN_Data = pMesh->GetVertPN(pMesh->mFaces[tri.mTriIdx].pn_idx[i_vert]);
+
+		const KVec3& pos = pPN_Data->pos;
 		KVec4 out_pos;
 		out_pos = KVec4(pos, 1.0f) * pNode->GetObjectTM();
 		triPos.mVertPos[i_vert][0] = out_pos[0] / out_pos[3];
 		triPos.mVertPos[i_vert][1] = out_pos[1] / out_pos[3];
 		triPos.mVertPos[i_vert][2] = out_pos[2] / out_pos[3];
+
+		if (triPos.mIsMoving) {
+			++pPN_Data;
+
+			const KVec3& pos = pPN_Data->pos;
+			KVec4 out_pos;
+			out_pos = KVec4(pos, 1.0f) * pNode->GetObjectTM();
+			triPos.mVertPos_Ending[i_vert][0] = out_pos[0] / out_pos[3];
+			triPos.mVertPos_Ending[i_vert][1] = out_pos[1] / out_pos[3];
+			triPos.mVertPos_Ending[i_vert][2] = out_pos[2] / out_pos[3];
+		}
 				
 	}
 }

@@ -1,4 +1,4 @@
 #pragma once
 #include "../base/geometry.h"
 
-int TriIntersectBBox(const KAccleTriVertPos& tri, const KBBox& bbox);
+int TriIntersectBBox(const KTriVertPos2& tri, const KBBox& bbox);

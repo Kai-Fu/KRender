@@ -51,7 +51,7 @@ public:
 	bool SceneNode_LoadUpdates(FILE* pFile);
 	bool SceneNode_SaveUpdates(const std::vector<UINT32>& animated_nodes, const std::vector<UINT32>& animated_scenes, FILE* pFile) const;
 
-	const KAccelTriangle* GetAccelTriData(UINT32 scene_node_idx, UINT32 tri_idx) const;
+	const KTriDesc* GetAccelTriData(UINT32 scene_node_idx, UINT32 tri_idx) const;
 	float GetSceneEpsilon() const {return mSceneEpsilon;}
 	const KBBox& GetSceneBBox() const;
 
