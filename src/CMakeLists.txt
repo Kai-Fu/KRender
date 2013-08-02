@@ -8,7 +8,6 @@ set( KRender_VERSION_MINOR 0 )
 # module names of KRT
 set( KRT_CORE_MODULE_NAME "KRTCore" )
 set( KRT_CONSOLE_MODULE_NAME "KRTConsole" )
-set( KRT_FBX_TRANSLATOR_NAME "KFBXTranslator" )
 set( KSC_MODULE_NAME "KShaderCompiler" )
 
 # The default CPU type is x86
