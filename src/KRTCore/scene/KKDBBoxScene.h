@@ -55,7 +55,7 @@ public:
 	float GetSceneEpsilon() const {return mSceneEpsilon;}
 	const KBBox& GetSceneBBox() const;
 
-	bool IntersectRay_KDTree(const KRay& ray, IntersectContext& ctx, float t) const;
+	bool IntersectRay_KDTree(const KRay& ray, float cur_t, IntersectContext& ctx) const;
 
 	void GetKDBuildTimeStatistics(KRT_SceneStatistic& sceneStat) const;
 
@@ -67,8 +67,8 @@ protected:
 
 	UINT32 SplitBBoxScene(UINT32* pKDSceneIdx, const KBBox* clampBox, UINT32 cnt, UINT32 depth = 0);
 	
-	bool IntersectBBoxNode(const KRay& ray, UINT32 idx, IntersectContext& ctx, float t) const;
-	bool IntersectBBoxLeaf(const KRay& ray, UINT32 idx, IntersectContext& ctx, float t) const;
+	bool IntersectBBoxNode(const KRay& ray, UINT32 idx, IntersectContext& ctx, float cur_t) const;
+	bool IntersectBBoxLeaf(const KRay& ray, UINT32 idx, IntersectContext& ctx, float cur_t) const;
 
 protected:
 	static const UINT32 LEAF_SCENE_CNT = 4;

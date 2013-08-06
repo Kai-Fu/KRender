@@ -29,8 +29,8 @@ public:
 class KAccelStruct
 {
 public:
-	virtual bool IntersectRay_KDTree(const KRay& ray, IntersectContext& ctx) const {return false;}
-	virtual bool IntersectRay_BruteForce(const KRay& ray, IntersectContext& ctx) const {return false;}
+	virtual bool IntersectRay_KDTree(const KRay& ray, float cur_t, IntersectContext& ctx) const {return false;}
+	virtual bool IntersectRay_BruteForce(const KRay& ray, float cur_t, IntersectContext& ctx) const {return false;}
 	virtual unsigned long long GetAccelLeafTriCnt() const = 0;
 	virtual unsigned long long GetAccelNodeCnt() const = 0;
 	virtual unsigned long long GetAccelLeafCnt() const = 0;
@@ -164,8 +164,8 @@ protected:
 
 protected:	
 	UINT32 BuildKDNode4Data(UINT32 idx);
-	bool IntersectNode(UINT32 idx, const KRay& ray, IntersectContext& ctx) const;
-	bool IntersectLeaf(UINT32 idx, const KRay& ray, IntersectContext& ctx) const;
+	bool IntersectNode(UINT32 idx, const KRay& ray, float cur_t, IntersectContext& ctx) const;
+	bool IntersectLeaf(UINT32 idx, const KRay& ray, float cur_t, IntersectContext& ctx) const;
 	int PrepareKDTree();
 	void FillAccelTri1r4t(const std::vector<KAccelTriangleOpt>& kuv_tri, KAccelTriangleOpt1r4t* acc_tri, UINT32 offset_tri4, bool pad_end) const;
 	void PrecomputeTriangleBBox();
@@ -179,8 +179,8 @@ public:
 	virtual void InitAccelData();
 	virtual void ResetScene();
 
-	bool IntersectRay_KDTree(const KRay& ray, IntersectContext& ctx) const;
-	bool IntersectRay_BruteForce(const KRay& ray, IntersectContext& ctx) const;
+	bool IntersectRay_KDTree(const KRay& ray, float cur_t, IntersectContext& ctx) const;
+	bool IntersectRay_BruteForce(const KRay& ray, float cur_t, IntersectContext& ctx) const;
 
 	const KTriDesc* GetAccelTriData(UINT32 tri_idx) const {return &mAccelTriangle[tri_idx];} 
 

@@ -420,7 +420,7 @@ void TracingInstance::CalcuHitInfo(const IntersectContext& hit_ctx, IntersectInf
 	
 bool TracingInstance::CastRay(const KRay& ray, IntersectContext& out_ctx) const
 {
-	if (mpScene->IntersectRay_KDTree(ray, out_ctx, mCameraContext.inMotionTime)) {
+	if (mpScene->IntersectRay_KDTree(ray, mCameraContext.inMotionTime, out_ctx)) {
 
 		// update the distance that the ray has traveled.
 		out_ctx.travel_distance += out_ctx.t;

@@ -74,7 +74,7 @@ void KSceneSet::SceneNodeTM_SetMovingNode(UINT32 node_idx, const KMatrix4& start
 	mKDSceneNodes[node_idx].scene_trs.Reset(starting, ending);
 }
 
-bool KAccelStruct_BVH::IntersectBBoxNode(const KRay& ray, UINT32 idx, IntersectContext& ctx, float t) const
+bool KAccelStruct_BVH::IntersectBBoxNode(const KRay& ray, UINT32 idx, IntersectContext& ctx, float cur_t) const
 {
 	bool res = false;
 	if (!mBBoxNode.empty()) {
@@ -100,9 +100,9 @@ bool KAccelStruct_BVH::IntersectBBoxNode(const KRay& ray, UINT32 idx, IntersectC
 			float old_t = ctx.t;
 
 			if (child_idx & LEAF_FLAG)
-				isHit0 = IntersectBBoxLeaf(ray, child_idx_noMask, ctx, t);
+				isHit0 = IntersectBBoxLeaf(ray, child_idx_noMask, ctx, cur_t);
 			else
-				isHit0 = IntersectBBoxNode(ray, child_idx_noMask, ctx, t);
+				isHit0 = IntersectBBoxNode(ray, child_idx_noMask, ctx, cur_t);
 		}
 
 		if (bHit[1] && ctx.t > t0[1]) {
@@ -111,9 +111,9 @@ bool KAccelStruct_BVH::IntersectBBoxNode(const KRay& ray, UINT32 idx, IntersectC
 			float old_t = ctx.t;
 
 			if (child_idx & LEAF_FLAG)
-				isHit1 = IntersectBBoxLeaf(ray, child_idx_noMask, ctx, t);
+				isHit1 = IntersectBBoxLeaf(ray, child_idx_noMask, ctx, cur_t);
 			else
-				isHit1 = IntersectBBoxNode(ray, child_idx_noMask, ctx, t);
+				isHit1 = IntersectBBoxNode(ray, child_idx_noMask, ctx, cur_t);
 		}
 
 		res = (isHit0 || isHit1);
@@ -122,7 +122,7 @@ bool KAccelStruct_BVH::IntersectBBoxNode(const KRay& ray, UINT32 idx, IntersectC
 	return res;
 }
 
-bool KAccelStruct_BVH::IntersectBBoxLeaf(const KRay& ray, UINT32 idx, IntersectContext& ctx, float t) const
+bool KAccelStruct_BVH::IntersectBBoxLeaf(const KRay& ray, UINT32 idx, IntersectContext& ctx, float cur_t) const
 {
 	UINT32 cur_idx = idx;
 	vec4f t0;
@@ -169,13 +169,13 @@ bool KAccelStruct_BVH::IntersectBBoxLeaf(const KRay& ray, UINT32 idx, IntersectC
 
 			// transform the ray
 			KRay transRay;
-			TransformRay(transRay, ray, mpSceneSet->mKDSceneNodes[scene_node_idx], t);
+			TransformRay(transRay, ray, mpSceneSet->mKDSceneNodes[scene_node_idx], cur_t);
 			if (scene_idx == ray.mExcludeBBoxNode)
 				ctx.self_tri_id = ray.mExcludeTriID;
 			else
 				ctx.self_tri_id = INVALID_INDEX;
 
-			if (mpAccelStructs[scene_idx]->IntersectRay_KDTree(transRay, ctx)) {
+			if (mpAccelStructs[scene_idx]->IntersectRay_KDTree(transRay, cur_t, ctx)) {
 				ret = true;
 				ctx.bbox_node_idx = scene_node_idx;
 			}
@@ -188,15 +188,15 @@ bool KAccelStruct_BVH::IntersectBBoxLeaf(const KRay& ray, UINT32 idx, IntersectC
 }
 
 
-bool KAccelStruct_BVH::IntersectRay_KDTree(const KRay& ray, IntersectContext& ctx, float t) const
+bool KAccelStruct_BVH::IntersectRay_KDTree(const KRay& ray, float cur_t, IntersectContext& ctx) const
 {
 	UINT32 nearestHitBBoxScene = INVALID_INDEX;
 	if (mRootNode != INVALID_INDEX) {
 		UINT32 rootNode = (mRootNode & ~LEAF_FLAG);
 		if (!mBBoxNode.empty())
-			return IntersectBBoxNode(ray, rootNode, ctx, t);
+			return IntersectBBoxNode(ray, rootNode, ctx, cur_t);
 		else
-			return IntersectBBoxLeaf(ray, rootNode, ctx, t);
+			return IntersectBBoxLeaf(ray, rootNode, ctx, cur_t);
 	}
 	else
 		return false;

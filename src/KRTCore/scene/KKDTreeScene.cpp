@@ -572,7 +572,7 @@ void KAccelStruct_KDTree::FillAccelTri1r4t(const std::vector<KAccelTriangleOpt>&
 
 }
 
-bool KAccelStruct_KDTree::IntersectLeaf(UINT32 idx, const KRay& ray, IntersectContext& ctx) const
+bool KAccelStruct_KDTree::IntersectLeaf(UINT32 idx, const KRay& ray, float cur_t, IntersectContext& ctx) const
 {
 	const KD_LeafData& leafData = mKDLeafData[idx];
 	bool ret = false;
@@ -597,10 +597,10 @@ bool KAccelStruct_KDTree::IntersectLeaf(UINT32 idx, const KRay& ray, IntersectCo
 #else
 	for (UINT32 i = 0; i < leafData.tri_cnt; ++i) {
 		UINT32 tri_idx = leafData.tri_list.leaf_triangles[i];
-		KAccleTriVertPos triPos;
-		GetAccelTriPos(mAccelTriangle[tri_idx], triPos);
+		KTriVertPos2 triPos;
+		mpSourceScene->GetAccelTriPos(mAccelTriangle[tri_idx], triPos);
 
-		if (RayIntersect(ray, triPos, tri_idx, ctx)) {
+		if (RayIntersect(ray, triPos, cur_t, tri_idx, ctx)) {
 		
 			// a new nearer triangle is hit
 			if (ctx.bbox_node_idx != ray.mExcludeBBoxNode || ctx.tri_id != ray.mExcludeTriID)
@@ -621,7 +621,7 @@ bool KAccelStruct_KDTree::IntersectLeaf(UINT32 idx, const KRay& ray, IntersectCo
 	return ret;
 }
 
-bool KAccelStruct_KDTree::IntersectNode(UINT32 idx, const KRay& ray, IntersectContext& ctx) const
+bool KAccelStruct_KDTree::IntersectNode(UINT32 idx, const KRay& ray, float cur_t, IntersectContext& ctx) const
 {
 	float t0 = 0, t1 = FLT_MAX;
 	bool bUpdateWalk = false;
@@ -663,10 +663,10 @@ bool KAccelStruct_KDTree::IntersectNode(UINT32 idx, const KRay& ray, IntersectCo
 
 	if (next_node0 != INVALID_INDEX) {
 		if (child_flag0) {
-			if (IntersectLeaf(next_node0, ray, ctx))
+			if (IntersectLeaf(next_node0, ray, cur_t, ctx))
 				return true;
 		}
-		else if (IntersectNode(next_node0, ray, ctx)) {
+		else if (IntersectNode(next_node0, ray, cur_t, ctx)) {
 			return true;
 		}
 	}
@@ -681,36 +681,36 @@ bool KAccelStruct_KDTree::IntersectNode(UINT32 idx, const KRay& ray, IntersectCo
 	
 	if (next_node1 != INVALID_INDEX) {
 		if (child_flag1)
-			return IntersectLeaf(next_node1, ray, ctx);
+			return IntersectLeaf(next_node1, ray, cur_t, ctx);
 		else
-			return IntersectNode(next_node1, ray, ctx);
+			return IntersectNode(next_node1, ray, cur_t, ctx);
 	}
 
 	return false;
 }
 
-bool KAccelStruct_KDTree::IntersectRay_KDTree(const KRay& ray, IntersectContext& ctx) const
+bool KAccelStruct_KDTree::IntersectRay_KDTree(const KRay& ray, float cur_t, IntersectContext& ctx) const
 {
 	ctx.walkVec = ray.GetOrg();
 	if (mRootNode != INVALID_INDEX) {
 		if (!mSceneNode.empty())
-			return IntersectNode(mRootNode, ray, ctx);
+			return IntersectNode(mRootNode, ray, cur_t, ctx);
 		else
-			return IntersectLeaf(mRootNode, ray, ctx);
+			return IntersectLeaf(mRootNode, ray, cur_t, ctx);
 	}
 	else
 		return false;
 }
 
 
-bool KAccelStruct_KDTree::IntersectRay_BruteForce(const KRay& ray, IntersectContext& ctx) const
+bool KAccelStruct_KDTree::IntersectRay_BruteForce(const KRay& ray, float cur_t, IntersectContext& ctx) const
 {
 	bool ret = false;
 	for (UINT32 i = 0; i < mAccelTriangle.size(); ++i) {
 		KTriVertPos2 triPos;
 		mpSourceScene->GetAccelTriPos(mAccelTriangle[i], triPos);
 
-		if (RayIntersect(ray, triPos, i, ctx)) {
+		if (RayIntersect(ray, triPos, 0, i, ctx)) {
 			ctx.tri_id = i;
 			ret = true;
 		}

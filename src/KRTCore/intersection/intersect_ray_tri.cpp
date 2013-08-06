@@ -69,12 +69,25 @@ int intersect_triangle(const float* orig, const float* dir,
 
 
 
-bool RayIntersect(const KRay& ray, const KTriVertPos1& tri, UINT32 tri_id, IntersectContext& ctx)
+bool RayIntersect(const KRay& ray, const KTriVertPos2& tri, float cur_t, UINT32 tri_id, IntersectContext& ctx)
 {
 	float t = 0;
 	float u, v;
+	KVec3 v0, v1, v2;
+
+	if (tri.mIsMoving) {
+		v0 = nvmath::lerp(cur_t, tri.mVertPos[0], tri.mVertPos_Ending[0]);
+		v1 = nvmath::lerp(cur_t, tri.mVertPos[1], tri.mVertPos_Ending[1]);
+		v2 = nvmath::lerp(cur_t, tri.mVertPos[2], tri.mVertPos_Ending[2]);
+	}
+	else {
+		v0 = tri.mVertPos[0];
+		v1 = tri.mVertPos[1];
+		v2 = tri.mVertPos[2];
+	}
+
 	if (intersect_triangle(ray.GetOrg().getPtr(), ray.GetDir().getPtr(), 
-		tri.mVertPos[0].getPtr(), tri.mVertPos[1].getPtr(), tri.mVertPos[2].getPtr(), 
+		(float*)&v0, (float*)&v1, (float*)&v2, 
 		&t, &u, &v)) {
 			if (t > 0 && ctx.t > t) {
 				ctx.t = t;
