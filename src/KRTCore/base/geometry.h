@@ -183,9 +183,8 @@ struct KTriVertPos1 {
 	KVec3		mVertPos[3];
 };
 
-struct KTriVertPos2 
+struct KTriVertPos2 : public KTriVertPos1
 {
-	KVec3		mVertPos[3];
 	KVec3		mVertPos_Ending[3];
 	bool		mIsMoving;
 };

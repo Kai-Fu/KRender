@@ -4,6 +4,7 @@
 #include "../scene/KKDTreeScene.h"
 #include <string>
 #include <list>
+#include <map>
 #include <hash_map>
 #include <Alembic/AbcGeom/All.h>
 #include <Alembic/Abc/Foundation.h>
@@ -21,6 +22,11 @@ public:
 	~AbcLoader();
 
 	bool Load(const char* filename, KSceneSet& scene);
+	bool Update(float time);
+
+public:
+	double mAnimStartTime;
+	double mAnimEndTime;
 
 private:
 	void ProcessNode(const Abc::IObject& obj, int treeDepth = 0);
@@ -47,11 +53,20 @@ private:
 		return true;
 	}
 
+	void GetCurNodeID(std::vector<size_t>& nodeId) const;
+
 private:
 	double mCurTime;
 	double mSampleDuration;
 
 	KSceneSet* mpScene;
+	std::string mFileName;
 	std::hash_map<AbcA::ObjectReader*, KScene*> mXformNodes;
+
+	std::vector<size_t> mCurNodeID;
+	int mCurTreeDepth;
+
+	std::map<std::vector<size_t>, UINT32> mAnimNodeIndices;
+	std::map<std::vector<size_t>, KScene*> mAnimSubScenes;
 
 };

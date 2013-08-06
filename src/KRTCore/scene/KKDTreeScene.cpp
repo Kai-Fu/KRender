@@ -80,7 +80,8 @@ UINT32 KAccelStruct_KDTree::SplitScene(UINT32* triangles, UINT32 cnt,
 					UINT32 idx = triangles[i];
 					KTriVertPos2 triPos;
 					mpSourceScene->GetAccelTriPos(mAccelTriangle[idx], triPos);
-					if (TriIntersectBBox(triPos, *clamp_box)) {
+
+					if (triPos.mIsMoving && TriIntersectBBox(triPos, *clamp_box)) {
 						bbox.Add(mTempDataForKD->mTriBBox[idx]);
 					}
 					else {

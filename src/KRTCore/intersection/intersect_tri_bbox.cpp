@@ -3,7 +3,7 @@
 static int triBoxOverlap(const float* boxcenter,const float* boxhalfsize,
 				  const float* trivert0, const float* trivert1, const float* trivert2);
 
-int TriIntersectBBox(const KTriVertPos2& tri, const KBBox& bbox)
+int TriIntersectBBox(const KTriVertPos1& tri, const KBBox& bbox)
 {
 	KVec3 boxcenter((bbox.mMax + bbox.mMin) * 0.5f);
 	KVec3 boxhalfsize((bbox.mMax - bbox.mMin) * 0.5f);

@@ -27,6 +27,12 @@ AbcLoader::~AbcLoader()
 bool AbcLoader::Load(const char* filename, KSceneSet& scene)
 {
 	mpScene = &scene;
+	mFileName = filename;
+	mAnimNodeIndices.clear();
+	mAnimSubScenes.clear();
+	mAnimStartTime = FLT_MAX;
+	mAnimEndTime = -FLT_MAX;
+
 	Abc::IArchive archive(Alembic::AbcCoreHDF5::ReadArchive(), filename);
 
 	std::string appName;
@@ -51,6 +57,13 @@ bool AbcLoader::Load(const char* filename, KSceneSet& scene)
 	Abc::IObject topObj(archive, Abc::kTop);
 
 	ProcessNode(topObj);
+
+	std::cout << ">> animation starting time is " << mAnimStartTime << std::endl;
+	std::cout << ">> animation ending time is " << mAnimEndTime << std::endl;
+
+	// Clean up unused data
+	mXformNodes.clear();
+
 	return true;
 }
 
@@ -58,10 +71,15 @@ void AbcLoader::ProcessNode(const Abc::IObject& obj, int treeDepth)
 {
 	if ( !obj ) { return; }
 
+	mCurTreeDepth = treeDepth;
+	if ( mCurNodeID.size() < size_t(treeDepth+1) )
+		mCurNodeID.resize(treeDepth+1);
+
     // IObject has no explicit time sampling, but its children may.
     size_t numChildren = obj.getNumChildren();
     for (size_t i = 0; i < numChildren; ++i) {
         const Abc::ObjectHeader &ohead = obj.getChildHeader(i);
+		mCurNodeID[treeDepth] = i;
 
 		for (int s = 0; s < treeDepth; ++s) std::cout << " ";
 
@@ -136,6 +154,17 @@ KScene* AbcLoader::GetXformStaticScene(const Abc::IObject& obj, KMatrix4& mat)
 			
 			if (!xform.getSchema().isConstant()) {
 				animNode = xform.getPtr();
+
+				// Check for the animation intervals
+				Abc::index_t firstSampIdx = 0;
+				Abc::index_t lastSampIdx = xform.getSchema().getNumSamples() - 1;
+				Abc::chrono_t animStartTime = xform.getSchema().getTimeSampling()->getSampleTime(firstSampIdx);
+				Abc::chrono_t animEndTime = xform.getSchema().getTimeSampling()->getSampleTime(lastSampIdx);
+				if (mAnimStartTime > animStartTime)
+					mAnimStartTime = animStartTime;
+				if (mAnimEndTime < animEndTime)
+					mAnimEndTime = animEndTime;
+
 				break;
 			}
 			localMat *= xform.getSchema().getValue().getMatrix();
@@ -147,16 +176,22 @@ KScene* AbcLoader::GetXformStaticScene(const Abc::IObject& obj, KMatrix4& mat)
 		UINT32 sceneIdx;
 		KScene* xformScene = mpScene->AddKDScene(sceneIdx);
 		mXformNodes[animNode.get()] = xformScene;
+		UINT32 sceneNodeIdx = mpScene->SceneNode_Create(sceneIdx);
+
 		if (animNode.get()) {
+			// Remember the animated xform node so that it can be reused in the update phase.
+			std::vector<size_t> nodeId;
+			GetCurNodeID(nodeId);
+			mAnimNodeIndices[nodeId] = sceneNodeIdx;
+
+			// Compute the transform matrix(beginning & ending) for the xform node
 			AbcG::IXform xform(animNode, Abc::kWrapExisting);
 			KMatrix4 sceneNodeFrames[2];
 			GetXformWorldTransform(xform, sceneNodeFrames);
-			UINT32 sceneNodeIdx = mpScene->SceneNode_Create(sceneIdx);
 			mpScene->SceneNodeTM_SetMovingNode(sceneNodeIdx, sceneNodeFrames[0], sceneNodeFrames[1]);
 		}
 		else {
 			// Create the default node with identify transform.
-			UINT32 sceneNodeIdx = mpScene->SceneNode_Create(sceneIdx);
 			mpScene->SceneNodeTM_SetStaticNode(sceneNodeIdx, nvmath::cIdentity44f);
 		}
 
@@ -172,6 +207,23 @@ void AbcLoader::ProcessMesh(const AbcG::IPolyMesh& mesh)
 	KMatrix4 localMat;
 	KScene* pScene = GetXformStaticScene(mesh, localMat);
 	assert(pScene);
+
+	if (!mesh.getSchema().isConstant()) {
+		// Remember the animated meshes for later update usage
+		std::vector<size_t> nodeId;
+		GetCurNodeID(nodeId);
+		mAnimSubScenes[nodeId] = pScene;
+	}
+
+	// Check for the animation intervals
+	Abc::index_t firstSampIdx = 0;
+	Abc::index_t lastSampIdx = mesh.getSchema().getNumSamples() - 1;
+	Abc::chrono_t animStartTime = mesh.getSchema().getTimeSampling()->getSampleTime(firstSampIdx);
+	Abc::chrono_t animEndTime = mesh.getSchema().getTimeSampling()->getSampleTime(lastSampIdx);
+	if (mAnimStartTime > animStartTime)
+		mAnimStartTime = animStartTime;
+	if (mAnimEndTime < animEndTime)
+		mAnimEndTime = animEndTime;
 
 	UINT32 meshIdx = pScene->AddMesh();
 	KTriMesh* pMesh = pScene->GetMesh(meshIdx);
@@ -529,4 +581,9 @@ void AbcLoader::GetXformWorldTransform(const AbcG::IXform& xform, KMatrix4 trans
 	}
 
 	
+}
+
+void AbcLoader::GetCurNodeID(std::vector<size_t>& nodeId) const
+{
+	nodeId.assign(&mCurNodeID[0], &mCurNodeID[mCurTreeDepth]);
 }
