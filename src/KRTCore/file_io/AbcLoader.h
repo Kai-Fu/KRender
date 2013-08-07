@@ -36,7 +36,7 @@ private:
 	void ProcessMesh(const AbcG::IPolyMesh& mesh);
 	void ProcessCamera(const AbcG::ICamera& camera);
 
-	void GetXformWorldTransform(const AbcG::IXform& xform, KMatrix4 trans[2]);
+	void GetObjectWorldTransform(const AbcG::IObject& obj, KMatrix4 trans[2], bool& isAnim);
 	KScene* GetXformStaticScene(const Abc::IObject& obj, KMatrix4& mat);
 
 	bool ConvertMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::chrono_t t, KTriMesh& outMesh);
@@ -55,6 +55,7 @@ private:
 
 	void GetCurNodeID(std::vector<size_t>& nodeId) const;
 	void UpdateXformNode(std::vector<size_t>::const_iterator nodeIdIt, std::vector<size_t>::const_iterator nodeItEnd, UINT32 nodeIdx, const Abc::IObject& parentObj);
+	void UpdateAnimSubScene(std::vector<size_t>::const_iterator nodeIdIt, std::vector<size_t>::const_iterator nodeItEnd, KScene* pScene, const Abc::IObject& parentObj);
 
 private:
 	double mCurTime;

@@ -187,8 +187,12 @@ KScene* AbcLoader::GetXformStaticScene(const Abc::IObject& obj, KMatrix4& mat)
 			// Compute the transform matrix(beginning & ending) for the xform node
 			AbcG::IXform xform(animNode, Abc::kWrapExisting);
 			KMatrix4 sceneNodeFrames[2];
-			GetXformWorldTransform(xform, sceneNodeFrames);
-			mpScene->SceneNodeTM_SetMovingNode(sceneNodeIdx, sceneNodeFrames[0], sceneNodeFrames[1]);
+			bool isAnim = false;
+			GetObjectWorldTransform(xform, sceneNodeFrames, isAnim);
+			if (isAnim)
+				mpScene->SceneNodeTM_SetMovingNode(sceneNodeIdx, sceneNodeFrames[0], sceneNodeFrames[1]);
+			else
+				assert(0);
 		}
 		else {
 			// Create the default node with identify transform.
@@ -204,38 +208,71 @@ KScene* AbcLoader::GetXformStaticScene(const Abc::IObject& obj, KMatrix4& mat)
 
 void AbcLoader::ProcessMesh(const AbcG::IPolyMesh& mesh)
 {
-	KMatrix4 localMat;
-	KScene* pScene = GetXformStaticScene(mesh, localMat);
-	assert(pScene);
+	KScene* targetSubScene = NULL;
+	KMatrix4 localMat = nvmath::cIdentity44f;
+	if (mesh.getSchema().isConstant()) {
+		// For static mesh, create the KTriMesh object under the SubScene that roots from 
+		// the nearest animatable parent(or other ancestor) transform or the scene root.
+		//
+		KScene* pScene = GetXformStaticScene(mesh, localMat);
+		assert(pScene);
 
-	if (!mesh.getSchema().isConstant()) {
-		// Remember the animated meshes for later update usage
+		targetSubScene = pScene;
+	}
+	else {
+		// For animatable(morphable) mesh, create its own SubScene object and SubNode.
+		//
+		KMatrix4 trans[2];
+		bool isAnim = false;
+		GetObjectWorldTransform(mesh, trans, isAnim);
+		UINT32 sceneIdx;
+		KScene* subScene = mpScene->AddKDScene(sceneIdx);
+		assert(subScene);
+		UINT32 sceneNodeIdx = mpScene->SceneNode_Create(sceneIdx);
+		if (isAnim) 
+			mpScene->SceneNodeTM_SetMovingNode(sceneNodeIdx, trans[0], trans[1]);
+		else
+			mpScene->SceneNodeTM_SetStaticNode(sceneNodeIdx, trans[0]);
+
+		// Remember this animatable mesh for the convenience of later update
 		std::vector<size_t> nodeId;
 		GetCurNodeID(nodeId);
-		mAnimSubScenes[nodeId] = pScene;
+		mAnimSubScenes[nodeId] = subScene;
+		targetSubScene = subScene;
+
+		// Remember the SubNode index in case the animatable object have animated transform
+		if (isAnim) 
+			mAnimNodeIndices[nodeId] = sceneNodeIdx;
 	}
 
-	// Check for the animation intervals
-	Abc::index_t firstSampIdx = 0;
-	Abc::index_t lastSampIdx = mesh.getSchema().getNumSamples() - 1;
-	Abc::chrono_t animStartTime = mesh.getSchema().getTimeSampling()->getSampleTime(firstSampIdx);
-	Abc::chrono_t animEndTime = mesh.getSchema().getTimeSampling()->getSampleTime(lastSampIdx);
-	if (mAnimStartTime > animStartTime)
-		mAnimStartTime = animStartTime;
-	if (mAnimEndTime < animEndTime)
-		mAnimEndTime = animEndTime;
-
-	UINT32 meshIdx = pScene->AddMesh();
-	KTriMesh* pMesh = pScene->GetMesh(meshIdx);
+	assert(targetSubScene);
+	UINT32 meshIdx = targetSubScene->AddMesh();
+	KTriMesh* pMesh = targetSubScene->GetMesh(meshIdx);
 	assert(pMesh);
 
-	UINT32 nodeIdx = pScene->AddNode();
-	KNode* pNode = pScene->GetNode(nodeIdx);
+	UINT32 nodeIdx = targetSubScene->AddNode();
+	KNode* pNode = targetSubScene->GetNode(nodeIdx);
 	pNode->mMesh.push_back(meshIdx);
-	pScene->SetNodeTM(nodeIdx, localMat);
+	targetSubScene->SetNodeTM(nodeIdx, localMat);
 	pNode->mpSurfShader = NULL;
 
+	// Convert the mesh representation
 	ConvertMesh(mesh.getSchema(), mCurTime, *pMesh);
+
+
+	if (mesh.getSchema().getNumSamples() > 1) {
+		// Check for the animation intervals
+		Abc::index_t firstSampIdx = 0;
+		Abc::index_t lastSampIdx = mesh.getSchema().getNumSamples() - 1;
+		Abc::chrono_t animStartTime = mesh.getSchema().getTimeSampling()->getSampleTime(firstSampIdx);
+		Abc::chrono_t animEndTime = mesh.getSchema().getTimeSampling()->getSampleTime(lastSampIdx);
+		if (mAnimStartTime > animStartTime)
+			mAnimStartTime = animStartTime;
+		if (mAnimEndTime < animEndTime)
+			mAnimEndTime = animEndTime;
+	}
+
+	
 }
 
 void AbcLoader::ConvertMatrix(const Imath::M44d& ilmMat, KMatrix4& mat)
@@ -505,10 +542,10 @@ bool AbcLoader::ConvertMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::chrono
 	return true;
 }
 
-void AbcLoader::GetXformWorldTransform(const AbcG::IXform& xform, KMatrix4 trans[2])
+void AbcLoader::GetObjectWorldTransform(const AbcG::IObject& obj, KMatrix4 trans[2], bool& isAnim)
 {
 	bool isAniminated = false;
-	for (Abc::IObject node = xform; node.valid(); node = node.getParent()) {
+	for (Abc::IObject node = obj; node.valid(); node = node.getParent()) {
 		if (AbcG::IXform::matches(node.getHeader())) {
 			AbcG::IXform xform(node, Abc::kWrapExisting);
 			if (!xform.getSchema().isConstant()) {
@@ -520,10 +557,11 @@ void AbcLoader::GetXformWorldTransform(const AbcG::IXform& xform, KMatrix4 trans
 
 	if (isAniminated) {
 
+		isAnim = true;
 		trans[0] = nvmath::cIdentity44f;
 		trans[1] = nvmath::cIdentity44f;
 
-		for (Abc::IObject node = xform; node.valid(); node = node.getParent()) {
+		for (Abc::IObject node = obj; node.valid(); node = node.getParent()) {
 			if (AbcG::IXform::matches(node.getHeader())) {
 				AbcG::IXform xform(node, Abc::kWrapExisting);
 
@@ -566,7 +604,7 @@ void AbcLoader::GetXformWorldTransform(const AbcG::IXform& xform, KMatrix4 trans
 	else {
 		// For static xform...
 		trans[0] = nvmath::cIdentity44f;
-		for (Abc::IObject node = xform; node.valid(); node = node.getParent()) {
+		for (Abc::IObject node = obj; node.valid(); node = node.getParent()) {
 			if (AbcG::IXform::matches(node.getHeader())) {
 				AbcG::IXform xform(node, Abc::kWrapExisting);
 				Imath::M44d mat = xform.getSchema().getValue().getMatrix();
@@ -577,6 +615,7 @@ void AbcLoader::GetXformWorldTransform(const AbcG::IXform& xform, KMatrix4 trans
 
 		}
 
+		isAnim = false;
 		trans[1] = trans[0];
 	}
 
@@ -611,8 +650,12 @@ void AbcLoader::UpdateXformNode(std::vector<size_t>::const_iterator nodeIdIt, st
             if (xform) {
 				std::cout << "updating xform: " << xform.getName() << std::endl;
 				KMatrix4 trans[2];
-				GetXformWorldTransform(xform, trans);
-				mpScene->SceneNodeTM_SetMovingNode(nodeIdx, trans[0], trans[1]);
+				bool isAnim = false;
+				GetObjectWorldTransform(xform, trans, isAnim);
+				if (isAnim)
+					mpScene->SceneNodeTM_SetMovingNode(nodeIdx, trans[0], trans[1]);
+				else
+					assert(0);
             }
 			else
 				assert(0); // the nodeId must be valid for a xform node
@@ -622,4 +665,37 @@ void AbcLoader::UpdateXformNode(std::vector<size_t>::const_iterator nodeIdIt, st
 	}
 	else
 		UpdateXformNode(nodeIdIt+1, nodeItEnd, nodeIdx, childObj);
+}
+
+void AbcLoader::UpdateAnimSubScene(std::vector<size_t>::const_iterator nodeIdIt, std::vector<size_t>::const_iterator nodeItEnd, KScene* pScene, const Abc::IObject& parentObj)
+{
+	const Abc::ObjectHeader &ohead = parentObj.getChildHeader(*nodeIdIt);
+	Abc::IObject childObj(parentObj, ohead.getName());
+	if (nodeIdIt+1 == nodeItEnd) {
+		if (AbcG::IPolyMesh::matches(ohead)) {
+            AbcG::IPolyMesh pmesh(parentObj, ohead.getName());
+            if (pmesh) {
+				std::cout << "updating pmesh: " << pmesh.getName() << std::endl;
+				pScene->ResetScene();
+
+				UINT32 meshIdx = pScene->AddMesh();
+				KTriMesh* pMesh = pScene->GetMesh(meshIdx);
+				assert(pMesh);
+
+				UINT32 nodeIdx = pScene->AddNode();
+				KNode* pNode = pScene->GetNode(nodeIdx);
+				pNode->mMesh.push_back(meshIdx);
+				pScene->SetNodeTM(nodeIdx, nvmath::cIdentity44f);
+				pNode->mpSurfShader = NULL;
+
+				ConvertMesh(pmesh.getSchema(), mCurTime, *pMesh);
+            }
+			else
+				assert(0); // the nodeId must be valid for a xform node
+		}
+		else
+			assert(0); // the nodeId must be valid for a xform node
+	}
+	else
+		UpdateAnimSubScene(nodeIdIt+1, nodeItEnd, pScene, childObj);
 }
