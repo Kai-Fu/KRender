@@ -587,3 +587,39 @@ void AbcLoader::GetCurNodeID(std::vector<size_t>& nodeId) const
 {
 	nodeId.assign(&mCurNodeID[0], &mCurNodeID[mCurTreeDepth]);
 }
+
+bool AbcLoader::Update(float time)
+{
+	Abc::IArchive archive(Alembic::AbcCoreHDF5::ReadArchive(), mFileName);
+	Abc::IObject topObj(archive, Abc::kTop);
+
+	std::map<std::vector<size_t>, UINT32>::iterator it_xform = mAnimNodeIndices.begin();
+	for (; it_xform != mAnimNodeIndices.end(); ++it_xform) {
+		UpdateXformNode(it_xform->first.cbegin(), it_xform->first.cend(), it_xform->second, topObj);
+	}
+
+	return true;
+}
+
+void AbcLoader::UpdateXformNode(std::vector<size_t>::const_iterator nodeIdIt, std::vector<size_t>::const_iterator nodeItEnd, UINT32 nodeIdx, const Abc::IObject& parentObj)
+{
+	const Abc::ObjectHeader &ohead = parentObj.getChildHeader(*nodeIdIt);
+	Abc::IObject childObj(parentObj, ohead.getName());
+	if (nodeIdIt+1 == nodeItEnd) {
+		if (AbcG::IXform::matches(ohead)) {
+            AbcG::IXform xform(parentObj, ohead.getName());
+            if (xform) {
+				std::cout << "updating xform: " << xform.getName() << std::endl;
+				KMatrix4 trans[2];
+				GetXformWorldTransform(xform, trans);
+				mpScene->SceneNodeTM_SetMovingNode(nodeIdx, trans[0], trans[1]);
+            }
+			else
+				assert(0); // the nodeId must be valid for a xform node
+		}
+		else
+			assert(0); // the nodeId must be valid for a xform node
+	}
+	else
+		UpdateXformNode(nodeIdIt+1, nodeItEnd, nodeIdx, childObj);
+}

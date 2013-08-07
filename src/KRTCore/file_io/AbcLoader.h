@@ -54,6 +54,7 @@ private:
 	}
 
 	void GetCurNodeID(std::vector<size_t>& nodeId) const;
+	void UpdateXformNode(std::vector<size_t>::const_iterator nodeIdIt, std::vector<size_t>::const_iterator nodeItEnd, UINT32 nodeIdx, const Abc::IObject& parentObj);
 
 private:
 	double mCurTime;
