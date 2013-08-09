@@ -46,10 +46,7 @@ public:
 
 	const KSceneSet* GetSource() const;
 
-	void SceneNode_ResetAccelData();
-	bool SceneNode_BuildAccelData(bool force);
-	bool SceneNode_LoadUpdates(FILE* pFile);
-	bool SceneNode_SaveUpdates(const std::vector<UINT32>& animated_nodes, const std::vector<UINT32>& animated_scenes, FILE* pFile) const;
+	bool SceneNode_BuildAccelData(const std::list<UINT32>* pDirtiedSubScene);
 
 	const KTriDesc* GetAccelTriData(UINT32 scene_node_idx, UINT32 tri_idx) const;
 	float GetSceneEpsilon() const {return mSceneEpsilon;}
@@ -58,10 +55,6 @@ public:
 	bool IntersectRay_KDTree(const KRay& ray, float cur_t, IntersectContext& ctx) const;
 
 	void GetKDBuildTimeStatistics(KRT_SceneStatistic& sceneStat) const;
-
-	// Save/load the scene and tracking camera data
-	bool SaveToFile(FILE* pFile);
-	bool LoadFromFile(FILE* pFile);
 
 protected:
 
@@ -102,9 +95,6 @@ protected:
 
 	UINT32 mRootNode;
 
-	// temporary data for building accelerating data structure
-	std::list<UINT32> mGeomDirtiedScenes;
-	bool mIsNodeTMDirty;
 	static void TransformRay(KRay& out_ray, const KRay& in_ray, const KSceneSet::KD_SCENE_LEAF& scene_info, float t);
 };
 

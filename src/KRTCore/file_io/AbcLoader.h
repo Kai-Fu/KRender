@@ -22,7 +22,7 @@ public:
 	~AbcLoader();
 
 	bool Load(const char* filename, KSceneSet& scene);
-	bool Update(float time);
+	bool Update(float time, std::list<UINT32>& changedScenes);
 
 public:
 	double mAnimStartTime;
@@ -55,7 +55,7 @@ private:
 
 	void GetCurNodeID(std::vector<size_t>& nodeId) const;
 	void UpdateXformNode(std::vector<size_t>::const_iterator nodeIdIt, std::vector<size_t>::const_iterator nodeItEnd, UINT32 nodeIdx, const Abc::IObject& parentObj);
-	void UpdateAnimSubScene(std::vector<size_t>::const_iterator nodeIdIt, std::vector<size_t>::const_iterator nodeItEnd, KScene* pScene, const Abc::IObject& parentObj);
+	void UpdateAnimSubScene(std::vector<size_t>::const_iterator nodeIdIt, std::vector<size_t>::const_iterator nodeItEnd,UINT32 sceneIdx, const Abc::IObject& parentObj);
 
 private:
 	double mCurTime;
@@ -69,6 +69,6 @@ private:
 	int mCurTreeDepth;
 
 	std::map<std::vector<size_t>, UINT32> mAnimNodeIndices;
-	std::map<std::vector<size_t>, KScene*> mAnimSubScenes;
+	std::map<std::vector<size_t>, UINT32> mAnimSubScenes;
 
 };

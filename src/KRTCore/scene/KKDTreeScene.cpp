@@ -81,7 +81,7 @@ UINT32 KAccelStruct_KDTree::SplitScene(UINT32* triangles, UINT32 cnt,
 					KTriVertPos2 triPos;
 					mpSourceScene->GetAccelTriPos(mAccelTriangle[idx], triPos);
 
-					if (triPos.mIsMoving && TriIntersectBBox(triPos, *clamp_box)) {
+					if (TriIntersectBBox(triPos, *clamp_box)) {
 						bbox.Add(mTempDataForKD->mTriBBox[idx]);
 					}
 					else {
@@ -128,7 +128,10 @@ UINT32 KAccelStruct_KDTree::SplitScene(UINT32* triangles, UINT32 cnt,
 	node.bbox = bbox;
 
 	bool bForceLeafNode = false;
+	int tryOtherSplitAxis = 0;
 	
+	int det_axis;
+
 FORCE_LEAF_NODE:
 	node.flag = (!(needBBox % 6) ? 0 : eNoBBox);
 	++needBBox;
@@ -168,33 +171,41 @@ FORCE_LEAF_NODE:
 	// 3. According to the bounding box, determine how to split this node
 	KVec3 det = bbox.mMax - bbox.mMin;
 	float det_value;
-	int det_axis;
 	KBBox left_bbox(bbox), right_bbox(bbox);
-	if (fabs(det[0]) >= fabs(det[1]) && fabs(det[0]) >= fabs(det[2])) {
-		// Split X axis
-		det_axis = 0;
-		node.flag |= eSplitX;
-	}
-	else if (fabs(det[1]) >= fabs(det[0]) && fabs(det[1]) >= fabs(det[2])) {
-		// Split Y axis
-		det_axis = 1;
-		node.flag |= eSplitY;
+	if (tryOtherSplitAxis) {
+		det_axis = (det_axis + tryOtherSplitAxis) % 3;
 	}
 	else {
-		// Split Z axis
-		det_axis = 2;
-		node.flag |= eSplitZ;
+		
+		if (fabs(det[0]) >= fabs(det[1]) && fabs(det[0]) >= fabs(det[2])) {
+			// Split X axis
+			det_axis = 0;
+		}
+		else if (fabs(det[1]) >= fabs(det[0]) && fabs(det[1]) >= fabs(det[2])) {
+			// Split Y axis
+			det_axis = 1;
+		}
+		else {
+			// Split Z axis
+			det_axis = 2;
+		}
+	}
+
+	switch (det_axis) {
+	case 0: node.flag |= eSplitX; break;
+	case 1: node.flag |= eSplitY; break;
+	case 2: node.flag |= eSplitZ; break;
 	}
 	// 4. Calculate the splitting position
 	{
 		// Use the middle plan splitting, may be used for testing
-		//det_value = (bbox.mMax[det_axis] + bbox.mMin[det_axis]) * 0.5f;
-		det_value = CalcuSplittingPosition(
+		det_value = (bbox.mMax[det_axis] + bbox.mMin[det_axis]) * 0.5f;
+		/*det_value = CalcuSplittingPosition(
 			triangles, cnt, 
 			bbox,
 			&mTempDataForKD->mTriBBox[0],
 			det_axis,
-			mTempDataForKD->mPigeonHoles[splitData.in_splitThreadIdx]);
+			mTempDataForKD->mPigeonHoles[splitData.in_splitThreadIdx]);*/
 	}
 	node.split_value = det_value;
 	left_bbox.mMin[det_axis] = det_value;
@@ -265,12 +276,16 @@ FORCE_LEAF_NODE:
 	}
 
 	if ((float)stride_cnt >= (float)cnt * mNodeSplitThreshhold ) {
-		bForceLeafNode = true;
+		if (cnt <= mLeafTriCnt*10 || tryOtherSplitAxis == 2)
+			bForceLeafNode = true;
+		else
+			++tryOtherSplitAxis;
 
 		for (int i = 0; i < 2; ++i) {
 			if (addedThreadIdx[i] != INVALID_INDEX) 
 				mTempDataForKD->mThreadPool->ReleaseScheduledThread(addedThreadIdx[i]);
 		}
+
 
 		goto FORCE_LEAF_NODE;
 	}

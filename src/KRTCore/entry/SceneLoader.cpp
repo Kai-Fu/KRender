@@ -116,6 +116,7 @@ bool SceneLoader::LoadFromFile(const char* file_name)
 		mpScene->Reset();
 
 	mIsFromOBJ = false;
+	mIsSceneLoaded = false;
 	KTimer fileReadingTime(true);
 	// Perform the file reading
 	if (ext == FILE_EXT_OBJ) {
@@ -145,14 +146,16 @@ bool SceneLoader::LoadFromFile(const char* file_name)
 		}
 	}
 
-	if (ret) 
+	if (ret) {
 		BuildNodeIdMap();
+		mIsSceneLoaded = true;
+	}
 
 	mFileLoadingTime = UINT32(fileReadingTime.Stop() * 1000);
 
 	// End of file reading, now build the acceleration structure
 	mpAccelData = new KAccelStruct_BVH(mpScene);
-	mpAccelData->SceneNode_BuildAccelData(true);
+	mpAccelData->SceneNode_BuildAccelData(NULL);
 
 	KBBox scene_box = mpAccelData->GetSceneBBox();
 	KVec3 center = scene_box.Center();
@@ -202,7 +205,15 @@ bool SceneLoader::UpdateTime(double timeInSec, double duration)
 		return false;
 	}
 		
-	return mAbcLoader.Update(timeInSec);;
+	std::list<UINT32> changedScenes;
+	if (mAbcLoader.Update(timeInSec, changedScenes)) {
+		// Let's update the accellerating structures
+		mpAccelData->SceneNode_BuildAccelData(&changedScenes);
+
+		return true;
+	}
+	else
+		return false;
 }
 
 void SceneLoader::BuildNodeIdMap()

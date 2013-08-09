@@ -22,7 +22,7 @@ UINT32 PIXEL_SAMPLE_CNT_MORE = 4;
 UINT32 PIXEL_SAMPLE_CNT_EDGE = 4;
 UINT32 AREA_LIGHT_SAMP_CNT = 10;
 UINT32 ENABLE_DOF = 0;
-UINT32 ENABLE_MB = 0;
+UINT32 ENABLE_MB = 1;
 
 #define CLAMP(value, min, max) {if (value < min) value = min;  if (value > max) value = max;}
 bool SetGlobalConstant(const char* name, const char* value)

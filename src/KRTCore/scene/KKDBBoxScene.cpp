@@ -10,7 +10,6 @@ KAccelStruct_BVH::KAccelStruct_BVH(const KSceneSet* sceneSet)
 	mRootNode = INVALID_INDEX;
 
 	mpSceneSet = NULL;
-	mIsNodeTMDirty = true;
 	mpAccelGeomBuffer = NULL;
 	mpSceneSet = sceneSet;
 }
@@ -363,7 +362,7 @@ void KAccelStruct_BVH::GetKDBuildTimeStatistics(KRT_SceneStatistic& sceneStat) c
 }
 
 
-bool KAccelStruct_BVH::SceneNode_BuildAccelData(bool force)
+bool KAccelStruct_BVH::SceneNode_BuildAccelData(const std::list<UINT32>* pDirtiedSubScene)
 {
 	mSceneBBox.SetEmpty();
 	mSceneEpsilon = FLT_MAX;
@@ -371,7 +370,8 @@ bool KAccelStruct_BVH::SceneNode_BuildAccelData(bool force)
 	m_buildAccelTriTime = 0;
 	m_kdFinializingTime = 0;
 
-	if (force) {
+	std::list<UINT32> tempDirtiedSubScene;
+	if (pDirtiedSubScene == NULL) {
 		// if it's forced to update, all the accellerating structures will be re-computed.
 		for (size_t i = 0; i < mpAccelStructs.size(); ++i) {
 			delete mpAccelStructs[i];
@@ -380,12 +380,14 @@ bool KAccelStruct_BVH::SceneNode_BuildAccelData(bool force)
 		for (UINT32 i = 0; i < mpSceneSet->mpKDScenes.size(); ++i) {
 			KAccelStruct_KDTree* pAccel = new KAccelStruct_KDTree(mpSceneSet->mpKDScenes[i]);
 			mpAccelStructs[i] = pAccel;
-			mGeomDirtiedScenes.push_back(i);
+			tempDirtiedSubScene.push_back(i);
 		}
 	}
+	else
+		tempDirtiedSubScene = *pDirtiedSubScene;
 
 	// Now build all KD scenes
-	for (std::list<UINT32>::iterator it = mGeomDirtiedScenes.begin(); it != mGeomDirtiedScenes.end(); ++it) {
+	for (std::list<UINT32>::iterator it = tempDirtiedSubScene.begin(); it != tempDirtiedSubScene.end(); ++it) {
 
 		// build the accellerating data strcuture for each KD scene
 		mpAccelStructs[*it]->InitAccelData();
@@ -403,7 +405,7 @@ bool KAccelStruct_BVH::SceneNode_BuildAccelData(bool force)
 	}
 
 	// Now compute the scene epsilon
-	if (mIsNodeTMDirty || !mGeomDirtiedScenes.empty()) {
+	{
 		mSceneEpsilon = FLT_MAX;
 		mKDSceneBBox.resize(mpSceneSet->mKDSceneNodes.size());
 		for (size_t i = 0; i < mKDSceneBBox.size(); ++i) {
@@ -419,7 +421,7 @@ bool KAccelStruct_BVH::SceneNode_BuildAccelData(bool force)
 	}
 
 	// Now finalize all the accellerating data structure by copying it into the final buffer.
-	if (!mGeomDirtiedScenes.empty()) {
+	{
 		// the final buffer only needs to be updated when the geometry data of any KD scene is changed.
 		KTimer stop_watch(true);
 		std::vector<size_t> nodeGeomBufSize;
@@ -505,28 +507,4 @@ const KBBox& KAccelStruct_BVH::GetSceneBBox() const
 	return mSceneBBox;
 }
 
-void KAccelStruct_BVH::SceneNode_ResetAccelData()
-{
-	mIsNodeTMDirty = true;
-}
-
-bool KAccelStruct_BVH::SceneNode_LoadUpdates(FILE* pFile)
-{
-	return true;
-}
-
-bool KAccelStruct_BVH::SceneNode_SaveUpdates(const std::vector<UINT32>& animated_nodes, const std::vector<UINT32>& animated_scenes, FILE* pFile) const
-{
-	return true;
-}
-
-bool KAccelStruct_BVH::SaveToFile(FILE* pFile)
-{
-	return true;
-}
-
-bool KAccelStruct_BVH::LoadFromFile(FILE* pFile)
-{
-	return true;
-}
 

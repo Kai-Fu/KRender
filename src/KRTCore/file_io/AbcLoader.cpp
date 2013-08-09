@@ -14,9 +14,9 @@
 
 AbcLoader::AbcLoader()
 {
-	mCurTime = 0;
+	mCurTime = 0.0;
 	mpScene = NULL;
-	mSampleDuration = 1.0 / 24.0;
+	mSampleDuration = 0.25 / 24.0;
 }
 
 AbcLoader::~AbcLoader()
@@ -237,7 +237,7 @@ void AbcLoader::ProcessMesh(const AbcG::IPolyMesh& mesh)
 		// Remember this animatable mesh for the convenience of later update
 		std::vector<size_t> nodeId;
 		GetCurNodeID(nodeId);
-		mAnimSubScenes[nodeId] = subScene;
+		mAnimSubScenes[nodeId] = sceneIdx;
 		targetSubScene = subScene;
 
 		// Remember the SubNode index in case the animatable object have animated transform
@@ -295,8 +295,7 @@ bool AbcLoader::ConvertMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::chrono
 		//
 		AbcG::IPolyMeshSchema::Sample meshSample_0;
 		AbcG::IPolyMeshSchema::Sample meshSample_1;
-		Abc::ISampleSelector ss_0(t, Abc::ISampleSelector::kFloorIndex);
-		Abc::ISampleSelector ss_1(t, Abc::ISampleSelector::kCeilIndex);
+
 		std::pair<Abc::index_t, Abc::chrono_t> idx_0 = meshSchema.getTimeSampling()->getFloorIndex(t, meshSchema.getNumSamples());
 		std::pair<Abc::index_t, Abc::chrono_t> idx_1 = meshSchema.getTimeSampling()->getCeilIndex(t, meshSchema.getNumSamples());
 		float alpha = (idx_0.first != idx_1.first) ? (float(t - idx_0.second) / float(idx_1.second - idx_0.second)) : 0;
@@ -490,9 +489,9 @@ bool AbcLoader::ConvertMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::chrono
 			// Now fill the data to KTriMesh object
 			outMesh.SetupPN(vertCnt, isAnimating);
 			for (size_t i = 0; i < vertCnt; ++i) {
-				outMesh.GetVertPN(i)[frame_i].pos[0] = nvmath::lerp(alpha, (*vertPos_0)[i].x, (*vertPos_0)[i].x);
-				outMesh.GetVertPN(i)[frame_i].pos[1] = nvmath::lerp(alpha, (*vertPos_0)[i].y, (*vertPos_0)[i].y);
-				outMesh.GetVertPN(i)[frame_i].pos[2] = nvmath::lerp(alpha, (*vertPos_0)[i].z, (*vertPos_0)[i].z);
+				outMesh.GetVertPN(i)[frame_i].pos[0] = nvmath::lerp(alpha, (*vertPos_0)[i].x, (*vertPos_1)[i].x);
+				outMesh.GetVertPN(i)[frame_i].pos[1] = nvmath::lerp(alpha, (*vertPos_0)[i].y, (*vertPos_1)[i].y);
+				outMesh.GetVertPN(i)[frame_i].pos[2] = nvmath::lerp(alpha, (*vertPos_0)[i].z, (*vertPos_1)[i].z);
 
 				outMesh.GetVertPN(i)[frame_i].nor = -averagedNormals[i];
 				outMesh.GetVertPN(i)[frame_i].nor.normalize();
@@ -624,17 +623,26 @@ void AbcLoader::GetObjectWorldTransform(const AbcG::IObject& obj, KMatrix4 trans
 
 void AbcLoader::GetCurNodeID(std::vector<size_t>& nodeId) const
 {
-	nodeId.assign(&mCurNodeID[0], &mCurNodeID[mCurTreeDepth]);
+	nodeId.assign(&mCurNodeID[0], &mCurNodeID[mCurTreeDepth] + 1);
 }
 
-bool AbcLoader::Update(float time)
+bool AbcLoader::Update(float time, std::list<UINT32>& changedScenes)
 {
+	mCurTime = time;
+
 	Abc::IArchive archive(Alembic::AbcCoreHDF5::ReadArchive(), mFileName);
 	Abc::IObject topObj(archive, Abc::kTop);
 
 	std::map<std::vector<size_t>, UINT32>::iterator it_xform = mAnimNodeIndices.begin();
 	for (; it_xform != mAnimNodeIndices.end(); ++it_xform) {
 		UpdateXformNode(it_xform->first.cbegin(), it_xform->first.cend(), it_xform->second, topObj);
+	}
+
+	changedScenes.clear();
+	std::map<std::vector<size_t>, UINT32>::iterator it_scene = mAnimSubScenes.begin();
+	for (; it_scene != mAnimSubScenes.end(); ++it_scene) {
+		UpdateAnimSubScene(it_scene->first.cbegin(), it_scene->first.cend(), it_scene->second, topObj);
+		changedScenes.push_back(it_scene->second);
 	}
 
 	return true;
@@ -667,7 +675,7 @@ void AbcLoader::UpdateXformNode(std::vector<size_t>::const_iterator nodeIdIt, st
 		UpdateXformNode(nodeIdIt+1, nodeItEnd, nodeIdx, childObj);
 }
 
-void AbcLoader::UpdateAnimSubScene(std::vector<size_t>::const_iterator nodeIdIt, std::vector<size_t>::const_iterator nodeItEnd, KScene* pScene, const Abc::IObject& parentObj)
+void AbcLoader::UpdateAnimSubScene(std::vector<size_t>::const_iterator nodeIdIt, std::vector<size_t>::const_iterator nodeItEnd, UINT32 sceneIdx, const Abc::IObject& parentObj)
 {
 	const Abc::ObjectHeader &ohead = parentObj.getChildHeader(*nodeIdIt);
 	Abc::IObject childObj(parentObj, ohead.getName());
@@ -676,6 +684,7 @@ void AbcLoader::UpdateAnimSubScene(std::vector<size_t>::const_iterator nodeIdIt,
             AbcG::IPolyMesh pmesh(parentObj, ohead.getName());
             if (pmesh) {
 				std::cout << "updating pmesh: " << pmesh.getName() << std::endl;
+				KScene* pScene = mpScene->GetKDScene(sceneIdx);
 				pScene->ResetScene();
 
 				UINT32 meshIdx = pScene->AddMesh();
@@ -697,5 +706,5 @@ void AbcLoader::UpdateAnimSubScene(std::vector<size_t>::const_iterator nodeIdIt,
 			assert(0); // the nodeId must be valid for a xform node
 	}
 	else
-		UpdateAnimSubScene(nodeIdIt+1, nodeItEnd, pScene, childObj);
+		UpdateAnimSubScene(nodeIdIt+1, nodeItEnd, sceneIdx, childObj);
 }

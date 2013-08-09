@@ -30,7 +30,7 @@ public:
 			const KTriDesc* pAccelTri = pscene->GetAccelTriData(idx);
 			KTriVertPos2 triPos;
 			pscene->GetSource()->GetAccelTriPos(*pAccelTri, triPos);
-			if (triPos.mIsMoving && TriIntersectBBox(triPos, *clamp_box)) {
+			if (TriIntersectBBox(triPos, *clamp_box)) {
 				bbox.Add(triBBox[idx]);
 			}
 			else {
@@ -238,7 +238,7 @@ float CalcuSplittingPosition(const UINT32* ptri_idx, UINT32 cnt,
 				splitRatio = tRatio;
 			}
 		}
-		
+		assert(splitRatio >=0 && splitRatio <= 1.0f);
 		return startPos + (endPos - startPos) * splitRatio;
 	}
 

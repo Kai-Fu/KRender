@@ -3,12 +3,20 @@
 static int triBoxOverlap(const float* boxcenter,const float* boxhalfsize,
 				  const float* trivert0, const float* trivert1, const float* trivert2);
 
-int TriIntersectBBox(const KTriVertPos1& tri, const KBBox& bbox)
+int TriIntersectBBox(const KTriVertPos2& tri, const KBBox& bbox)
 {
+
 	KVec3 boxcenter((bbox.mMax + bbox.mMin) * 0.5f);
 	KVec3 boxhalfsize((bbox.mMax - bbox.mMin) * 0.5f);
 	int ret = triBoxOverlap(boxcenter.getPtr(), boxhalfsize.getPtr(), tri.mVertPos[0].getPtr(), tri.mVertPos[1].getPtr(), tri.mVertPos[2].getPtr());
-	return ret;
+	if (ret) return 1;
+	
+	if (tri.mIsMoving) {
+		// This is just a simplified version of intersection test which may introduce error
+		int ret = triBoxOverlap(boxcenter.getPtr(), boxhalfsize.getPtr(), tri.mVertPos_Ending[0].getPtr(), tri.mVertPos_Ending[1].getPtr(), tri.mVertPos_Ending[2].getPtr());
+		if (ret) return 1;
+	}
+	return 0;
 }
 
 
