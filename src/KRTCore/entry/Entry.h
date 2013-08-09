@@ -17,8 +17,7 @@ namespace KRayTracer {
 		bool SetConstant(const char* name, const char* value);
 
 		bool LoadScene(const char* filename);
-		bool SaveScene(const char* filename);
-		bool LoadUpdateFile(const char* filename);
+		bool UpdateTime(double timeInSec, double duration);
 		void CloseScene();
 
 		const BitmapObject* Render(UINT32 w, UINT32 h, KRT_ImageFormat destFormat, void* pUserBuf, double& render_time);

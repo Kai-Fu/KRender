@@ -72,21 +72,14 @@ bool KRayTracer_Root::LoadScene(const char* filename)
 		return false;
 }
 
-bool KRayTracer_Root::LoadUpdateFile(const char* filename)
+bool KRayTracer_Root::UpdateTime(double timeInSec, double duration)
 {
-	if (mpSceneLoader.get() && mpSceneLoader->LoadUpdatingFile(filename))
+	if (mpSceneLoader.get() && mpSceneLoader->UpdateTime(timeInSec, duration))
 		return true;
 	else
 		return false;
 }
 
-bool KRayTracer_Root::SaveScene(const char* filename)
-{
-	if (mpSceneLoader.get())
-		return mpSceneLoader->SaveToFile(filename);
-	else
-		return false;
-}
 
 void KRayTracer_Root::CloseScene()
 {
@@ -276,14 +269,9 @@ bool KRT_LoadScene(const char* fileName, KRT_SceneStatistic& statistic)
 	return ret;
 }
 
-bool KRT_LoadUpdate(const char* fileName)
+bool KRT_UpdateTime(double timeInSec, double duration)
 {
-	return KRayTracer::g_pRoot->LoadUpdateFile(fileName);
-}
-
-bool KRT_SaveScene(const char* fileName)
-{
-	return KRayTracer::g_pRoot->SaveScene(fileName);
+	return KRayTracer::g_pRoot->UpdateTime(timeInSec, duration);
 }
 
 void KRT_CloseScene()
@@ -464,20 +452,6 @@ void KRT_ResetSubSceneNodeTransform(TopSceneHandle scene, unsigned nodeIdx)
 TopSceneHandle KRT_GetScene()
 {
 	return KRayTracer::g_pRoot->mpSceneLoader->mpScene;
-}
-
-bool KRT_SaveUpdate(const char* file_name, 
-			const std::vector<UINT32>& modified_cameras,
-			const std::vector<UINT32>& modified_lights,
-			const std::vector<UINT32>& modified_morph_nodes, 
-			const std::vector<UINT32>& modified_RBA_nodes)
-{
-
-	return KRayTracer::g_pRoot->mpSceneLoader->SaveUpdatingFile(file_name, 
-				modified_cameras,
-				modified_lights,
-				modified_morph_nodes,
-				modified_RBA_nodes);
 }
 
 static KNode* _GetSceneNode(const char* nodeName)

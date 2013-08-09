@@ -45,18 +45,18 @@ static int LuaWrapper_LoadScene(lua_State *L)
 	return 4;
 }
 
-static int LuaWrapper_UpdateScene(lua_State *L)
+static int LuaWrapper_UpdateTime(lua_State *L)
 {
 	int num_param = lua_gettop(L);
-	if (num_param != 1) {
+	if (num_param != 2) {
 		printf("UpdateScene : Invalid input parameters.\n");
 		return 0;
 	}
 
-	size_t str_len;
-	const char* filename = lua_tolstring(L, 1, &str_len);
+	double timeInSec = (double)lua_tonumber(L, 1);
+	double duration = (double)lua_tonumber(L, 1);
 
-	int success = KRT_LoadUpdate(filename) ? 1 : 0;
+	int success = KRT_UpdateTime(timeInSec, duration) ? 1 : 0;
 	lua_pushnumber(L, success);
 
 	if (success)
@@ -65,23 +65,6 @@ static int LuaWrapper_UpdateScene(lua_State *L)
 	return 1;
 }
 
-
-static int LuaWrapper_SaveScene(lua_State *L)
-{
-	int num_param = lua_gettop(L);
-	if (num_param != 1) {
-		printf("SaveScene : Invalid input parameters.\n");
-		return 0;
-	}
-
-	size_t str_len;
-	const char* filename = lua_tolstring(L, 1, &str_len);
-
-	int success = KRT_SaveScene(filename) ? 1 : 0;
-	lua_pushnumber(L, success);
-
-	return 1;
-}
 
 static int LuaWrapper_CloseScene(lua_State *L)
 {
@@ -357,8 +340,7 @@ void BindLuaFunc()
 
 	/* register our function */
 	lua_register(L_S, "LoadScene", LuaWrapper_LoadScene);
-	lua_register(L_S, "UpdateScene", LuaWrapper_UpdateScene);
-	lua_register(L_S, "SaveScene", LuaWrapper_SaveScene);
+	lua_register(L_S, "UpdateTime", LuaWrapper_UpdateTime);
 	lua_register(L_S, "CloseScene", LuaWrapper_CloseScene);
 	lua_register(L_S, "Render", LuaWrapper_Render);
 	lua_register(L_S, "SetConstant", LuaWrapper_SetConstant);

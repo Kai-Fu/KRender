@@ -6,7 +6,6 @@
 #include "../camera/camera_manager.h"
 #include "../shader/light_scheme.h"
 #include "../util/HelperFunc.h"
-#include "../file_io/AbcLoader.h"
 
 #include <assert.h>
 
@@ -21,7 +20,8 @@ SceneLoader::SceneLoader()
 	KMaterialLibrary::Initialize();
 	CameraManager::Initialize();
 	Texture::TextureManager::Initialize();
-
+	mIsFromOBJ = false;
+	mIsSceneLoaded = false;
 	mpScene = new KSceneSet();
 	mpAccelData = NULL;
 }
@@ -80,9 +80,8 @@ protected:
 };
 
 #define FILE_EXT_UNKNOWN -1
-#define FILE_EXT_SCN	1
-#define FILE_EXT_OBJ	2
-#define FILE_EXT_ABC	3
+#define FILE_EXT_OBJ	1
+#define FILE_EXT_ABC	2
 static int _FileExtension(const char* file_name)
 {
 	std::string pathname(file_name);
@@ -91,8 +90,6 @@ static int _FileExtension(const char* file_name)
 		const char* ext = &pathname.c_str()[dot_pos + 1];
 		if (strcmp(ext, "obj") == 0)
 			return FILE_EXT_OBJ;
-		else if (strcmp(ext, "scn") == 0)
-			return FILE_EXT_SCN;
 		else if (strcmp(ext, "abc") == 0)
 			return FILE_EXT_ABC;
 		else
@@ -118,16 +115,10 @@ bool SceneLoader::LoadFromFile(const char* file_name)
 	else
 		mpScene->Reset();
 
+	mIsFromOBJ = false;
 	KTimer fileReadingTime(true);
 	// Perform the file reading
-	if (ext == FILE_EXT_SCN) {
-		fopen_s(&pFile, file_name, "rb");
-		if (pFile)
-			ret = LoadAsSCN(pFile);
-		else
-			ret = false;
-	}
-	else if (ext == FILE_EXT_OBJ) {
+	if (ext == FILE_EXT_OBJ) {
 		KRT_ObjFileLoader OBJLoader;
 		OBJLoader.mUseTexMap = USE_TEX_MAP ? true : false;
 
@@ -138,6 +129,7 @@ bool SceneLoader::LoadFromFile(const char* file_name)
 
 		if (OBJLoader.LoadObjFile(file_name, *pKDScene)) {
 			ret = true;
+			mIsFromOBJ = true;
 		}
 		else {
 			mpScene->Reset();
@@ -145,8 +137,7 @@ bool SceneLoader::LoadFromFile(const char* file_name)
 		}
 	}
 	else if (ext == FILE_EXT_ABC) {
-		AbcLoader loader;
-		if (loader.Load(file_name, *mpScene))
+		if (mAbcLoader.Load(file_name, *mpScene))
 			ret = true;
 		else {
 			mpScene->Reset();
@@ -199,82 +190,19 @@ bool SceneLoader::LoadFromFile(const char* file_name)
 	return ret;
 }
 
-bool SceneLoader::SaveAsSCN(FILE* pFile) const
+bool SceneLoader::UpdateTime(double timeInSec, double duration)
 {
-	return true;
-}
-
-bool SceneLoader::LoadAsSCN(FILE* pFile)
-{
-	return true;
-}
-
-
-bool SceneLoader::SaveToFile(const char* file_name) const
-{
-	FILE* pFile = NULL;
-	// Save the update of rigid body animation nodes
-	fopen_s(&pFile, file_name, "wb");
-	if (!pFile) return false;
-
-	bool res = SaveAsSCN(pFile);
-	fclose(pFile);
-	return res;
-}
-
-bool SceneLoader::SaveUpdatingFile(const char* file_name, 
-			const std::vector<UINT32>& modified_cameras,
-			const std::vector<UINT32>& modified_lights,
-			const std::vector<UINT32>& modified_morph_nodes, 
-			const std::vector<UINT32>& modified_RBA_nodes) const
-{
-	FILE* pFile = NULL;
-	// Save the update of rigid body animation nodes
-	fopen_s(&pFile, file_name, "wb");
-	if (!pFile) return false;
-
-	std::string tag("KRT_Updating");
-	if (!SaveArrayToFile(tag, pFile))
+	if (!mIsSceneLoaded) {
+		std::cout << "Scene not loaded...it cannot be updated." << std::endl;
 		return false;
-	// TODO: handling of camera and light updating
+	}
 
-	if (!SaveArrayToFile(modified_RBA_nodes, pFile))
+	if (mIsFromOBJ) {
+		std::cout << "Scene loaded from OBJ file cannot be updated." << std::endl;
 		return false;
-	
-	//if (!mpScene->SceneNode_SaveUpdates(modified_RBA_nodes, modified_morph_nodes, pFile))
-	//	return false;
-
-	fclose(pFile);
-	return true;
-}
-
-bool SceneLoader::LoadUpdatingFile(const char* file_name)
-{
-	FILE* pFile = NULL;
-	fopen_s(&pFile, file_name, "rb");
-	if (!pFile)
-		return false;
-
-	std::string srcTypeName;
-	std::string dstTypeName = "KRT_Updating"; 
-	if (!LoadArrayFromFile(srcTypeName, pFile))
-		return false;
-	if (srcTypeName.compare(dstTypeName) != 0)
-		return false;
-	// TODO: handling of camera and light updating
-
-	std::vector<UINT32> modified_RBA_nodes;
-	if (!LoadArrayFromFile(modified_RBA_nodes, pFile))
-		return false;
-	
-	if (!mpScene)
-		return false; // Need to load a scene before loading update file
-
-//	if (!mpScene->SceneNode_LoadUpdates(pFile))
-//		return false;
-
-	fclose(pFile);
-	return true;
+	}
+		
+	return mAbcLoader.Update(timeInSec);;
 }
 
 void SceneLoader::BuildNodeIdMap()
