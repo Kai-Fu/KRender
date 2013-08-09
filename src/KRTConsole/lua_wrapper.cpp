@@ -48,13 +48,13 @@ static int LuaWrapper_LoadScene(lua_State *L)
 static int LuaWrapper_UpdateTime(lua_State *L)
 {
 	int num_param = lua_gettop(L);
-	if (num_param != 2) {
+	if (num_param < 1) {
 		printf("UpdateScene : Invalid input parameters.\n");
 		return 0;
 	}
 
 	double timeInSec = (double)lua_tonumber(L, 1);
-	double duration = (double)lua_tonumber(L, 1);
+	double duration = num_param > 1 ? (double)lua_tonumber(L, 2) : 1.0 / 24.0;
 
 	int success = KRT_UpdateTime(timeInSec, duration) ? 1 : 0;
 	lua_pushnumber(L, success);
