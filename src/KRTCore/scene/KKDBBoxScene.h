@@ -67,11 +67,12 @@ protected:
 	static const UINT32 LEAF_SCENE_CNT = 4;
 	struct KD_BBOX_LEAF
 	{
-		KBBox4 bbox;// this bbox is transformed by the transform matrix of the kd scene
+		KBBox bbox[LEAF_SCENE_CNT];// this bbox is transformed by the transform matrix of the kd scene
+		UINT32 scene_cnt;
 		UINT32 next_leaf_idx;
 		UINT32 scene_node_idx[LEAF_SCENE_CNT];
 	};
-	KVectorA16<KD_BBOX_LEAF> mBBoxLeaf;
+	std::vector<KD_BBOX_LEAF> mBBoxLeaf;
 
 	struct KD_BBOX_NODE
 	{
@@ -82,7 +83,6 @@ protected:
 
 	const KSceneSet* mpSceneSet;
 	std::vector<KAccelStruct*> mpAccelStructs;
-	KAccelTriangleOpt1r4t* mpAccelGeomBuffer;
 
 	std::vector<KD_BBOX_NODE> mBBoxNode;
 	std::vector<KBBox> mKDSceneBBox;

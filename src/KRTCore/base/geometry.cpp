@@ -19,51 +19,13 @@ bool ClampRayByBBox(KRay& in_out_ray, const KBBox& bbox);
 
 void KRay::InitInternal(const KVec3& o, const KVec3& d)
 {
-	*(KVec3*)&mOrign = o;
-	*(KVec3*)&mDir = d;
+	mOrign = o;
+	mDir = d;
 
-	for (int i = 0; i < 3; ++i) {
-		vec4_f(mOrign_shift1, i) = vec4_f(mOrign, (i+1) % 3);
-		vec4_f(mDir_shift1, i) = vec4_f(mDir, (i+1) % 3);
-
-		vec4_f(mOrign_shift2, i) = vec4_f(mOrign, (i+2) % 3);
-		vec4_f(mDir_shift2, i) = vec4_f(mDir, (i+2) % 3);
-	}
 	mRcpDir = KVec3(1/d[0], 1/d[1], 1/d[2]);
 	mSign[0] = (mRcpDir[0] < 0) ? 1 : 0;
 	mSign[1] = (mRcpDir[1] < 0) ? 1 : 0;
 	mSign[2] = (mRcpDir[2] < 0) ? 1 : 0;
-
-	vec4_f(mOrign_0011, 0) = o[0];
-	vec4_f(mOrign_0011, 1) = o[0];
-	vec4_f(mOrign_0011, 2) = o[1];
-	vec4_f(mOrign_0011, 3) = o[1];
-
-	vec4_f(mRcpDir_0011, 0) = mRcpDir[0];
-	vec4_f(mRcpDir_0011, 1) = mRcpDir[0];
-	vec4_f(mRcpDir_0011, 2) = mRcpDir[1];
-	vec4_f(mRcpDir_0011, 3) = mRcpDir[1];
-	UINT32 shuffle_src0[2] = {0x03020100, 0x07060504};
-	UINT32 shuffle_src1[2] = {0x0b0a0908, 0x0f0e0d0c};
-	vec4_i(mOrign_shuffle_0011, 0) = shuffle_src0[1 - mSign[0]];
-	vec4_i(mOrign_shuffle_0011, 1) = shuffle_src0[mSign[0]];
-	vec4_i(mOrign_shuffle_0011, 2) = shuffle_src1[1 - mSign[1]];
-	vec4_i(mOrign_shuffle_0011, 3) = shuffle_src1[mSign[1]];
-
-	vec4_f(mOrign_22, 0) = o[2];
-	vec4_f(mOrign_22, 1) = o[2];
-	vec4_f(mOrign_22, 2) = o[2];
-	vec4_f(mOrign_22, 3) = o[2];
-
-	vec4_f(mRcpDir_22, 0) = mRcpDir[2];
-	vec4_f(mRcpDir_22, 1) = mRcpDir[2];
-	vec4_f(mRcpDir_22, 2) = mRcpDir[2];
-	vec4_f(mRcpDir_22, 3) = mRcpDir[2];
-
-	vec4_i(mOrign_shuffle_22, 0) = shuffle_src0[1 - mSign[2]];
-	vec4_i(mOrign_shuffle_22, 1) = shuffle_src0[mSign[2]];
-	vec4_i(mOrign_shuffle_22, 2) = shuffle_src0[1 - mSign[2]];
-	vec4_i(mOrign_shuffle_22, 3) = shuffle_src0[mSign[2]];
 
 	mExcludeBBoxNode = INVALID_INDEX;
 	mExcludeTriID = INVALID_INDEX;

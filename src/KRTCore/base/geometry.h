@@ -3,12 +3,7 @@
 #include "../image/color.h"
 #include <vector>
 #include <string>
-#include <xmmintrin.h>
-#ifdef _WIN32
-	#include <tmmintrin.h>
-#else
 
-#endif
 
 // Force to align in 16 byte to improve cache coherency
 #define INVALID_INDEX 0xffffffff
@@ -16,34 +11,6 @@
 
 
 
-typedef __m128 vec4f;
-typedef __m128i vec4i;
-union vec4
-{
-	vec4f asFloat4;
-	vec4i asUINT4;
-};
-#define vec4_i(vec, idx) (((UINT32*)&vec)[idx])
-#define vec4_f(vec, idx) (((float*)&vec)[idx])
-
-
-#define vec4_madd(a, b, c) (_mm_add_ps(_mm_mul_ps((a), (b)), (c)))
-#define vec4_add(a, b)    _mm_add_ps((a), (b))
-#define vec4_sub(a, b)    _mm_sub_ps((a), (b))
-#define vec4_div(a, b)    _mm_div_ps((a), (b))
-#define vec4_mul(a, b)    _mm_mul_ps((a), (b))
-#define vec4_splats(a)    _mm_set_ps1((a))
-#define vec4_rcp(a)        _mm_rcp_ps((a))
-#define vec4_and(a, b)    _mm_and_ps((a), (b))
-#define vec4_cmpgt(a, b)  _mm_cmpgt_ps((a), (b))
-#define vec4_cmpge(a, b)  _mm_cmpge_ps((a), (b))
-#define vec4_cmple(a, b)  _mm_cmple_ps((a), (b))
-#define vec4_cmplt(a, b)  _mm_cmplt_ps((a), (b))
-#define vec4_cmpgt(a, b)  _mm_cmpgt_ps((a), (b))
-#define vec4_gather(a)    _mm_movemask_ps((a))
-#define vec4_zero()       _mm_setzero_ps()
-#define vec4_st(a, b)     _mm_store_ps((a), (b))
-#define vec4_sel(a, b, c) _mm_or_ps(_mm_and_ps((b), (c)), _mm_andnot_ps((c), (a)))
 
 struct ShadingContext;
 class KBBox;
@@ -67,26 +34,14 @@ struct IntersectContext
 class KRay 
 {
 private:
-	vec4 mOrign;
-	vec4 mDir;
+	KVec3 mOrign;
+	KVec3 mDir;
 public:
 
 	KVec3 mRcpDir;
 	int mSign[4];
 
-	vec4 mOrign_shift1;
-	vec4 mDir_shift1;
-	vec4 mOrign_shift2;
-	vec4 mDir_shift2;
-
-	vec4f mOrign_0011;
-	vec4f mRcpDir_0011;
-	vec4i mOrign_shuffle_0011;
-	vec4f mOrign_22;
-	vec4f mRcpDir_22;
-	vec4i mOrign_shuffle_22;
-
-	// triangle ID used to exclude the hit testing
+		// triangle ID used to exclude the hit testing
 	UINT32 mExcludeBBoxNode;
 	UINT32 mExcludeTriID;
 
@@ -101,14 +56,11 @@ public:
 	
 	const KVec3& GetOrg() const {return *(KVec3*)&mOrign;}
 	const KVec3& GetDir() const {return *(KVec3*)&mDir;}
-
-	const vec4& GetOrgVec4() const {return mOrign;}
-	const vec4& GetDirVec4() const {return mDir;}
 };
 
 class KTriDesc;
 struct KTriVertPos2;
-class KBBoxOpt;
+
 
 class KBSphere
 {
@@ -147,29 +99,8 @@ public:
 	bool IsOverlapping(const KBSphere& sphere) const;
 	const KVec3 Center() const;
 	void GetFaceArea(float area[3]) const;
-	const KBBox& operator = (const KBBoxOpt& bbox);
 };
 
-class KBBoxOpt
-{
-public:
-	vec4 mXXYY;
-	vec4 mZZ;
-
-	KBBoxOpt();
-	KBBoxOpt(const KBBox& bbox);
-	const KBBoxOpt& operator = (const KBBox& bbox);
-};
-
-class KBBox4
-{
-public:
-	vec4f mMin[3];
-	vec4f mMax[3];
-
-	const vec4f* operator[](int i) const {return i ? mMax : mMin;}
-	void FromBBox(const KBBox* bbox, UINT32 cnt);
-};
 
 struct KTriangle {
 	UINT32 pn_idx[3]; // position & normal index
@@ -227,32 +158,6 @@ public:
 	float c_nv;
 	float c_d;
 	float E_F;	// data use to store the normal flag(sign bit) and the uv epsilon value
-};
-
-// This is the optimized version of KTriDesc(one triangle and four rays)
-class KAccelTriangleOpt1r4t
-{
-public:
-	// first 16 byte half cache line
-	// plane:
-	vec4f n_u;	// normal.u / normal.k
-	vec4f n_v;	// normal.v / normal.k
-	vec4f n_d;	// constant of plane equation
-	vec4i k;		// projection dimension
-
-	// second 16 byte half cache line
-	vec4f b_nu;
-	vec4f b_nv;
-	vec4f b_d;
-	vec4f tri_id;	// triangle id, it's also for pad to next cache line(triangle index)
-
-	// third of 16 byte half cache line
-	// line equation for line ab
-	vec4f c_nu;
-	vec4f c_nv;
-	vec4f c_d;
-	vec4f E_F;	// max edge length, it's also for pad to next cache line(triangle index)
-
 };
 
 void PrecomputeAccelTri(const KTriVertPos1& tri, UINT32 tri_id, KAccelTriangleOpt &triAccel);

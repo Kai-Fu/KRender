@@ -362,11 +362,15 @@ void KAccelStruct_KDTree::AddKDNode(const KD_Node& node, UINT32& out_idx)
 {
 	EnterSpinLockCriticalSection(mTempDataForKD->mNodeAddingCS);
 
-	mSceneNode.Append(*(const KD_Node_NoBBox*)&node);
-	out_idx = (UINT32)mSceneNode.size() - 1;
-
-	if (!(node.flag & eNoBBox))
-		mSceneNode.AppendRawData(&node.bbox, sizeof(KBBoxOpt));
+	UINT32 oldSize = (UINT32)mSceneNode.size();
+	out_idx = oldSize;
+	mSceneNode.resize(oldSize + sizeof(KD_Node_NoBBox));
+	*(KD_Node_NoBBox*)&mSceneNode[oldSize] = node;
+	if (!(node.flag & eNoBBox)) {
+		oldSize = (UINT32)mSceneNode.size();
+		mSceneNode.resize(oldSize + sizeof(KBBox));
+		*(KBBox*)&mSceneNode[oldSize] = node.bbox;
+	}
 
 	LeaveSpinLockCriticalSection(mTempDataForKD->mNodeAddingCS);
 }
@@ -456,138 +460,6 @@ int KAccelStruct_KDTree::PrepareKDTree()
 	return mRootNode;
 }
 
-size_t KAccelStruct_KDTree::CalcGeomDataSize() const
-{
-#ifdef USE_PACKED_PRIMITIVE
-	// First calculate the total geometry buffer's size
-	size_t geomBufferSize = 0;
-	for (UINT32 leaf_i = 0; leaf_i < mKDLeafData.size(); ++leaf_i) {
-		const KD_LeafData& leafData = mKDLeafData[leaf_i];
-		UINT32 total_size = leafData.tri_cnt + 3;
-		geomBufferSize += (total_size >> 2);
-	}
-	return geomBufferSize;
-#else
-	return 0;
-#endif
-}
-
-void KAccelStruct_KDTree::FinalizeKDTree(KAccelTriangleOpt1r4t* pGeomBuffer)
-{
-
-#ifdef USE_PACKED_PRIMITIVE
-
-	// Fill the geometry buffer
-	std::vector<KAccelTriangleOpt> kuv_tri[3];
-	size_t currentFillPos = 0;
-	size_t filled_tri4 = 0;
-	for (UINT32 leaf_i = 0; leaf_i < mKDLeafData.size(); ++leaf_i) {
-		KD_LeafData& leafData = mKDLeafData[leaf_i];
-
-		for (UINT32 i = 0; i < 3; ++i)
-			kuv_tri[i].resize(0);
-
-		for (UINT32 tri_i = 0; tri_i < leafData.tri_cnt; ++tri_i) {
-			UINT32 idx = leafData.tri_list.leaf_triangles[tri_i];
-			KAccelTriangleOpt accelTriOpt;
-			KTriVertPos2 triPos;
-			mpSourceScene->GetAccelTriPos(mAccelTriangle[idx], triPos);
-			PrecomputeAccelTri(triPos,idx, accelTriOpt);
-			kuv_tri[accelTriOpt.k].push_back(accelTriOpt);
-		}
-
-		UINT32 total_size = 0;
-		for (int gi = 0; gi < 3; ++gi) {
-			total_size += (UINT32)kuv_tri[gi].size();
-		}
-		total_size += 3;
-		UINT32 tri4cnt = (total_size >> 2);
-		filled_tri4 += tri4cnt;
-		KAccelTriangleOpt1r4t* ret = &pGeomBuffer[currentFillPos];
-
-		leafData.tri_cnt = tri4cnt;
-		leafData.tri_list.accel_tri4 = ret;
-		currentFillPos += tri4cnt;
-		
-		UINT32 curPos = 0;
-		FillAccelTri1r4t(kuv_tri[0], ret, 0, false);
-		curPos += (UINT32)kuv_tri[0].size();
-		FillAccelTri1r4t(kuv_tri[1], ret, curPos, false);
-		curPos += (UINT32)kuv_tri[1].size();
-		FillAccelTri1r4t(kuv_tri[2], ret, curPos, true);
-		curPos += (UINT32)kuv_tri[2].size();
-
-		if ((curPos % 4) != 0) {
-			UINT32 last_bias = (curPos % 4) - 1;
-			UINT32 last_idx = tri4cnt - 1;
-			KAccelTriangleOpt1r4t* acc_tri = ret;
-			for (UINT32 i = last_bias + 1; i < 4; ++i) {
-				vec4_f(acc_tri[last_idx].b_d, i) = vec4_f(acc_tri[last_idx].b_d, last_bias);
-				vec4_f(acc_tri[last_idx].b_nu, i) = vec4_f(acc_tri[last_idx].b_nu, last_bias);
-				vec4_f(acc_tri[last_idx].b_nv, i) = vec4_f(acc_tri[last_idx].b_nv, last_bias);
-
-				vec4_f(acc_tri[last_idx].c_d, i) = vec4_f(acc_tri[last_idx].c_d, last_bias);
-				vec4_f(acc_tri[last_idx].c_nu, i) = vec4_f(acc_tri[last_idx].c_nu, last_bias);
-				vec4_f(acc_tri[last_idx].c_nv, i) = vec4_f(acc_tri[last_idx].c_nv, last_bias);
-
-				vec4_f(acc_tri[last_idx].n_d, i) = vec4_f(acc_tri[last_idx].n_d, last_bias);
-				vec4_f(acc_tri[last_idx].n_u, i) = vec4_f(acc_tri[last_idx].n_u, last_bias);
-				vec4_f(acc_tri[last_idx].n_v, i) = vec4_f(acc_tri[last_idx].n_v, last_bias);
-
-				vec4_i(acc_tri[last_idx].k, i) = vec4_i(acc_tri[last_idx].k, last_bias);
-
-				vec4_i(acc_tri[last_idx].tri_id, i) = vec4_i(acc_tri[last_idx].tri_id, last_bias);
-				vec4_f(acc_tri[last_idx].E_F, i) = vec4_f(acc_tri[last_idx].E_F, last_bias);
-			}
-		}
-	}
-
-	mLeafIdxMemPool.Reset();
-	
-#endif
-	
-}
-
-void KAccelStruct_KDTree::FillAccelTri1r4t(const std::vector<KAccelTriangleOpt>& kuv_tri, KAccelTriangleOpt1r4t* acc_tri, UINT32 offset_tri4, bool pad_end) const
-{
-	if (kuv_tri.empty())
-		return;
-
-	const UINT32 shuffle_mask[3] = {0x03020100, 0x07060504, 0x0b0a0908};
-	UINT32 k = shuffle_mask[kuv_tri[0].k];
-	UINT32 last_idx = INVALID_INDEX;
-	UINT32 last_bias = INVALID_INDEX;
-
-	for (UINT32 i = 0; i < kuv_tri.size(); ++i) {
-		
-		const KAccelTriangleOpt& tri = kuv_tri[i];
-		UINT32 r_i = (offset_tri4 + i) >> 2;
-		UINT32 bias = (offset_tri4 + i) % 4;
-		last_bias = bias;
-		last_idx = r_i;
-		vec4_f(acc_tri[r_i].b_d, bias) = tri.b_d;
-		vec4_f(acc_tri[r_i].b_nu, bias) = tri.b_nu;
-		vec4_f(acc_tri[r_i].b_nv, bias) = tri.b_nv;
-
-		vec4_f(acc_tri[r_i].c_d, bias) = tri.c_d;
-		vec4_f(acc_tri[r_i].c_nu, bias) = tri.c_nu;
-		vec4_f(acc_tri[r_i].c_nv, bias) = tri.c_nv;
-
-		vec4_f(acc_tri[r_i].n_d, bias) = tri.n_d;
-		vec4_f(acc_tri[r_i].n_u, bias) = tri.n_u;
-		vec4_f(acc_tri[r_i].n_v, bias) = tri.n_v;
-		
-		vec4_i(acc_tri[r_i].k, bias) = k;
-
-		vec4_i(acc_tri[r_i].tri_id, bias) = tri.tri_id;
-		// How this magic value is here?
-		// This is calculated by assuming the image size is 10000*10000, and the tan(half of fov) is 0.5
-		vec4_f(acc_tri[r_i].E_F, bias) = 0.000001f / tri.E_F;
-
-	}
-
-}
-
 bool KAccelStruct_KDTree::IntersectLeaf(UINT32 idx, const KRay& ray, float cur_t, IntersectContext& ctx) const
 {
 	const KD_LeafData& leafData = mKDLeafData[idx];
@@ -604,13 +476,7 @@ bool KAccelStruct_KDTree::IntersectLeaf(UINT32 idx, const KRay& ray, float cur_t
 	float old_t = ctx.t;
 	ctx.t = (old_t < t1 ? old_t : t1);
 
-#ifdef USE_PACKED_PRIMITIVE
 
-	if (RayIntersect4Tri(ray, leafData.tri_list.accel_tri4, leafData.tri_cnt, ctx)) {
-		ret = true;
-	}
-
-#else
 	for (UINT32 i = 0; i < leafData.tri_cnt; ++i) {
 		UINT32 tri_idx = leafData.tri_list.leaf_triangles[i];
 		KTriVertPos2 triPos;
@@ -624,7 +490,6 @@ bool KAccelStruct_KDTree::IntersectLeaf(UINT32 idx, const KRay& ray, float cur_t
 		}
 	}
 	
-#endif
 
 	// If no triangle get hit, then I should restore it back.
 	if (ret)
@@ -640,15 +505,13 @@ bool KAccelStruct_KDTree::IntersectLeaf(UINT32 idx, const KRay& ray, float cur_t
 bool KAccelStruct_KDTree::IntersectNode(UINT32 idx, const KRay& ray, float cur_t, IntersectContext& ctx) const
 {
 	float t0 = 0, t1 = FLT_MAX;
-	bool bUpdateWalk = false;
-	const KD_Node_NoBBox& node = mSceneNode[idx];
+	const KD_Node_NoBBox& node = *(const KD_Node_NoBBox*)&mSceneNode[idx];
 	UINT32 det_axis = node.flag & eSplitAxisMask;
 
 	if (!(node.flag & eNoBBox)) {
-		const KD_Node* pKDNode = (const KD_Node*)&node;
-		if (!IntersectBBox(ray, pKDNode->bbox, t0, t1))
+		const KBBox* pNodeBBox = (const KBBox*)&mSceneNode[idx + sizeof(KD_Node_NoBBox)];
+		if (!IntersectBBox(ray, *pNodeBBox, t0, t1))
 			return false;
-		bUpdateWalk = true;
 	}
 
 	if (t0 > ctx.t)
@@ -746,11 +609,7 @@ void KAccelStruct_KDTree::ResetScene()
 	mMaxDepth = MAX_KD_DEPTH;
 	mRootNode = INVALID_INDEX;
 
-#ifdef USE_PACKED_PRIMITIVE
-	
-#else
 	mLeafIdxMemPool.Reset();
-#endif
 
 	mKDLeafData.clear();
 	mSceneNode.clear();

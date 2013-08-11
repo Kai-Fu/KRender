@@ -4,7 +4,6 @@
 #include <vector>
 #include <set>
 #include "../os/api_wrapper.h"
-#include "../base/kvector.h"
 #include "../util/memory_pool.h"
 #include <memory>
 
@@ -38,8 +37,6 @@ public:
 	virtual float GetSceneEpsilon() const = 0;
 	virtual void GetKDBuildTimeStatistics(DWORD& kd_build, DWORD& gen_accel) const = 0;
 	virtual const KBBox& GetSceneBBox() const = 0;
-	virtual size_t CalcGeomDataSize() const = 0;
-	virtual void FinalizeKDTree(KAccelTriangleOpt1r4t* pGeomBuffer) = 0;
 
 	const KTriDesc* GetAccelTriData(UINT32 tri_idx) const;
 protected:
@@ -58,7 +55,6 @@ public:
 	typedef struct _KD_LeafData {
 		
 		union TRI_LIST {
-			KAccelTriangleOpt1r4t* accel_tri4;
 			UINT32* leaf_triangles;
 		} tri_list;
 		KBBox bbox;
@@ -78,20 +74,15 @@ public:
 		eSplitAxisMask = 0x000f
 	};
 	// Data structure for each kd node
-	struct KD_Node {
-		long flag;
-		UINT32  left_child;
-		UINT32  right_child;
-		float  split_value;
-		KBBoxOpt bbox;
-	};
 	struct KD_Node_NoBBox {
 		long flag;
 		UINT32  left_child;
 		UINT32  right_child;
 		float  split_value;
 	};
-
+	struct KD_Node : public KD_Node_NoBBox {
+		KBBox bbox;
+	};
 	// Statistic info of this kd tree	
 	UINT32 mTotalLeafTriCnt;
 	UINT32 mPerfectsplitCnt;	// splitting the doesn't intersect any triangle
@@ -105,7 +96,7 @@ protected:
 	const KScene* mpSourceScene;
 	float mSceneEpsilon;
 
-	KVectorA16<KD_Node_NoBBox>	mSceneNode;
+	std::vector<BYTE>	mSceneNode;
 	std::vector<KD_LeafData> mKDLeafData;
 	GlowableMemPool mLeafIdxMemPool;
 
@@ -167,7 +158,6 @@ protected:
 	bool IntersectNode(UINT32 idx, const KRay& ray, float cur_t, IntersectContext& ctx) const;
 	bool IntersectLeaf(UINT32 idx, const KRay& ray, float cur_t, IntersectContext& ctx) const;
 	int PrepareKDTree();
-	void FillAccelTri1r4t(const std::vector<KAccelTriangleOpt>& kuv_tri, KAccelTriangleOpt1r4t* acc_tri, UINT32 offset_tri4, bool pad_end) const;
 	void PrecomputeTriangleBBox();
 
 public:
@@ -190,8 +180,6 @@ public:
 	virtual unsigned long long GetAccelLeafCnt() const {return mKDLeafData.size();}
 	virtual const KBBox& GetSceneBBox() const {return mSceneBBox;}
 	virtual void GetKDBuildTimeStatistics(DWORD& kd_build, DWORD& gen_accel) const;
-	virtual size_t CalcGeomDataSize() const;
-	virtual void FinalizeKDTree(KAccelTriangleOpt1r4t* pGeomBuffer);
 	
 	// These functions will modify scene, BE CAREFUL!!!
 	void AddKDNode(const KD_Node& node, UINT32& out_idx);

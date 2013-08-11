@@ -10,16 +10,11 @@ KAccelStruct_BVH::KAccelStruct_BVH(const KSceneSet* sceneSet)
 	mRootNode = INVALID_INDEX;
 
 	mpSceneSet = NULL;
-	mpAccelGeomBuffer = NULL;
 	mpSceneSet = sceneSet;
 }
 
 KAccelStruct_BVH::~KAccelStruct_BVH()
 {
-	if (mpAccelGeomBuffer) {
-		Aligned_Free(mpAccelGeomBuffer);
-		mpAccelGeomBuffer = NULL;
-	}
 
 }
 
@@ -124,32 +119,33 @@ bool KAccelStruct_BVH::IntersectBBoxNode(const KRay& ray, UINT32 idx, IntersectC
 bool KAccelStruct_BVH::IntersectBBoxLeaf(const KRay& ray, UINT32 idx, IntersectContext& ctx, float cur_t) const
 {
 	UINT32 cur_idx = idx;
-	vec4f t0;
-	vec4f t1;
+
 	bool ret = false;
 
 	do {
 		int scene_cnt = 0;
 		int hit_scene[LEAF_SCENE_CNT];
+		float t0[LEAF_SCENE_CNT], t1[LEAF_SCENE_CNT];
+		bool hit_res[LEAF_SCENE_CNT];
+		for (UINT32 i = 0; i < mBBoxLeaf[cur_idx].scene_cnt; ++i)
+			hit_res[i] = IntersectBBox(ray, mBBoxLeaf[cur_idx].bbox[i], t0[i], t1[i]);
 
-		vec4i hit_res = IntersectBBox(ray, mBBoxLeaf[cur_idx].bbox, t0, t1);
 		float* pT0;
 		for (UINT32 i = 0; i < 4; ++i) {
-			if (vec4_i(hit_res, i)) {
+			if (hit_res[i]) {
 				pT0 = (float*)&t0 + i;
 				break;
 			}
 		}
 
-		for (UINT32 i = 0; i < LEAF_SCENE_CNT; ++i) {
+		for (UINT32 i = 0; i < mBBoxLeaf[cur_idx].scene_cnt; ++i) {
 			if (mBBoxLeaf[cur_idx].scene_node_idx[i] == INVALID_INDEX)
 				break;
 			
-			if (vec4_i(hit_res, i)) {
+			if (hit_res[i]) {
 				hit_scene[scene_cnt] = i;
 				++scene_cnt;
 			}
-
 		}
 		
 		// Here I sort the order the the sub-scenes to be tested, doing so could potentially improve
@@ -157,7 +153,7 @@ bool KAccelStruct_BVH::IntersectBBoxLeaf(const KRay& ray, UINT32 idx, IntersectC
 		int scene_order[LEAF_SCENE_CNT] = {0,1,2,3};
 		for (int i = 0; i < scene_cnt; ++i) {
 			for (int j = scene_cnt - 1; j > i; --j) {
-				if (vec4_f(t0, scene_order[j-1]) > vec4_f(t0, scene_order[j]))
+				if (t0[scene_order[j-1]] > t0[scene_order[j]])
 					std::swap(scene_order[j-1], scene_order[j]);
 			}
 		}
@@ -311,21 +307,21 @@ UINT32 KAccelStruct_BVH::SplitBBoxScene(UINT32* pKDSceneIdx, const KBBox* clampB
 		UINT32 offset = 0;
 		do {
 			UINT32 cur_cnt = ((cnt - offset) > LEAF_SCENE_CNT) ? LEAF_SCENE_CNT : (cnt - offset);
-			KBBox tempBox[4];
-			for (UINT32 i = 0; i < cur_cnt; ++i) {
+				for (UINT32 i = 0; i < cur_cnt; ++i) {
 				UINT32 scene_node_idx = pKDSceneIdx ? pKDSceneIdx[offset+i] : (offset+i);
-				tempBox[i] = mKDSceneBBox[scene_node_idx];
+				bbox_leaf.bbox[i] = mKDSceneBBox[scene_node_idx];
 				bbox_leaf.scene_node_idx[i] = scene_node_idx;
 			}
-			bbox_leaf.bbox.FromBBox(tempBox, cur_cnt);
-
+			
+			bbox_leaf.scene_cnt = cur_cnt;
 			for (UINT32 i = cur_cnt; i < LEAF_SCENE_CNT; ++i) {
 				bbox_leaf.scene_node_idx[i] = INVALID_INDEX;
+				bbox_leaf.bbox[i] = bbox_leaf.bbox[cur_cnt - 1];
 			}
 			offset += cur_cnt;
 			bbox_leaf.next_leaf_idx = last_idx;
 			last_idx = (UINT32)mBBoxLeaf.size();
-			mBBoxLeaf.Append(bbox_leaf);
+			mBBoxLeaf.push_back(bbox_leaf);
 		} while (cnt > offset);
 
 		ret = UINT32(mBBoxLeaf.size() - 1);
@@ -422,32 +418,7 @@ bool KAccelStruct_BVH::SceneNode_BuildAccelData(const std::list<UINT32>* pDirtie
 
 	// Now finalize all the accellerating data structure by copying it into the final buffer.
 	{
-		// the final buffer only needs to be updated when the geometry data of any KD scene is changed.
-		KTimer stop_watch(true);
-		std::vector<size_t> nodeGeomBufSize;
-		size_t totalGeomBufferSize = 0;
-		nodeGeomBufSize.resize(mpSceneSet->mpKDScenes.size());
-		for (size_t i = 0; i < mpSceneSet->mpKDScenes.size(); ++i) {
-			nodeGeomBufSize[i] = mpAccelStructs[i]->CalcGeomDataSize();
-			totalGeomBufferSize += nodeGeomBufSize[i];
-		}
-
-		if (totalGeomBufferSize > 0) {
-			mpAccelGeomBuffer = 
-				(KAccelTriangleOpt1r4t*)Aligned_Malloc(totalGeomBufferSize * sizeof(KAccelTriangleOpt1r4t), 16);
-			if (!mpAccelGeomBuffer) {
-				printf("Out of memory, exit now...\n");
-				exit(0);
-			}
-		}
-		size_t fill_offset = 0;
-		for (size_t i = 0; i < mpAccelStructs.size(); ++i) {
-			mpAccelStructs[i]->FinalizeKDTree(mpAccelGeomBuffer + fill_offset);
-			fill_offset += nodeGeomBufSize[i];
-		}
-
-		double time_elapsed = stop_watch.Stop();
-		m_kdFinializingTime = DWORD(time_elapsed * 1000.0);
+		m_kdFinializingTime = 0;
 	}
 
 	return true;

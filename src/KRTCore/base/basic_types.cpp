@@ -169,54 +169,6 @@ void KBBox::GetFaceArea(float area[3]) const
 	area[2] = fabs(len[0] * len[1]);
 }
 
-void KBBox4::FromBBox(const KBBox* bbox, UINT32 cnt)
-{
-	for (UINT32 ki = 0; ki < 4; ++ki) {
-
-		UINT32 bi = ki > (cnt-1) ? (cnt-1) : ki;
-		for (int i = 0; i < 3; ++i) {
-			vec4_f(mMin[i], ki) = bbox[bi].mMin[i];
-			vec4_f(mMax[i], ki) = bbox[bi].mMax[i];
-		}
-	}
-}
-
-const KBBox& KBBox::operator = (const KBBoxOpt& bbox)
-{
-	mMax[0] = vec4_f(bbox.mXXYY, 0);
-	mMin[0] = vec4_f(bbox.mXXYY, 1);
-	mMax[1] = vec4_f(bbox.mXXYY, 2);
-	mMin[1] = vec4_f(bbox.mXXYY, 3);
-	mMax[2] = vec4_f(bbox.mZZ, 0);
-	mMin[2] = vec4_f(bbox.mZZ, 1);
-	mMax[2] = vec4_f(bbox.mZZ, 2);
-	mMin[2] = vec4_f(bbox.mZZ, 3);
-	return *this;
-}
-
-KBBoxOpt::KBBoxOpt()
-{
-
-}
-
-KBBoxOpt::KBBoxOpt(const KBBox& bbox)
-{
-	*this = bbox;
-}
-
-const KBBoxOpt& KBBoxOpt::operator =(const KBBox& bbox)
-{
-	vec4_f(mXXYY, 0) = bbox.mMax[0];
-	vec4_f(mXXYY, 1) = bbox.mMin[0];
-	vec4_f(mXXYY, 2) = bbox.mMax[1];
-	vec4_f(mXXYY, 3) = bbox.mMin[1];
-	vec4_f(mZZ, 0) = bbox.mMax[2];
-	vec4_f(mZZ, 1) = bbox.mMin[2];
-	vec4_f(mZZ, 2) = bbox.mMax[2];
-	vec4_f(mZZ, 3) = bbox.mMin[2];
-	return *this;
-}
-
 void Vec3TransformCoord(KVec3& res, const KVec3& v, const KMatrix4& mat)
 {
 	KVec4 temp = KVec4(v, 1.0f) * mat;

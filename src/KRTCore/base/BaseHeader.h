@@ -21,10 +21,6 @@ extern UINT32 ENABLE_DOF;
 extern UINT32 ENABLE_MB;
 
 
-// Comment out this to enable safe ray-triangle intersection algorithm
-//#define USE_PACKED_PRIMITIVE
-
-
 
 // Common constants
 #define SQRT_TWO 1.4142135623730950488016887242097f
