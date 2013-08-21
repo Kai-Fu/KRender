@@ -25,13 +25,13 @@ public:
 	
 
 	struct MotionState {
-		KVec3 pos;
-		KVec3 lookat;
-		KVec3 up;
-		float xfov;
-		float focal;
+		KVec3d pos;
+		KVec3d lookat;
+		KVec3d up;
+		double xfov;
+		double focal;
 
-		MotionState() {xfov = 45.0f; }
+		MotionState() {xfov = 45.0; }
 	};
 
 	// Utility class to assist the adaptive sampling of DOF(Depth of Field) and motion blur, thread should
@@ -40,8 +40,8 @@ public:
 		friend class KCamera;
 	public:
 		
-		KVec2 inScreenPos;  // position in screen coordinates(pixel uint)
-		KVec2 inAperturePos;		// offset in camera plane(world unit)
+		KVec2d inScreenPos;  // position in screen coordinates(pixel uint)
+		KVec2d inAperturePos;		// offset in camera plane(world unit)
 		float inMotionTime;	// time defined between 0 - 1
 		
 		// the value of this structure is computed from the input data
@@ -71,13 +71,10 @@ public:
 
 	// Get pixel position(suppose the ray is shot from the center of aperture)
 	bool GetScreenPosition(const KVec3& pos, KVec2& outScrPos) const;
-	// File IO functions
-	bool Save(FILE* pFile);
-	bool Load(FILE* pFile);
 
 protected:
-	void InterpolateCameraMotion(MotionState& outMotion, float t) const;
-	void ConfigEyeRayGen(EyeRayGen& outEyeRayGen, MotionState& outMotion, float t) const;
+	void InterpolateCameraMotion(MotionState& outMotion, double cur_t) const;
+	void ConfigEyeRayGen(EyeRayGen& outEyeRayGen, MotionState& outMotion, double cur_t) const;
 private:
 	std::vector<MotionState> mMotionStates;
 	KVec2 mApertureSize; // aperture size may be different in x and y directions

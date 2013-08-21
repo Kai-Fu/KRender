@@ -351,14 +351,14 @@ void TracingInstance::CalcuShadingContext(const KRay& hitRay, const IntersectCon
 	out_shading_ctx.face_normal = face_nor;
 	out_shading_ctx.face_normal.normalize();
 
-	KVec3 rayDir = hitRay.GetDir();
+	KVec3d rayDir = hitRay.GetDir();
 	rayDir.normalize(); // Normalize the ray direction because it's not normalized
 
 	// Get the surface shader
 	ISurfaceShader* pSurfShader = pNode->mpSurfShader;
 	out_shading_ctx.surface_shader = pSurfShader;
 
-	out_shading_ctx.out_vec = -rayDir;
+	out_shading_ctx.out_vec = ToVec3f(-rayDir);
 }
 
 const ISurfaceShader* TracingInstance::GetSurfaceShader(const IntersectContext& hit_ctx) const
@@ -422,9 +422,6 @@ bool TracingInstance::CastRay(const KRay& ray, IntersectContext& out_ctx) const
 {
 	if (mpScene->IntersectRay_KDTree(ray, mCameraContext.inMotionTime, out_ctx)) {
 
-		// update the distance that the ray has traveled.
-		out_ctx.travel_distance += out_ctx.t;
-
 		return true;
 	}
 	else
@@ -435,7 +432,7 @@ bool TracingInstance::IsPointOccluded(const KRay& ray, float len) const
 {
 	IntersectContext ctx;
 	if (CastRay(ray, ctx)) {
-		float diff = ctx.t - len;
+		double diff = ctx.ray_t - len;
 		float epsilon = mpScene->GetSceneEpsilon();
 		if (diff > epsilon)
 			return false;

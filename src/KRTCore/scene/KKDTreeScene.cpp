@@ -465,28 +465,37 @@ bool KAccelStruct_KDTree::IntersectLeaf(UINT32 idx, const KRay& ray, float cur_t
 	const KD_LeafData& leafData = mKDLeafData[idx];
 	bool ret = false;
 
-	float t0 = 0, t1 = FLT_MAX;
+	double t0 = 0, t1 = FLT_MAX;
 	if (!IntersectBBox(ray, leafData.bbox,t0, t1))
 		return false;
-	if (t0 > ctx.t)
+	if (t0 > ctx.ray_t)
 		return false; // ok, the required distance is reached
 
 	// we need to make sure the hit point is inside this node's bounding box
 	// t1 is the possible furthest point
-	float old_t = ctx.t;
-	ctx.t = (old_t < t1 ? old_t : t1);
+	double old_t = ctx.ray_t;
+	ctx.ray_t = (old_t < t1 ? old_t : t1);
 
-
+	KVec3 tempRayOrg = ToVec3f(ray.GetOrg() + ray.GetDir() * t0);
+	KVec3 tempRayDir = ToVec3f(ray.GetDir());
 	for (UINT32 i = 0; i < leafData.tri_cnt; ++i) {
 		UINT32 tri_idx = leafData.tri_list.leaf_triangles[i];
 		KTriVertPos2 triPos;
 		mpSourceScene->GetAccelTriPos(mAccelTriangle[tri_idx], triPos);
 
-		if (RayIntersect(ray, triPos, cur_t, tri_idx, ctx)) {
+		RayTriIntersect hitInfo;
+		hitInfo.ray_t = ctx.ray_t - t0;
+		if (RayIntersect((const float*)&tempRayOrg, (const float*)&tempRayDir, triPos, cur_t, hitInfo)) {
 		
 			// a new nearer triangle is hit
-			if (ctx.bbox_node_idx != ray.mExcludeBBoxNode || ctx.tri_id != ray.mExcludeTriID)
+			if (ctx.bbox_node_idx != ray.mExcludeBBoxNode || ctx.tri_id != ray.mExcludeTriID) {
+				ctx.ray_t = t0 + hitInfo.ray_t;
+				ctx.u = hitInfo.u;
+				ctx.v = hitInfo.v;
+				ctx.w = hitInfo.w;
+				ctx.tri_id = tri_idx;
 				ret = true;
+			}
 		}
 	}
 	
@@ -495,8 +504,8 @@ bool KAccelStruct_KDTree::IntersectLeaf(UINT32 idx, const KRay& ray, float cur_t
 	if (ret)
 		ctx.kd_leaf_idx = idx;
 	else { 
-		ctx.walkVec = ray.GetOrg() + ray.GetDir() * t1;
-		ctx.t = old_t;
+		ctx.walkVec = ToVec3f(ray.GetOrg() + ray.GetDir() * t1);
+		ctx.ray_t = old_t;
 	}
 
 	return ret;
@@ -504,7 +513,7 @@ bool KAccelStruct_KDTree::IntersectLeaf(UINT32 idx, const KRay& ray, float cur_t
 
 bool KAccelStruct_KDTree::IntersectNode(UINT32 idx, const KRay& ray, float cur_t, IntersectContext& ctx) const
 {
-	float t0 = 0, t1 = FLT_MAX;
+	double t0 = 0, t1 = FLT_MAX;
 	const KD_Node_NoBBox& node = *(const KD_Node_NoBBox*)&mSceneNode[idx];
 	UINT32 det_axis = node.flag & eSplitAxisMask;
 
@@ -514,7 +523,7 @@ bool KAccelStruct_KDTree::IntersectNode(UINT32 idx, const KRay& ray, float cur_t
 			return false;
 	}
 
-	if (t0 > ctx.t)
+	if (t0 > ctx.ray_t)
 		return false; // ok, the required distance is reached
 		
 	UINT32 next_node0 = INVALID_INDEX;
@@ -554,7 +563,7 @@ bool KAccelStruct_KDTree::IntersectNode(UINT32 idx, const KRay& ray, float cur_t
 	
 	// No triangle is hit in the fisrt child node, here we do some check to see 
 	// whether we need to test the other child node.
-	float hit_pt = ray.GetOrg()[det_axis] + ray.GetDir()[det_axis]*t1;
+	float hit_pt = float(ray.GetOrg()[det_axis] + ray.GetDir()[det_axis]*t1);
 	if ((hit_pt - node.split_value)*det_sign > mSceneEpsilon)
 		return false;
 	
@@ -581,21 +590,6 @@ bool KAccelStruct_KDTree::IntersectRay_KDTree(const KRay& ray, float cur_t, Inte
 		return false;
 }
 
-
-bool KAccelStruct_KDTree::IntersectRay_BruteForce(const KRay& ray, float cur_t, IntersectContext& ctx) const
-{
-	bool ret = false;
-	for (UINT32 i = 0; i < mAccelTriangle.size(); ++i) {
-		KTriVertPos2 triPos;
-		mpSourceScene->GetAccelTriPos(mAccelTriangle[i], triPos);
-
-		if (RayIntersect(ray, triPos, 0, i, ctx)) {
-			ctx.tri_id = i;
-			ret = true;
-		}
-	}
-	return ret;
-}
 
 void KAccelStruct_KDTree::InitAccelData()
 {

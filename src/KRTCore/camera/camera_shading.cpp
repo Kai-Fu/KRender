@@ -10,9 +10,9 @@ bool KCamera::EvaluateShading(TracingInstance& tracingInstance, KColor& out_clr)
 	MotionState ts;
 	ConfigEyeRayGen(evalCtx.mEyeRayGen, ts, evalCtx.inMotionTime);
 
-	KVec3 eyePos = evalCtx.mEyeRayGen.mHorizonVec * evalCtx.inAperturePos[0] + evalCtx.mEyeRayGen.mViewUp * evalCtx.inAperturePos[1];
+	KVec3d eyePos = evalCtx.mEyeRayGen.mHorizonVec * evalCtx.inAperturePos[0] + evalCtx.mEyeRayGen.mViewUp * evalCtx.inAperturePos[1];
 	eyePos += ts.pos;
-	KVec3 eyeLookAt;
+	KVec3d eyeLookAt;
 	evalCtx.mEyeRayGen.GenerateEyeRayFocal(evalCtx.inScreenPos[0], evalCtx.inScreenPos[1], eyeLookAt);
 	KRay ray;
 	ray.Init(eyePos, eyeLookAt - eyePos, NULL);
@@ -27,17 +27,17 @@ void KCamera::CastRay(TracingInstance& tracingInstance, float x, float y, const 
 	EyeRayGen eyeGen;
 	ConfigEyeRayGen(eyeGen, ts, tracingInstance.mCameraContext.inMotionTime);
 
-	float theta = aperturePos[0] * 2.0f * nvmath::PI;
-	float t0 = sinf(theta) * aperturePos[1];
-	float t1 = cosf(theta) * aperturePos[1];
-	KVec3 aperture_x = eyeGen.mHorizonVec * (mApertureSize[0] * 0.5f);
-	KVec3 aperture_y = eyeGen.mViewUp * (mApertureSize[1] * 0.5f);
+	double theta = aperturePos[0] * 2.0f * nvmath::PI;
+	double t0 = sin(theta) * aperturePos[1];
+	double t1 = cos(theta) * aperturePos[1];
+	KVec3d aperture_x = eyeGen.mHorizonVec * double(mApertureSize[0] * 0.5f);
+	KVec3d aperture_y = eyeGen.mViewUp * double(mApertureSize[1] * 0.5f);
 
-	KVec3 adjustedOrg = aperture_x * t0 + aperture_y * t1;
-	KVec3 rayOrg(eyeGen.mEyePos), rayTarget;
+	KVec3d adjustedOrg = aperture_x * t0 + aperture_y * t1;
+	KVec3d rayOrg(eyeGen.mEyePos), rayTarget;
 	eyeGen.GenerateEyeRayFocal(x, y, rayTarget);
 	rayOrg += adjustedOrg;
-	KVec3 rayDir = rayTarget - rayOrg;
+	KVec3d rayDir = rayTarget - rayOrg;
 	rayDir.normalize();
 	outRay.Init(eyeGen.mEyePos, rayDir, &sceneBBox);
 }

@@ -7,7 +7,7 @@
 
 extern UINT32 AREA_LIGHT_SAMP_CNT;
 
-void LightScheme::AdjustHitPos(TracingInstance* pLocalData, const IntersectContext& hit_ctx, const ShadingContext& shadingCtx, KVec3& in_out_pos) const
+void LightScheme::AdjustHitPos(TracingInstance* pLocalData, const IntersectContext& hit_ctx, const ShadingContext& shadingCtx, KVec3d& in_out_pos) const
 {
 	const KAccelStruct_BVH* pScene = pLocalData->GetScenePtr();
 	const KScene* pKDScene = pScene->GetSource()->GetNodeKDScene(hit_ctx.bbox_node_idx);
@@ -37,33 +37,33 @@ bool LightScheme::GetLightIter(TracingInstance* pLocalData, const KVec2& sampleP
 {
 	const ILightObject* pLightObj = GetLightPtr(lightIdx);
 		
-	KVec3 lightPos;
+	KVec3d lightPos;
 	KColor litClr;
-	if (pLightObj->EvaluateLighting(samplePos, shadingCtx->position, lightPos, out_iter)) {
+	if (pLightObj->EvaluateLighting(samplePos, shadingCtx->position, ToVec3f(lightPos), out_iter)) {
 
 		bool isOccluded = false;
 		KColor transmission(out_iter.intensity);
 		{
-			KVec3 adjustedPos = shadingCtx->position;
-			KVec3 lightDir = lightPos - adjustedPos;
-			float l_n = lightDir * shadingCtx->normal;
-			float l_fn = lightDir * shadingCtx->face_normal;
+			KVec3d adjustedPos = ToVec3d(shadingCtx->position);
+			KVec3d lightDir = lightPos - adjustedPos;
+			float l_n = ToVec3f(lightDir) * shadingCtx->normal;
+			float l_fn = ToVec3f(lightDir) * shadingCtx->face_normal;
 			if (l_n > 0) {
 
 				if (l_fn < 0) 
 					AdjustHitPos(pLocalData, *hit_ctx, *shadingCtx, adjustedPos);
 
-				KVec3 temp_light_pos(lightPos);
+				KVec3d temp_light_pos(lightPos);
 				lightDir = adjustedPos - temp_light_pos;
 					
 				// Clamp the shadow ray if the light source is out of the scene's bounding box.
 				// Doing so can improve the floating point precision.
 				const KBBox& sceneBBox = pLocalData->GetScenePtr()->GetSceneBBox();
-				bool needClampRay = !sceneBBox.IsInside(temp_light_pos);
+				bool needClampRay = !sceneBBox.IsInside(ToVec3f(temp_light_pos));
 				if (needClampRay) {
 					KRay ray;
 					ray.Init(temp_light_pos, lightDir, NULL);
-					float t0, t1;
+					double t0, t1;
 					if (IntersectBBox(ray, sceneBBox, t0, t1)) {
 						temp_light_pos = ray.GetOrg() + ray.GetDir() * t0;
 					}
@@ -79,7 +79,7 @@ bool LightScheme::GetLightIter(TracingInstance* pLocalData, const KVec2& sampleP
 				float lum = 1.0f;
 				while (lum > 0) {
 					IntersectContext test_ctx;
-					test_ctx.t = 1.0f;
+					test_ctx.ray_t = 1.0;
 					isOccluded = pLocalData->CastRay(ray, test_ctx);
 					if (isOccluded) {
 						if (test_ctx.bbox_node_idx == hit_ctx->bbox_node_idx && test_ctx.tri_id == hit_ctx->tri_id)
@@ -96,9 +96,9 @@ bool LightScheme::GetLightIter(TracingInstance* pLocalData, const KVec2& sampleP
 
 						lum = transmission.Luminance();
 						if (lum > 0.001f) {
-							KVec3 go_dis = lightDir*test_ctx.t;
-							temp_light_pos += (go_dis * 1.00001f);
-							lightDir -= (go_dis * 0.9999f);
+							KVec3d go_dis = lightDir*test_ctx.ray_t;
+							temp_light_pos += (go_dis * 1.00001);
+							lightDir -= (go_dis * 0.9999);
 							ray.Init(temp_light_pos, lightDir, NULL);
 							ray.mExcludeBBoxNode = test_ctx.bbox_node_idx;
 							ray.mExcludeTriID = test_ctx.tri_id; 

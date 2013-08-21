@@ -72,8 +72,8 @@ bool KAccelStruct_BVH::IntersectBBoxNode(const KRay& ray, UINT32 idx, IntersectC
 {
 	bool res = false;
 	if (!mBBoxNode.empty()) {
-		float t0[2] = {FLT_MAX,FLT_MAX};
-		float t1[2] = {FLT_MAX,FLT_MAX};
+		double t0[2] = {FLT_MAX,FLT_MAX};
+		double t1[2] = {FLT_MAX,FLT_MAX};
 		bool bHit[2];
 		UINT32 order[2] = {0, 1};
 		bHit[0] = IntersectBBox(ray, mBBoxNode[idx].bbox[0], t0[0], t1[0]);
@@ -91,7 +91,6 @@ bool KAccelStruct_BVH::IntersectBBoxNode(const KRay& ray, UINT32 idx, IntersectC
 		if (bHit[0]) {
 			UINT32 child_idx = mBBoxNode[idx].child_node[order[0]];
 			UINT32 child_idx_noMask = (child_idx & ~LEAF_FLAG);
-			float old_t = ctx.t;
 
 			if (child_idx & LEAF_FLAG)
 				isHit0 = IntersectBBoxLeaf(ray, child_idx_noMask, ctx, cur_t);
@@ -99,10 +98,9 @@ bool KAccelStruct_BVH::IntersectBBoxNode(const KRay& ray, UINT32 idx, IntersectC
 				isHit0 = IntersectBBoxNode(ray, child_idx_noMask, ctx, cur_t);
 		}
 
-		if (bHit[1] && ctx.t > t0[1]) {
+		if (bHit[1] && ctx.ray_t > t0[1]) {
 			UINT32 child_idx = mBBoxNode[idx].child_node[order[1]];
 			UINT32 child_idx_noMask = (child_idx & ~LEAF_FLAG);
-			float old_t = ctx.t;
 
 			if (child_idx & LEAF_FLAG)
 				isHit1 = IntersectBBoxLeaf(ray, child_idx_noMask, ctx, cur_t);
@@ -125,7 +123,7 @@ bool KAccelStruct_BVH::IntersectBBoxLeaf(const KRay& ray, UINT32 idx, IntersectC
 	do {
 		int scene_cnt = 0;
 		int hit_scene[LEAF_SCENE_CNT];
-		float t0[LEAF_SCENE_CNT], t1[LEAF_SCENE_CNT];
+		double t0[LEAF_SCENE_CNT], t1[LEAF_SCENE_CNT];
 		bool hit_res[LEAF_SCENE_CNT];
 		for (UINT32 i = 0; i < mBBoxLeaf[cur_idx].scene_cnt; ++i)
 			hit_res[i] = IntersectBBox(ray, mBBoxLeaf[cur_idx].bbox[i], t0[i], t1[i]);
@@ -165,10 +163,6 @@ bool KAccelStruct_BVH::IntersectBBoxLeaf(const KRay& ray, UINT32 idx, IntersectC
 			// transform the ray
 			KRay transRay;
 			TransformRay(transRay, ray, mpSceneSet->mKDSceneNodes[scene_node_idx], cur_t);
-			if (scene_idx == ray.mExcludeBBoxNode)
-				ctx.self_tri_id = ray.mExcludeTriID;
-			else
-				ctx.self_tri_id = INVALID_INDEX;
 
 			if (mpAccelStructs[scene_idx]->IntersectRay_KDTree(transRay, cur_t, ctx)) {
 				ret = true;

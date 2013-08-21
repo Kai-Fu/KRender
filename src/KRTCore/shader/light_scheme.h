@@ -139,7 +139,7 @@ public:
 	static void Shutdown();
 
 private:
-	void AdjustHitPos(TracingInstance* pLocalData, const IntersectContext& hit_ctx, const ShadingContext& shadingCtx, KVec3& in_out_pos) const;
+	void AdjustHitPos(TracingInstance* pLocalData, const IntersectContext& hit_ctx, const ShadingContext& shadingCtx, KVec3d& in_out_pos) const;
 
 protected:
 	std::vector<ILightObject*> mpLights;

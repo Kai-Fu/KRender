@@ -24,9 +24,6 @@ public:
 	static void Initialize();
 	static void Shutdown();
 
-	bool Save(FILE* pFile);
-	bool Load(FILE* pFile);
-
 private:
 	void BuildCameraIndices();
 

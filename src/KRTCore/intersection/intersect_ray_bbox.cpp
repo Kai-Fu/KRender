@@ -8,21 +8,21 @@
 //      "An Efficient and Robust Ray-Box Intersection Algorithm"
 //      Journal of graphics tools, 10(1):49-54, 2005
 //		You can get an intersection point by grabbing tmin (if return is true). 
-bool IntersectBBox(const KRay& ray, const KBBox& bbox, float& t0, float& t1)
+bool IntersectBBox(const KRay& ray, const KBBox& bbox, double& t0, double& t1)
 {
-	float tmin = (bbox[ray.mSign[0]][0] - ray.GetOrg()[0]) * ray.mRcpDir[0];
-	float tmax = (bbox[1-ray.mSign[0]][0] - ray.GetOrg()[0]) * ray.mRcpDir[0];
+	double tmin = (bbox[ray.mSign[0]][0] - ray.GetOrg()[0]) * ray.mRcpDir[0];
+	double tmax = (bbox[1-ray.mSign[0]][0] - ray.GetOrg()[0]) * ray.mRcpDir[0];
 
-	float tymin = (bbox[ray.mSign[1]][1] - ray.GetOrg()[1]) * ray.mRcpDir[1];
-	float tymax = (bbox[1-ray.mSign[1]][1] - ray.GetOrg()[1]) * ray.mRcpDir[1];
+	double tymin = (bbox[ray.mSign[1]][1] - ray.GetOrg()[1]) * ray.mRcpDir[1];
+	double tymax = (bbox[1-ray.mSign[1]][1] - ray.GetOrg()[1]) * ray.mRcpDir[1];
 
 	if (tymin > tmin)
 		tmin = tymin;
 	if (tymax < tmax)
 		tmax = tymax;
 
-	float tzmin = (bbox[ray.mSign[2]][2] - ray.GetOrg()[2]) * ray.mRcpDir[2];
-	float tzmax = (bbox[1-ray.mSign[2]][2] - ray.GetOrg()[2]) * ray.mRcpDir[2];
+	double tzmin = (bbox[ray.mSign[2]][2] - ray.GetOrg()[2]) * ray.mRcpDir[2];
+	double tzmax = (bbox[1-ray.mSign[2]][2] - ray.GetOrg()[2]) * ray.mRcpDir[2];
 
 	if (tzmin > tmin)
 		tmin = tzmin;

@@ -111,6 +111,15 @@ namespace nvmath
     return( (T)(v0 + alpha * ( v1 - v0 )) );
   }
 
+  template<typename T> 
+  inline T lerp( double alpha  //!<  interpolation parameter
+               , const T &v0  //!<  starting value
+               , const T &v1  //!<  ending value
+               )
+  {
+    return( (T)(v0 + alpha * ( v1 - v0 )) );
+  }
+
   template<typename T>
   inline void lerp( float alpha, const T & v0, const T & v1, T & vr )
   {

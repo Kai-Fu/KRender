@@ -13,7 +13,7 @@ bool CalcuShadingByRay(TracingInstance* pLocalData, const KRay& ray, KColor& out
 	UINT32 rayBounceDepth = pLocalData->GetBoundDepth();
 	// Check the maximum bounce depth
 	if (rayBounceDepth >= MAX_REFLECTION_BOUNCE) {
-		out_clr = pLocalData->GetBackGroundColor(ray.GetDir());
+		out_clr = pLocalData->GetBackGroundColor(ToVec3f(ray.GetDir()));
 		return false;
 	}
 	pLocalData->IncBounceDepth();
@@ -77,7 +77,7 @@ bool CalcuShadingByRay(TracingInstance* pLocalData, const KRay& ray, KColor& out
 		//
 		const KEnvShader* pEnvShader = KEnvShader::GetEnvShader();
 		if (pEnvShader) {
-			pEnvShader->Sample(ray.GetOrg(), ray.GetDir(), out_clr);
+			pEnvShader->Sample(ToVec3f(ray.GetOrg()), ToVec3f(ray.GetDir()), out_clr);
 		}
 	}
 
@@ -88,7 +88,7 @@ bool CalcuShadingByRay(TracingInstance* pLocalData, const KRay& ray, KColor& out
 bool CalcSecondaryRay(TracingInstance* pLocalData, const KVec3& org, UINT32 excludingBBox, UINT32 excludingTri, const KVec3& ray_dir, KColor& out_clr)
 {
 	KRay secondaryRay;
-	secondaryRay.Init(org, ray_dir, NULL);
+	secondaryRay.Init(ToVec3d(org), ToVec3d(ray_dir), NULL);
 	secondaryRay.mExcludeBBoxNode = excludingBBox;
 	secondaryRay.mExcludeTriID = excludingTri;
 	return CalcuShadingByRay(pLocalData, secondaryRay, out_clr, NULL);

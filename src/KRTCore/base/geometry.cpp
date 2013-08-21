@@ -17,12 +17,37 @@
 
 bool ClampRayByBBox(KRay& in_out_ray, const KBBox& bbox);
 
-void KRay::InitInternal(const KVec3& o, const KVec3& d)
+KVec3d ToVec3d(const KVec3& ref)
+{
+	return KVec3d(ref[0], ref[1], ref[2]);
+}
+
+KVec3 ToVec3f(const KVec3d& ref)
+{
+	return KVec3(float(ref[0]), float(ref[1]), float(ref[2]));
+}
+
+KVec4d ToVec4d(const KVec4& ref)
+{
+	return KVec4d(ref[0], ref[1], ref[2], ref[3]);
+}
+
+KMatrix4d ToMatrix4d(const KMatrix4& ref)
+{
+	KMatrix4d ret;
+	ret[0] = ToVec4d(ref[0]);
+	ret[1] = ToVec4d(ref[1]);
+	ret[2] = ToVec4d(ref[2]);
+	ret[3] = ToVec4d(ref[3]);
+	return ret;
+}
+
+void KRay::Init(const KVec3d& o, const KVec3d& d)
 {
 	mOrign = o;
 	mDir = d;
 
-	mRcpDir = KVec3(1/d[0], 1/d[1], 1/d[2]);
+	mRcpDir = KVec3d(1/d[0], 1/d[1], 1/d[2]);
 	mSign[0] = (mRcpDir[0] < 0) ? 1 : 0;
 	mSign[1] = (mRcpDir[1] < 0) ? 1 : 0;
 	mSign[2] = (mRcpDir[2] < 0) ? 1 : 0;
@@ -31,16 +56,16 @@ void KRay::InitInternal(const KVec3& o, const KVec3& d)
 	mExcludeTriID = INVALID_INDEX;
 }
 
-void KRay::Init(const KVec3& o, const KVec3& d, const KBBox* bbox) 
+void KRay::Init(const KVec3d& o, const KVec3d& d, const KBBox* clamp_bbox) 
 {
-	InitInternal(o, d);
-	if (bbox)
-		ClampRayByBBox(*this, *bbox);
+	Init(o, d);
+	if (clamp_bbox)
+		ClampRayByBBox(*this, *clamp_bbox);
 }
 
 void KRay::InitTranslucentRay(const ShadingContext& shadingCtx, const KBBox* bbox)
 {
-	Init(shadingCtx.position, shadingCtx.out_vec, bbox);
+	Init(ToVec3d(shadingCtx.position), ToVec3d(shadingCtx.out_vec), bbox);
 	mExcludeBBoxNode = shadingCtx.excluding_bbox;
 	mExcludeTriID = shadingCtx.excluding_tri;
 }
@@ -48,7 +73,7 @@ void KRay::InitTranslucentRay(const ShadingContext& shadingCtx, const KBBox* bbo
 void KRay::InitReflectionRay(const ShadingContext& shadingCtx, const KVec3& in_dir, const KBBox* bbox)
 {
 	KVec3 reflect = in_dir - shadingCtx.normal * (shadingCtx.normal*in_dir) * 2.0f;
-	Init(shadingCtx.position, reflect, bbox);
+	Init(ToVec3d(shadingCtx.position), ToVec3d(reflect), bbox);
 	mExcludeBBoxNode = shadingCtx.excluding_bbox;
 	mExcludeTriID = shadingCtx.excluding_tri;
 }
@@ -404,12 +429,12 @@ public:
 // this can improve the floating point precision.
 bool ClampRayByBBox(KRay& in_out_ray, const KBBox& bbox)
 {
-	float t0, t1;
+	double t0, t1;
 	if (IntersectBBox(in_out_ray, bbox, t0, t1)) {
 		if (t0 < 0) t0 = 0;  // for the case the ray originate from inside the bbox
 
-		KVec3 newPos = in_out_ray.GetOrg() + in_out_ray.GetDir() * t0;
-		in_out_ray.InitInternal(newPos, in_out_ray.GetDir());
+		KVec3d newPos = in_out_ray.GetOrg() + in_out_ray.GetDir() * t0;
+		in_out_ray.Init(newPos, in_out_ray.GetDir());
 		return true;
 	}
 	else 
@@ -423,11 +448,9 @@ IntersectContext::IntersectContext()
 
 void IntersectContext::Reset()
 {
-	t = FLT_MAX;
+	ray_t = FLT_MAX;
 	tri_id = NOT_HIT_INDEX;
 	kd_leaf_idx = INVALID_INDEX;
 	bbox_node_idx = INVALID_INDEX;
-
-	travel_distance = 0.0f;
 }
 

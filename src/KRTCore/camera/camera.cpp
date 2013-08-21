@@ -48,12 +48,12 @@ void KCamera::AddCameraMotionState(const MotionState& param)
 	mMotionStates.push_back(param);
 }
 
-static void _CalcTimeInterpParams(float t, UINT32 ms_len, UINT32& out_ms_start, float& lerp_t)
+static void _CalcTimeInterpParams(double t, UINT32 ms_len, UINT32& out_ms_start, double& lerp_t)
 {
 	assert(ms_len > 1);
-	float l = (t + 0.5f) * 0.5f * float(ms_len - 1);
+	double l = (t + 0.5) * 0.5 * double(ms_len - 1);
 	int il = int(l);
-	lerp_t = l - (float)il;
+	lerp_t = l - (double)il;
 
 	if (il >= (int)ms_len) {
 		il = int(ms_len - 2);
@@ -68,14 +68,14 @@ static void _CalcTimeInterpParams(float t, UINT32 ms_len, UINT32& out_ms_start, 
 	out_ms_start = (UINT32)il;
 }
 
-void KCamera::InterpolateCameraMotion(MotionState& outMotion, float t) const
+void KCamera::InterpolateCameraMotion(MotionState& outMotion, double cur_t) const
 {
 	assert(mMotionStates.size() > 0);
 
 	if (mMotionStates.size() > 1) {
 		UINT32 out_ms_start;
-		float lerp_t;
-		_CalcTimeInterpParams(t, (UINT32)mMotionStates.size(), out_ms_start, lerp_t);
+		double lerp_t;
+		_CalcTimeInterpParams(cur_t, (UINT32)mMotionStates.size(), out_ms_start, lerp_t);
 		const MotionState& ms0 = mMotionStates[out_ms_start];
 		const MotionState& ms1 = mMotionStates[out_ms_start + 1];
 		outMotion.pos = nvmath::lerp(lerp_t, ms0.pos, ms1.pos);
@@ -89,57 +89,24 @@ void KCamera::InterpolateCameraMotion(MotionState& outMotion, float t) const
 	
 }
 
-void KCamera::ConfigEyeRayGen(EyeRayGen& outEyeRayGen, MotionState& outMotion, float t) const
+void KCamera::ConfigEyeRayGen(EyeRayGen& outEyeRayGen, MotionState& outMotion, double cur_t) const
 {
-	InterpolateCameraMotion(outMotion, t);
+	InterpolateCameraMotion(outMotion, cur_t);
 
-	KVec3 viewVec = outMotion.lookat - outMotion.pos;
+	KVec3d viewVec = outMotion.lookat - outMotion.pos;
 	viewVec.normalize();
 
-	KVec3 horVec;
+	KVec3d horVec;
 	horVec = viewVec ^ outMotion.up;
 	horVec.normalize();
 
 	outEyeRayGen.mViewUp = horVec ^ viewVec;
 	outEyeRayGen.mViewDir = viewVec;
 	outEyeRayGen.mHorizonVec = horVec;
-	outEyeRayGen.SetFov(tanf(outMotion.xfov * nvmath::PI / 180.0f * 0.5f));
+	outEyeRayGen.SetFov(tan(outMotion.xfov * nvmath::PI / 180.0 * 0.5));
 	outEyeRayGen.mEyePos = outMotion.pos;
 	outEyeRayGen.mFocalPlaneDis = outMotion.focal;
 
 	outEyeRayGen.SetImageSize(mImageWidth, mImageHeight);
 }
 
-
-bool KCamera::Save(FILE* pFile)
-{
-	std::string typeName = "KCamera";
-	if (!SaveArrayToFile(typeName, pFile))
-		return false;
-
-	if (!SaveArrayToFile(mMotionStates, pFile))
-		return false;
-
-	if (!SaveTypeToFile(mApertureSize, pFile))
-		return false;
-
-	return true;
-}
-
-bool KCamera::Load(FILE* pFile)
-{
-	std::string srcTypeName;
-	std::string dstTypeName = "KCamera"; 
-	if (!LoadArrayFromFile(srcTypeName, pFile))
-		return false;
-	if (srcTypeName.compare(dstTypeName) != 0)
-		return false;
-
-	if (!LoadArrayFromFile(mMotionStates, pFile))
-		return false;
-
-	if (!LoadTypeFromFile(mApertureSize, pFile))
-		return false;
-
-	return true;
-}

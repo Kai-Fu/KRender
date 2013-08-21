@@ -10,21 +10,28 @@
 #define NOT_HIT_INDEX 0xfffffffe
 
 
-
+KVec3d ToVec3d(const KVec3& ref);
+KVec3 ToVec3f(const KVec3d& ref);
+KVec4d ToVec4d(const KVec4& ref);
+KMatrix4d ToMatrix4d(const KMatrix4& ref);
 
 struct ShadingContext;
 class KBBox;
 
+struct RayTriIntersect
+{
+	double ray_t;
+	float w, u, v;
+};
+
 struct IntersectContext
 {
-	float t;
+	double ray_t;
+
 	float w, u, v;
 	UINT32 tri_id;
 	UINT32 kd_leaf_idx;
 	UINT32 bbox_node_idx;
-	float travel_distance;
-
-	UINT32 self_tri_id;
 
 	KVec3 walkVec;
 	IntersectContext();
@@ -34,28 +41,26 @@ struct IntersectContext
 class KRay 
 {
 private:
-	KVec3 mOrign;
-	KVec3 mDir;
+	KVec3d mOrign;
+	KVec3d mDir;
 public:
 
-	KVec3 mRcpDir;
+	KVec3d mRcpDir;
 	int mSign[4];
 
-		// triangle ID used to exclude the hit testing
+	// triangle ID used to exclude the hit testing
 	UINT32 mExcludeBBoxNode;
 	UINT32 mExcludeTriID;
 
 public:
-	// this method should not be used explicitly
-	void InitInternal(const KVec3& o, const KVec3& d);
-
-	// methods that are real public:)
-	void Init(const KVec3& o, const KVec3& d, const KBBox* bbox);
+	void Init(const KVec3d& o, const KVec3d& d, const KBBox* clamp_bbox);
 	void InitTranslucentRay(const ShadingContext& shadingCtx, const KBBox* bbox);
 	void InitReflectionRay(const ShadingContext& shadingCtx, const KVec3& in_dir, const KBBox* bbox);
 	
-	const KVec3& GetOrg() const {return *(KVec3*)&mOrign;}
-	const KVec3& GetDir() const {return *(KVec3*)&mDir;}
+	KVec3d GetOrg() const {return mOrign;}
+	KVec3d GetDir() const {return mDir;}
+
+	void Init(const KVec3d& o, const KVec3d& d);
 };
 
 class KTriDesc;
@@ -91,6 +96,7 @@ public:
 	void ContainVert(const KVec3& vert);
 	void ClampBBox(const KBBox& bbox);
 	void TransformByMatrix(const KMatrix4& mat);
+	void TransformByMatrix(const KMatrix4d& mat);
 	void SetEmpty();
 	void Enlarge(float factor);
 
@@ -285,6 +291,8 @@ private:
 };
 
 void Vec3TransformCoord(KVec3& res, const KVec3& v, const KMatrix4& mat);
+void Vec3TransformCoord(KVec3d& res, const KVec3d& v, const KMatrix4d& mat);
+void Vec3TransformCoord(KVec3d& res, const KVec3d& v, const KMatrix4& mat);
 void Vec3TransformNormal(KVec3& res, const KVec3& v, const KMatrix4& mat);
 
 bool ClampRayByBBox(KRay& in_out_ray, const KBBox& bbox);

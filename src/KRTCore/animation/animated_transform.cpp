@@ -70,12 +70,12 @@ void LocalTRSFrame::Interpolate(float cur_t, LocalTRSFrame::LclTRS& out_TRS) con
 
 void LocalTRSFrame::TransformRay(KRay& out_ray, const KRay& in_ray, const LocalTRSFrame::LclTRS& trs)
 {
-	KVec3 newOrig;
+	KVec3d newOrig;
 	Vec3TransformCoord(newOrig, in_ray.GetOrg(), trs.inv_node_tm);
-	KVec3 oldDst = in_ray.GetOrg() + in_ray.GetDir();
-	KVec3 newDst;
+	KVec3d oldDst = in_ray.GetOrg() + in_ray.GetDir();
+	KVec3d newDst;
 	Vec3TransformCoord(newDst, oldDst, trs.inv_node_tm);
-	KVec3 newDir = newDst - newOrig;
+	KVec3d newDir = newDst - newOrig;
 
 	out_ray.Init(newOrig, newDir, NULL);
 }

@@ -115,61 +115,6 @@ void CameraManager::Shutdown()
 	s_pInstance = NULL;
 }
 
-bool CameraManager::Save(FILE* pFile)
-{
-	std::string typeName = "CameraManager";
-	if (!SaveArrayToFile(typeName, pFile))
-		return false;
-
-	UINT64 cnt = mCameras.size();
-	if (!SaveTypeToFile(cnt, pFile))
-		return false;
-
-	CAMERA_NAME_TO_PTR::iterator it = mCameras.begin();
-	for (; it != mCameras.end(); ++it) {
-
-		if (!SaveArrayToFile(it->first, pFile))
-			return false;
-
-		if (!it->second->Save(pFile))
-			return false;
-	}
-	return true;
-}
-
-bool CameraManager::Load(FILE* pFile)
-{
-	Clear();
-	std::string srcTypeName;
-	std::string dstTypeName = "CameraManager"; 
-	if (!LoadArrayFromFile(srcTypeName, pFile))
-		return false;
-	if (srcTypeName.compare(dstTypeName) != 0)
-		return false;
-
-	UINT64 cnt = 0;
-	if (!LoadTypeFromFile(cnt, pFile))
-		return false;
-
-	for (UINT32 i = 0; i < cnt; ++i) {
-
-		std::string camera_name;
-		if (!LoadArrayFromFile(camera_name, pFile))
-			return false;
-
-		KCamera* pCamera = new KCamera();
-		if (!pCamera->Load(pFile)) {
-			delete pCamera;
-			return false;
-		}
-
-		mCameras[camera_name] = pCamera;
-	}
-
-	BuildCameraIndices();
-	return true;
-}
-
 void CameraManager::Clear()
 {
 	CAMERA_NAME_TO_PTR::iterator it = mCameras.begin();

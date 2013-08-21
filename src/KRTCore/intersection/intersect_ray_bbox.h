@@ -2,4 +2,4 @@
 
 #include "../base/geometry.h"
 
-bool IntersectBBox(const KRay& ray, const KBBox& bbox, float& t0, float& t1);
+bool IntersectBBox(const KRay& ray, const KBBox& bbox, double& t0, double& t1);

@@ -112,6 +112,21 @@ void KBBox::TransformByMatrix(const KMatrix4& mat)
 	(*this) = newBBox;
 }
 
+void KBBox::TransformByMatrix(const KMatrix4d& mat)
+{
+	KBBox newBBox;
+	for (int i = 0; i < 3; ++i) {
+		for (int j = 0; j < 2; ++j) {
+			KVec3d v = ToVec3d((*this)[j]);
+			v[i] = (*this)[j == 1 ? 0 : 1][i];
+			KVec3d out_v;
+			Vec3TransformCoord(out_v, v, mat);
+			newBBox.ContainVert(ToVec3f(out_v));
+		}
+	}
+	(*this) = newBBox;
+}
+
 KBBox::KBBox(const KTriVertPos2& tri)
 {
 	SetEmpty();
@@ -176,6 +191,24 @@ void Vec3TransformCoord(KVec3& res, const KVec3& v, const KMatrix4& mat)
 	res[0] = temp[0] / temp[3];
 	res[1] = temp[1] / temp[3];
 	res[2] = temp[2] / temp[3];
+}
+
+void Vec3TransformCoord(KVec3d& res, const KVec3d& v, const KMatrix4d& mat)
+{
+	KVec4d temp = KVec4d(v, 1.0f) * mat;
+
+	res[0] = temp[0] / temp[3];
+	res[1] = temp[1] / temp[3];
+	res[2] = temp[2] / temp[3];
+}
+
+void Vec3TransformCoord(KVec3d& res, const KVec3d& v, const KMatrix4& mat)
+{
+	for (unsigned int i = 0; i < 3; ++i)
+		res[i] = v[0]*mat[0][i] + v[1]*mat[1][i] + v[2]*mat[2][i] + mat[3][i]; 
+
+	double r4 = v[0]*mat[0][3] + v[1]*mat[1][3] + v[2]*mat[2][3] + mat[3][3]; 
+	res /= r4;
 }
 
 void Vec3TransformNormal(KVec3& res, const KVec3& v, const KMatrix4& mat)

@@ -170,7 +170,6 @@ public:
 	virtual void ResetScene();
 
 	bool IntersectRay_KDTree(const KRay& ray, float cur_t, IntersectContext& ctx) const;
-	bool IntersectRay_BruteForce(const KRay& ray, float cur_t, IntersectContext& ctx) const;
 
 	const KTriDesc* GetAccelTriData(UINT32 tri_idx) const {return &mAccelTriangle[tri_idx];} 
 
