@@ -293,7 +293,7 @@ void KTriMesh::SetupTT(UINT32 ttCnt, bool ttAnim)
 
 void KTriMesh::ComputePN_Data(PN_Data& pnData, UINT32 vidx, float cur_t) const
 {
-	if (mPN_VertCnt > 1) {
+	if (mHasPNAnim) {
 		float alpha = cur_t;
 		const PN_Data* pVert = GetVertPN(vidx);
 		pnData.pos = nvmath::lerp(alpha, pVert[0].pos, pVert[1].pos);
@@ -305,7 +305,7 @@ void KTriMesh::ComputePN_Data(PN_Data& pnData, UINT32 vidx, float cur_t) const
 
 void KTriMesh::ComputeTT_Data(TT_Data& ttData, UINT32 vidx, float cur_t) const
 {
-	if (mTT_VertCnt > 1) {
+	if (mHasTTAnim) {
 		float alpha = cur_t;
 		const TT_Data* pVert = GetVertTT(vidx);
 		ttData.texcoord = nvmath::lerp(alpha, pVert[0].texcoord, pVert[1].texcoord);
@@ -318,7 +318,7 @@ void KTriMesh::ComputeTT_Data(TT_Data& ttData, UINT32 vidx, float cur_t) const
 
 KVec3 KTriMesh::ComputeVertPos(UINT32 vidx, float cur_t) const
 {
-	if (mPN_VertCnt > 1) {
+	if (mHasPNAnim) {
 		float alpha = cur_t;
 		const PN_Data* pVert = GetVertPN(vidx);
 		return nvmath::lerp(alpha, pVert[0].pos, pVert[1].pos);
@@ -329,7 +329,7 @@ KVec3 KTriMesh::ComputeVertPos(UINT32 vidx, float cur_t) const
 
 KVec3 KTriMesh::ComputeVertNor(UINT32 vidx, float cur_t) const
 {
-	if (mPN_VertCnt > 1) {
+	if (mHasPNAnim) {
 		float alpha = cur_t;
 		const PN_Data* pVert = GetVertPN(vidx);
 		return nvmath::lerp(alpha, pVert[0].nor, pVert[1].nor);
@@ -340,7 +340,7 @@ KVec3 KTriMesh::ComputeVertNor(UINT32 vidx, float cur_t) const
 
 KVec2 KTriMesh::ComputeTexcrd(UINT32 vidx, float cur_t) const
 {
-	if (mTT_VertCnt > 1) {
+	if (mHasTTAnim) {
 		float alpha = cur_t;
 		const TT_Data* pVert = GetVertTT(vidx);
 		return nvmath::lerp(alpha, pVert[0].texcoord, pVert[1].texcoord);
