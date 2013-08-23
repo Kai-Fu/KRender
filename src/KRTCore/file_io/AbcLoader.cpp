@@ -376,9 +376,9 @@ bool AbcLoader::ConvertMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::chrono
 				normCnt_0 == vertPos_0->size() && normCnt_1 == vertPos_1->size() ) {
 
 				// This mesh has per-vertex normal
-				outMesh.SetupPN(normCnt_0, isAnimating);
+				outMesh.SetupPN((UINT32)normCnt_0, isAnimating);
 
-				for (size_t i = 0; i < normCnt_0; ++i) {
+				for (UINT32 i = 0; i < normCnt_0; ++i) {
 					outMesh.GetVertPN(i)[frame_i].pos[0] = nvmath::lerp(alpha, (*vertPos_0)[i].x, (*vertPos_1)[i].x);
 					outMesh.GetVertPN(i)[frame_i].pos[1] = nvmath::lerp(alpha, (*vertPos_0)[i].y, (*vertPos_1)[i].y);
 					outMesh.GetVertPN(i)[frame_i].pos[2] = nvmath::lerp(alpha, (*vertPos_0)[i].z, (*vertPos_1)[i].z);
@@ -406,10 +406,10 @@ bool AbcLoader::ConvertMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::chrono
 			else if (normCnt_0 == polyVertCnt && normCnt_1 == polyVertCnt &&
 				normParam.getScope() == Alembic::AbcGeom::kFacevaryingScope) {
 				// This mesh has per-face normal
-				outMesh.SetupPN(triCnt*3, isAnimating);
+				outMesh.SetupPN((UINT32)triCnt*3, isAnimating);
 				size_t triIter = 0;
 				size_t fiIter = 0;
-				size_t viIter = 0;
+				UINT32 viIter = 0;
 				for (size_t fi = 0; fi < faceCnt; ++fi) {
 					for (int vi = 1; vi < (*faceCnts_0)[fi] - 1; ++vi) {
 						int v0 = (*faceIdx_0)[fiIter];
@@ -487,8 +487,8 @@ bool AbcLoader::ConvertMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::chrono
 			}
 
 			// Now fill the data to KTriMesh object
-			outMesh.SetupPN(vertCnt, isAnimating);
-			for (size_t i = 0; i < vertCnt; ++i) {
+			outMesh.SetupPN((UINT32)vertCnt, isAnimating);
+			for (UINT32 i = 0; i < vertCnt; ++i) {
 				outMesh.GetVertPN(i)[frame_i].pos[0] = nvmath::lerp(alpha, (*vertPos_0)[i].x, (*vertPos_1)[i].x);
 				outMesh.GetVertPN(i)[frame_i].pos[1] = nvmath::lerp(alpha, (*vertPos_0)[i].y, (*vertPos_1)[i].y);
 				outMesh.GetVertPN(i)[frame_i].pos[2] = nvmath::lerp(alpha, (*vertPos_0)[i].z, (*vertPos_1)[i].z);

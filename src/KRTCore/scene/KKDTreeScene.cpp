@@ -478,18 +478,25 @@ bool KAccelStruct_KDTree::IntersectLeaf(UINT32 idx, const KRay& ray, float cur_t
 
 	KVec3 tempRayOrg = ToVec3f(ray.GetOrg() + ray.GetDir() * t0);
 	KVec3 tempRayDir = ToVec3f(ray.GetDir());
+	double tScale;
+	KBoxNormalizer boxNorm;
+	boxNorm.InitFromBBox(leafData.bbox);
+	boxNorm.ApplyToRay(tempRayOrg, tempRayDir, tScale);
+
+	RayTriIntersect hitInfo;
+	hitInfo.ray_t = ctx.ray_t - t0;
+	hitInfo.ray_t /= tScale;
+
 	for (UINT32 i = 0; i < leafData.tri_cnt; ++i) {
 		UINT32 tri_idx = leafData.tri_list.leaf_triangles[i];
 		KTriVertPos2 triPos;
-		mpSourceScene->GetAccelTriPos(mAccelTriangle[tri_idx], triPos);
-
-		RayTriIntersect hitInfo;
-		hitInfo.ray_t = ctx.ray_t - t0;
+		mpSourceScene->GetAccelTriPos(mAccelTriangle[tri_idx], triPos, &boxNorm);
+		
 		if (RayIntersect((const float*)&tempRayOrg, (const float*)&tempRayDir, triPos, cur_t, hitInfo)) {
 		
 			// a new nearer triangle is hit
 			if (ctx.bbox_node_idx != ray.mExcludeBBoxNode || ctx.tri_id != ray.mExcludeTriID) {
-				ctx.ray_t = t0 + hitInfo.ray_t;
+				ctx.ray_t = t0 + hitInfo.ray_t * tScale;
 				ctx.u = hitInfo.u;
 				ctx.v = hitInfo.v;
 				ctx.w = hitInfo.w;

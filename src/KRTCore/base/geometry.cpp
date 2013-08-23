@@ -144,10 +144,13 @@ UINT32 KScene::GenAccelTriangle(UINT32 nodeIdx, UINT32 subMeshIdx, KTriDesc* acc
 	return faceCnt;
 }
 
-void KScene::GetAccelTriPos(const KTriDesc& tri, KTriVertPos2& triPos) const
+void KScene::GetAccelTriPos(const KTriDesc& tri, KTriVertPos2& triPos, const KBoxNormalizer* pNorm) const
 {
 	KNode* pNode = mpNode[tri.GetNodeIdx()];
 	KTriMesh* pMesh = mpMesh[tri.GetMeshIdx()];
+	KMatrix4 mat = pNode->GetObjectTM();
+	if (pNorm)
+		pNorm->ApplyToMatrix(mat);
 	triPos.mIsMoving = pMesh->mHasPNAnim;
 
 	for (int i_vert = 0; i_vert < 3; ++i_vert) {
@@ -156,7 +159,7 @@ void KScene::GetAccelTriPos(const KTriDesc& tri, KTriVertPos2& triPos) const
 
 		const KVec3& pos = pPN_Data->pos;
 		KVec4 out_pos;
-		out_pos = KVec4(pos, 1.0f) * pNode->GetObjectTM();
+		out_pos = KVec4(pos, 1.0f) * mat;
 		triPos.mVertPos[i_vert][0] = out_pos[0] / out_pos[3];
 		triPos.mVertPos[i_vert][1] = out_pos[1] / out_pos[3];
 		triPos.mVertPos[i_vert][2] = out_pos[2] / out_pos[3];
@@ -166,7 +169,7 @@ void KScene::GetAccelTriPos(const KTriDesc& tri, KTriVertPos2& triPos) const
 
 			const KVec3& pos = pPN_Data->pos;
 			KVec4 out_pos;
-			out_pos = KVec4(pos, 1.0f) * pNode->GetObjectTM();
+			out_pos = KVec4(pos, 1.0f) * mat;
 			triPos.mVertPos_Ending[i_vert][0] = out_pos[0] / out_pos[3];
 			triPos.mVertPos_Ending[i_vert][1] = out_pos[1] / out_pos[3];
 			triPos.mVertPos_Ending[i_vert][2] = out_pos[2] / out_pos[3];

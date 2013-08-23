@@ -590,6 +590,17 @@ namespace nvmath
     return( m );
   }
 
+  template<typename T>
+    Matnnt<4,T> & setMat( Matnnt<4,T> & m, const Vecnt<3,T> & trans
+                                         , const Vecnt<3,T> & scale )
+  {
+    m[0] = Vecnt<4,T>( scale[0], 0, 0, 0 );
+    m[1] = Vecnt<4,T>( 0, scale[1], 0, 0 );
+    m[2] = Vecnt<4,T>( 0, 0, scale[2], 0 );
+    m[3] = Vecnt<4,T>( trans, 1 );
+    return( m );
+  }
+
   /*! \brief Set the values of a 4 by 4 matrix by the constituents of a transformation.
    *  \param m A reference to the matrix to set.
    *  \param trans An constant reference to the translational part of the transformation. 

@@ -82,6 +82,16 @@ public:
 	bool IsInside(const KVec3& vert) const;
 };
 
+class KBoxNormalizer
+{
+public:
+	KVec3 mCenter;
+	KVec3 mScale;
+
+	void InitFromBBox(const KBBox& box);
+	void ApplyToMatrix(KMatrix4& mat) const;
+	void ApplyToRay(KVec3& rayOrg, KVec3& rayDir, double& tScale) const;
+};
 
 class KBBox
 {
@@ -277,7 +287,7 @@ public:
 	UINT32 GetNodeCnt() const {return (UINT32)mpNode.size();}
 	UINT32 GetMeshCnt() const {return (UINT32)mpMesh.size();}
 	void SetNodeTM(UINT32 nodeIdx, const KMatrix4& tm);
-	void GetAccelTriPos(const KTriDesc& tri, KTriVertPos2& triPos) const;
+	void GetAccelTriPos(const KTriDesc& tri, KTriVertPos2& triPos, const KBoxNormalizer* pNorm = NULL) const;
 
 	// Functions used to calculate accelerated data structure for ray tracing
 	void InitAccelTriangleCache(std::vector<KTriDesc>& triCache) const;

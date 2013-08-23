@@ -184,6 +184,36 @@ void KBBox::GetFaceArea(float area[3]) const
 	area[2] = fabs(len[0] * len[1]);
 }
 
+void KBoxNormalizer::InitFromBBox(const KBBox& box)
+{
+	mCenter = box.Center();
+	mScale = box.mMax - box.mMin;
+}
+
+void KBoxNormalizer::ApplyToMatrix(KMatrix4& mat) const
+{
+	KMatrix4 tmpMat;
+	KVec3 invScale = KVec3(1.0f/mScale[0], 1.0f/mScale[1], 1.0f/mScale[2]);
+	nvmath::setTransMat(tmpMat, -mCenter);
+	mat *= tmpMat;
+	nvmath::setMat(tmpMat, KVec3(0,0,0), invScale);
+	mat *= tmpMat;
+}
+
+void KBoxNormalizer::ApplyToRay(KVec3& rayOrg, KVec3& rayDir, double& tScale) const
+{
+	rayOrg -= mCenter;
+
+	rayOrg[0] /= mScale[0];
+	rayOrg[1] /= mScale[1];
+	rayOrg[2] /= mScale[2];
+
+	rayDir[0] /= mScale[0];
+	rayDir[1] /= mScale[1];
+	rayDir[2] /= mScale[2];
+	tScale = 1.0f / rayDir.normalize();
+}
+
 void Vec3TransformCoord(KVec3& res, const KVec3& v, const KMatrix4& mat)
 {
 	KVec4 temp = KVec4(v, 1.0f) * mat;
