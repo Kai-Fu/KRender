@@ -135,7 +135,7 @@ KBBox::KBBox(const KTriVertPos2& tri)
 
 	if (tri.mIsMoving) {
 		for (int i = 0; i < 3; ++i)
-		ContainVert(tri.mVertPos_Ending[i]);
+			ContainVert(tri.mVertPos_Ending[i]);
 	}
 
 	KVec3 diagnal(mMax - mMin);

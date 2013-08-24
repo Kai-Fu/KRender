@@ -81,7 +81,7 @@ UINT32 KAccelStruct_KDTree::SplitScene(UINT32* triangles, UINT32 cnt,
 					KTriVertPos2 triPos;
 					mpSourceScene->GetAccelTriPos(mAccelTriangle[idx], triPos);
 
-					if (TriIntersectBBox(triPos, *clamp_box)) {
+					if (triPos.mIsMoving || TriIntersectBBox(triPos.mVertPos, *clamp_box)) {
 						bbox.Add(mTempDataForKD->mTriBBox[idx]);
 					}
 					else {
@@ -566,13 +566,6 @@ bool KAccelStruct_KDTree::IntersectNode(UINT32 idx, const KRay& ray, float cur_t
 		}
 	}
 
-
-	
-	// No triangle is hit in the fisrt child node, here we do some check to see 
-	// whether we need to test the other child node.
-	float hit_pt = float(ray.GetOrg()[det_axis] + ray.GetDir()[det_axis]*t1);
-	if ((hit_pt - node.split_value)*det_sign > mSceneEpsilon)
-		return false;
 	
 	if (next_node1 != INVALID_INDEX) {
 		if (child_flag1)

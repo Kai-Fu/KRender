@@ -30,7 +30,7 @@ public:
 			const KTriDesc* pAccelTri = pscene->GetAccelTriData(idx);
 			KTriVertPos2 triPos;
 			pscene->GetSource()->GetAccelTriPos(*pAccelTri, triPos);
-			if (TriIntersectBBox(triPos, *clamp_box)) {
+			if (triPos.mIsMoving || TriIntersectBBox(triPos.mVertPos, *clamp_box)) {
 				bbox.Add(triBBox[idx]);
 			}
 			else {
