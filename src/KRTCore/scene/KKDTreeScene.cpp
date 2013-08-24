@@ -151,6 +151,7 @@ FORCE_LEAF_NODE:
 			}
 			KD_LeafData leafData;
 			leafData.bbox = bbox;
+			leafData.box_norm.InitFromBBox(bbox);
 			leafData.tri_cnt = cnt;
 			leafData.tri_list.leaf_triangles = leafTriIdx;
 
@@ -466,7 +467,7 @@ bool KAccelStruct_KDTree::IntersectLeaf(UINT32 idx, const KRay& ray, float cur_t
 	bool ret = false;
 
 	double t0 = 0, t1 = FLT_MAX;
-	if (!IntersectBBox(ray, leafData.bbox,t0, t1))
+	if (!IntersectBBox(ray, leafData.bbox, t0, t1))
 		return false;
 	if (t0 > ctx.ray_t)
 		return false; // ok, the required distance is reached
@@ -477,26 +478,24 @@ bool KAccelStruct_KDTree::IntersectLeaf(UINT32 idx, const KRay& ray, float cur_t
 	ctx.ray_t = (old_t < t1 ? old_t : t1);
 
 	KVec3 tempRayOrg = ToVec3f(ray.GetOrg() + ray.GetDir() * t0);
-	KVec3 tempRayDir = ToVec3f(ray.GetDir());
-	double tScale;
-	KBoxNormalizer boxNorm;
-	boxNorm.InitFromBBox(leafData.bbox);
-	boxNorm.ApplyToRay(tempRayOrg, tempRayDir, tScale);
+	KVec3 tempRayDir = ToVec3f(ray.mNormDir);
+	leafData.box_norm.ApplyToRay(tempRayOrg, tempRayDir);
 
+	double tScale = ray.mDirLen * leafData.box_norm.mRcpScaleLen;
 	RayTriIntersect hitInfo;
 	hitInfo.ray_t = ctx.ray_t - t0;
-	hitInfo.ray_t /= tScale;
+	hitInfo.ray_t *= tScale;
 
 	for (UINT32 i = 0; i < leafData.tri_cnt; ++i) {
 		UINT32 tri_idx = leafData.tri_list.leaf_triangles[i];
 		KTriVertPos2 triPos;
-		mpSourceScene->GetAccelTriPos(mAccelTriangle[tri_idx], triPos, &boxNorm);
+		mpSourceScene->GetAccelTriPos(mAccelTriangle[tri_idx], triPos, &leafData.box_norm);
 		
 		if (RayIntersect((const float*)&tempRayOrg, (const float*)&tempRayDir, triPos, cur_t, hitInfo)) {
 		
 			// a new nearer triangle is hit
 			if (ctx.bbox_node_idx != ray.mExcludeBBoxNode || ctx.tri_id != ray.mExcludeTriID) {
-				ctx.ray_t = t0 + hitInfo.ray_t * tScale;
+				ctx.ray_t = t0 + hitInfo.ray_t / tScale;
 				ctx.u = hitInfo.u;
 				ctx.v = hitInfo.v;
 				ctx.w = hitInfo.w;

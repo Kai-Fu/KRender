@@ -46,6 +46,8 @@ private:
 public:
 
 	KVec3d mRcpDir;
+	KVec3d mNormDir;
+	double mDirLen;
 	int mSign[4];
 
 	// triangle ID used to exclude the hit testing
@@ -86,11 +88,13 @@ class KBoxNormalizer
 {
 public:
 	KVec3 mCenter;
-	KVec3 mScale;
+	KVec3 mRcpScale;
+	KVec3 mNormRcpScale;
+	double mRcpScaleLen;
 
 	void InitFromBBox(const KBBox& box);
 	void ApplyToMatrix(KMatrix4& mat) const;
-	void ApplyToRay(KVec3& rayOrg, KVec3& rayDir, double& tScale) const;
+	void ApplyToRay(KVec3& rayOrg, KVec3& rayDir) const;
 };
 
 class KBBox

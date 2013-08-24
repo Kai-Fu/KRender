@@ -58,6 +58,7 @@ public:
 			UINT32* leaf_triangles;
 		} tri_list;
 		KBBox bbox;
+		KBoxNormalizer box_norm;
 		UINT32  tri_cnt;		
 	} KD_LeafData;
 

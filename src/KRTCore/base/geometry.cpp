@@ -52,6 +52,9 @@ void KRay::Init(const KVec3d& o, const KVec3d& d)
 	mSign[1] = (mRcpDir[1] < 0) ? 1 : 0;
 	mSign[2] = (mRcpDir[2] < 0) ? 1 : 0;
 
+	mNormDir = mDir;
+	mDirLen = mNormDir.normalize();
+
 	mExcludeBBoxNode = INVALID_INDEX;
 	mExcludeTriID = INVALID_INDEX;
 }

@@ -187,31 +187,34 @@ void KBBox::GetFaceArea(float area[3]) const
 void KBoxNormalizer::InitFromBBox(const KBBox& box)
 {
 	mCenter = box.Center();
-	mScale = box.mMax - box.mMin;
+	KVec3 scale = box.mMax - box.mMin;
+	mRcpScale[0] = 1.0f / scale[0];
+	mRcpScale[1] = 1.0f / scale[1];
+	mRcpScale[2] = 1.0f / scale[2];
+	mNormRcpScale = mRcpScale;
+	mRcpScaleLen = mNormRcpScale.normalize();
 }
 
 void KBoxNormalizer::ApplyToMatrix(KMatrix4& mat) const
 {
 	KMatrix4 tmpMat;
-	KVec3 invScale = KVec3(1.0f/mScale[0], 1.0f/mScale[1], 1.0f/mScale[2]);
 	nvmath::setTransMat(tmpMat, -mCenter);
 	mat *= tmpMat;
-	nvmath::setMat(tmpMat, KVec3(0,0,0), invScale);
+	nvmath::setMat(tmpMat, KVec3(0,0,0), mRcpScale);
 	mat *= tmpMat;
 }
 
-void KBoxNormalizer::ApplyToRay(KVec3& rayOrg, KVec3& rayDir, double& tScale) const
+void KBoxNormalizer::ApplyToRay(KVec3& rayOrg, KVec3& rayDir) const
 {
 	rayOrg -= mCenter;
 
-	rayOrg[0] /= mScale[0];
-	rayOrg[1] /= mScale[1];
-	rayOrg[2] /= mScale[2];
+	rayOrg[0] *= mRcpScale[0];
+	rayOrg[1] *= mRcpScale[1];
+	rayOrg[2] *= mRcpScale[2];
 
-	rayDir[0] /= mScale[0];
-	rayDir[1] /= mScale[1];
-	rayDir[2] /= mScale[2];
-	tScale = 1.0f / rayDir.normalize();
+	rayDir[0] *= mNormRcpScale[0];
+	rayDir[1] *= mNormRcpScale[1];
+	rayDir[2] *= mNormRcpScale[2];
 }
 
 void Vec3TransformCoord(KVec3& res, const KVec3& v, const KMatrix4& mat)
