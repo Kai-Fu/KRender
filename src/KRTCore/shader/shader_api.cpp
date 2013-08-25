@@ -418,9 +418,9 @@ void TracingInstance::CalcuHitInfo(const IntersectContext& hit_ctx, IntersectInf
 	out_info.tri_id = hit_ctx.tri_id;
 }
 	
-bool TracingInstance::CastRay(const KRay& ray, IntersectContext& out_ctx) const
+bool TracingInstance::CastRay(const KRay& ray, IntersectContext& out_ctx)
 {
-	if (mpScene->IntersectRay_KDTree(ray, mCameraContext.inMotionTime, out_ctx)) {
+	if (mpScene->IntersectRay_KDTree(ray, this, out_ctx)) {
 
 		return true;
 	}
@@ -428,7 +428,7 @@ bool TracingInstance::CastRay(const KRay& ray, IntersectContext& out_ctx) const
 		return false;
 }
 
-bool TracingInstance::IsPointOccluded(const KRay& ray, float len) const
+bool TracingInstance::IsPointOccluded(const KRay& ray, float len)
 {
 	IntersectContext ctx;
 	if (CastRay(ray, ctx)) {

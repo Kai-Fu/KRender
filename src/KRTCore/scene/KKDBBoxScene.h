@@ -3,6 +3,7 @@
 #include "../scene/KKDTreeScene.h"
 #include "../animation/animated_transform.h"
 #include "../api/KRT_API.h"
+#include "../shader/shader_api.h"
 
 class KSceneSet
 {
@@ -52,7 +53,7 @@ public:
 	float GetSceneEpsilon() const {return mSceneEpsilon;}
 	const KBBox& GetSceneBBox() const;
 
-	bool IntersectRay_KDTree(const KRay& ray, float cur_t, IntersectContext& ctx) const;
+	bool IntersectRay_KDTree(const KRay& ray, TracingInstance* inst, IntersectContext& ctx) const;
 
 	void GetKDBuildTimeStatistics(KRT_SceneStatistic& sceneStat) const;
 
@@ -60,8 +61,8 @@ protected:
 
 	UINT32 SplitBBoxScene(UINT32* pKDSceneIdx, const KBBox* clampBox, UINT32 cnt, UINT32 depth = 0);
 	
-	bool IntersectBBoxNode(const KRay& ray, UINT32 idx, IntersectContext& ctx, float cur_t) const;
-	bool IntersectBBoxLeaf(const KRay& ray, UINT32 idx, IntersectContext& ctx, float cur_t) const;
+	bool IntersectBBoxNode(const KRay& ray, UINT32 idx, IntersectContext& ctx, TracingInstance* inst) const;
+	bool IntersectBBoxLeaf(const KRay& ray, UINT32 idx, IntersectContext& ctx, TracingInstance* inst) const;
 
 protected:
 	static const UINT32 LEAF_SCENE_CNT = 4;

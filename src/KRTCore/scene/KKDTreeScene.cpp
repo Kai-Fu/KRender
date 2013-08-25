@@ -461,7 +461,7 @@ int KAccelStruct_KDTree::PrepareKDTree()
 	return mRootNode;
 }
 
-bool KAccelStruct_KDTree::IntersectLeaf(UINT32 idx, const KRay& ray, float cur_t, IntersectContext& ctx) const
+bool KAccelStruct_KDTree::IntersectLeaf(UINT32 idx, const KRay& ray, TracingInstance* inst, IntersectContext& ctx) const
 {
 	const KD_LeafData& leafData = mKDLeafData[idx];
 	bool ret = false;
@@ -482,33 +482,41 @@ bool KAccelStruct_KDTree::IntersectLeaf(UINT32 idx, const KRay& ray, float cur_t
 	leafData.box_norm.ApplyToRay(tempRayOrg, tempRayDir);
 
 	double tScale = ray.mDirLen * leafData.box_norm.mRcpScaleLen;
-	RayTriIntersect hitInfo;
-	hitInfo.ray_t = ctx.ray_t - t0;
-	hitInfo.ray_t *= tScale;
+
+	if (leafData.tri_cnt > inst->mTmpRayTriIntsct.size())
+		inst->mTmpRayTriIntsct.resize(leafData.tri_cnt);
 
 	for (UINT32 i = 0; i < leafData.tri_cnt; ++i) {
 		UINT32 tri_idx = leafData.tri_list.leaf_triangles[i];
 		KTriVertPos2 triPos;
 		mpSourceScene->GetAccelTriPos(mAccelTriangle[tri_idx], triPos, &leafData.box_norm);
-		
-		if (RayIntersect((const float*)&tempRayOrg, (const float*)&tempRayDir, triPos, cur_t, hitInfo)) {
-		
-			// a new nearer triangle is hit
-			if (ctx.bbox_node_idx != ray.mExcludeBBoxNode || ctx.tri_id != ray.mExcludeTriID) {
-				ctx.ray_t = t0 + hitInfo.ray_t / tScale;
-				ctx.u = hitInfo.u;
-				ctx.v = hitInfo.v;
-				ctx.w = hitInfo.w;
-				ctx.tri_id = tri_idx;
-				ret = true;
-			}
+		RayIntersect((const float*)&tempRayOrg, (const float*)&tempRayDir, triPos, inst->mCameraContext.inMotionTime, inst->mTmpRayTriIntsct[i]);
+	}
+
+	double min_ray_t = (ctx.ray_t - t0) * tScale;
+	UINT32 min_i;
+	for (UINT32 i = 0; i < leafData.tri_cnt; ++i) {
+		UINT32 tri_idx = leafData.tri_list.leaf_triangles[i];
+		// a new nearer triangle is hit
+		if (min_ray_t > inst->mTmpRayTriIntsct[i].ray_t &&
+			tri_idx != ray.mExcludeTriID) {
+
+			min_ray_t = inst->mTmpRayTriIntsct[i].ray_t;
+			min_i = i;
+			ret = true;
 		}
 	}
 	
 
 	// If no triangle get hit, then I should restore it back.
-	if (ret)
+	if (ret) {
+		ctx.ray_t = t0 + min_ray_t / tScale;
+		ctx.u = inst->mTmpRayTriIntsct[min_i].u;
+		ctx.v = inst->mTmpRayTriIntsct[min_i].v;
+		ctx.w = 1.0f - ctx.u - ctx.v;
+		ctx.tri_id = leafData.tri_list.leaf_triangles[min_i];
 		ctx.kd_leaf_idx = idx;
+	}
 	else { 
 		ctx.walkVec = ToVec3f(ray.GetOrg() + ray.GetDir() * t1);
 		ctx.ray_t = old_t;
@@ -517,7 +525,7 @@ bool KAccelStruct_KDTree::IntersectLeaf(UINT32 idx, const KRay& ray, float cur_t
 	return ret;
 }
 
-bool KAccelStruct_KDTree::IntersectNode(UINT32 idx, const KRay& ray, float cur_t, IntersectContext& ctx) const
+bool KAccelStruct_KDTree::IntersectNode(UINT32 idx, const KRay& ray, TracingInstance* inst, IntersectContext& ctx) const
 {
 	double t0 = 0, t1 = FLT_MAX;
 	const KD_Node_NoBBox& node = *(const KD_Node_NoBBox*)&mSceneNode[idx];
@@ -557,10 +565,10 @@ bool KAccelStruct_KDTree::IntersectNode(UINT32 idx, const KRay& ray, float cur_t
 
 	if (next_node0 != INVALID_INDEX) {
 		if (child_flag0) {
-			if (IntersectLeaf(next_node0, ray, cur_t, ctx))
+			if (IntersectLeaf(next_node0, ray, inst, ctx))
 				return true;
 		}
-		else if (IntersectNode(next_node0, ray, cur_t, ctx)) {
+		else if (IntersectNode(next_node0, ray, inst, ctx)) {
 			return true;
 		}
 	}
@@ -568,22 +576,22 @@ bool KAccelStruct_KDTree::IntersectNode(UINT32 idx, const KRay& ray, float cur_t
 	
 	if (next_node1 != INVALID_INDEX) {
 		if (child_flag1)
-			return IntersectLeaf(next_node1, ray, cur_t, ctx);
+			return IntersectLeaf(next_node1, ray, inst, ctx);
 		else
-			return IntersectNode(next_node1, ray, cur_t, ctx);
+			return IntersectNode(next_node1, ray, inst, ctx);
 	}
 
 	return false;
 }
 
-bool KAccelStruct_KDTree::IntersectRay_KDTree(const KRay& ray, float cur_t, IntersectContext& ctx) const
+bool KAccelStruct_KDTree::IntersectRay_KDTree(const KRay& ray, TracingInstance* inst, IntersectContext& ctx) const
 {
 	ctx.walkVec = ray.GetOrg();
 	if (mRootNode != INVALID_INDEX) {
 		if (!mSceneNode.empty())
-			return IntersectNode(mRootNode, ray, cur_t, ctx);
+			return IntersectNode(mRootNode, ray, inst, ctx);
 		else
-			return IntersectLeaf(mRootNode, ray, cur_t, ctx);
+			return IntersectLeaf(mRootNode, ray, inst, ctx);
 	}
 	else
 		return false;

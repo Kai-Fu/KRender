@@ -21,7 +21,7 @@ class KBBox;
 struct RayTriIntersect
 {
 	double ray_t;
-	float w, u, v;
+	float u, v;
 };
 
 struct IntersectContext

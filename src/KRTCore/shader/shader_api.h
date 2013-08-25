@@ -128,8 +128,8 @@ public:
 	const ISurfaceShader* GetSurfaceShader(const IntersectContext& hit_ctx) const;
 	void CalcuHitInfo(const IntersectContext& hit_ctx, IntersectInfo& out_info) const;
 	
-	bool CastRay(const KRay& ray, IntersectContext& out_ctx) const;
-	bool IsPointOccluded(const KRay& ray, float len) const;
+	bool CastRay(const KRay& ray, IntersectContext& out_ctx);
+	bool IsPointOccluded(const KRay& ray, float len);
 
 	void ConvertToSurfaceContext(const IntersectContext& hitCtx, const ShadingContext& shadingCtx, SurfaceContext& surfaceCtx);
 	SurfaceContext& GetCurrentSurfaceCtxStorage();
@@ -139,6 +139,7 @@ public:
 public:
 	KCamera::EvalContext mCameraContext;
 
+	std::vector<RayTriIntersect> mTmpRayTriIntsct;
 private:
 	const KAccelStruct_BVH* mpScene;
 	const RenderBuffers* mpRenderBuffers;

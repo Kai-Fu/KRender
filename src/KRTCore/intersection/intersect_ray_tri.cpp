@@ -86,14 +86,14 @@ bool RayIntersect(const float* ray_org, const float* ray_dir, const KTriVertPos2
 		v2 = tri.mVertPos[2];
 	}
 
+	out_info.ray_t = FLT_MAX;
 	if (intersect_triangle(ray_org, ray_dir, 
 		(float*)&v0, (float*)&v1, (float*)&v2, 
 		&t, &u, &v)) {
-			if (t > 0 && out_info.ray_t > t) {
+			if (t > 0) {
 				out_info.ray_t = t;
 				out_info.u = u;
 				out_info.v = v;
-				out_info.w = 1.0f - u - v;
 				return true;
 			}
 			else

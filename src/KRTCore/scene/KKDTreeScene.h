@@ -5,6 +5,7 @@
 #include <set>
 #include "../os/api_wrapper.h"
 #include "../util/memory_pool.h"
+#include "../shader/shader_api.h"
 #include <memory>
 
 class KAccelStruct_KDTree;
@@ -28,8 +29,7 @@ public:
 class KAccelStruct
 {
 public:
-	virtual bool IntersectRay_KDTree(const KRay& ray, float cur_t, IntersectContext& ctx) const {return false;}
-	virtual bool IntersectRay_BruteForce(const KRay& ray, float cur_t, IntersectContext& ctx) const {return false;}
+	virtual bool IntersectRay_KDTree(const KRay& ray, TracingInstance* inst, IntersectContext& ctx) const {return false;}
 	virtual unsigned long long GetAccelLeafTriCnt() const = 0;
 	virtual unsigned long long GetAccelNodeCnt() const = 0;
 	virtual unsigned long long GetAccelLeafCnt() const = 0;
@@ -156,8 +156,8 @@ protected:
 
 protected:	
 	UINT32 BuildKDNode4Data(UINT32 idx);
-	bool IntersectNode(UINT32 idx, const KRay& ray, float cur_t, IntersectContext& ctx) const;
-	bool IntersectLeaf(UINT32 idx, const KRay& ray, float cur_t, IntersectContext& ctx) const;
+	bool IntersectNode(UINT32 idx, const KRay& ray, TracingInstance* inst, IntersectContext& ctx) const;
+	bool IntersectLeaf(UINT32 idx, const KRay& ray, TracingInstance* inst, IntersectContext& ctx) const;
 	int PrepareKDTree();
 	void PrecomputeTriangleBBox();
 
@@ -170,7 +170,7 @@ public:
 	virtual void InitAccelData();
 	virtual void ResetScene();
 
-	bool IntersectRay_KDTree(const KRay& ray, float cur_t, IntersectContext& ctx) const;
+	bool IntersectRay_KDTree(const KRay& ray, TracingInstance* inst, IntersectContext& ctx) const;
 
 	const KTriDesc* GetAccelTriData(UINT32 tri_idx) const {return &mAccelTriangle[tri_idx];} 
 
