@@ -173,9 +173,10 @@ void KScene::GetAccelTriPos(const KTriDesc& tri, KTriVertPos2& triPos, const KBo
 			const KVec3& pos = pPN_Data->pos;
 			KVec4 out_pos;
 			out_pos = KVec4(pos, 1.0f) * mat;
-			triPos.mVertPos_Ending[i_vert][0] = out_pos[0] / out_pos[3];
-			triPos.mVertPos_Ending[i_vert][1] = out_pos[1] / out_pos[3];
-			triPos.mVertPos_Ending[i_vert][2] = out_pos[2] / out_pos[3];
+			triPos.mVertPos_Delta[i_vert][0] = out_pos[0] / out_pos[3];
+			triPos.mVertPos_Delta[i_vert][1] = out_pos[1] / out_pos[3];
+			triPos.mVertPos_Delta[i_vert][2] = out_pos[2] / out_pos[3];
+			triPos.mVertPos_Delta[i_vert] -= triPos.mVertPos[i_vert];
 		}
 				
 	}

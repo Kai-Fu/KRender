@@ -76,9 +76,9 @@ bool RayIntersect(const float* ray_org, const float* ray_dir, const KTriVertPos2
 	KVec3 v0, v1, v2;
 
 	if (tri.mIsMoving) {
-		v0 = nvmath::lerp(cur_t, tri.mVertPos[0], tri.mVertPos_Ending[0]);
-		v1 = nvmath::lerp(cur_t, tri.mVertPos[1], tri.mVertPos_Ending[1]);
-		v2 = nvmath::lerp(cur_t, tri.mVertPos[2], tri.mVertPos_Ending[2]);
+		v0 = tri.mVertPos[0] + tri.mVertPos_Delta[0]*cur_t;
+		v1 = tri.mVertPos[1] + tri.mVertPos_Delta[1]*cur_t;
+		v2 = tri.mVertPos[2] + tri.mVertPos_Delta[2]*cur_t;
 	}
 	else {
 		v0 = tri.mVertPos[0];
