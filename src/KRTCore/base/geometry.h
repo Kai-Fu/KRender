@@ -10,6 +10,35 @@
 #define NOT_HIT_INDEX 0xfffffffe
 
 
+class KMemCacher
+{
+public:
+	KMemCacher(UINT32 bucketSize, UINT32 alignment = 0);
+	~KMemCacher();
+
+	void Reset();
+
+	bool EntryExists(UINT64 id);
+	void* LRU_OpenEntry(UINT64 id,  UINT32 memSize);
+
+protected:
+
+	struct EntryDesc
+	{
+		UINT64 id;
+		void* pMem;
+		UINT32 memSize;
+
+		UINT64 lru_flag;
+	};
+
+	static const UINT64 INVALID_ENTRY_IDX = 0xffffffffffffffff;
+	UINT32 mAllocAlignment;
+	std::vector<EntryDesc> mEntries;
+	UINT64 mLRU_TimeStamp;
+
+};
+
 KVec3d ToVec3d(const KVec3& ref);
 KVec3 ToVec3f(const KVec3d& ref);
 KVec4d ToVec4d(const KVec4& ref);
@@ -153,34 +182,6 @@ public:
 
 	void SetNodeMeshIdx(UINT32 nodeIdx, UINT32 meshIdx) {mNodeMeshIdx = ((nodeIdx << 16) | (meshIdx & 0x0000ffff));}
 };
-
-
-// This is the optimized version of KTriDesc(four triangles and one ray)
-class KAccelTriangleOpt
-{
-public:
-	// first 16 byte half cache line
-	// plane:
-	float n_u;	// normal.u / normal.k
-	float n_v;	// normal.v / normal.k
-	float n_d;	// constant of plane equation
-	UINT32 k;		// projection dimension
-
-	// second 16 byte half cache line
-	float b_nu;
-	float b_nv;
-	float b_d;
-	UINT32 tri_id;	// triangle id, it's also for pad to next cache line(triangle index)
-
-	// third of 16 byte half cache line
-	// line equation for line ab
-	float c_nu;
-	float c_nv;
-	float c_d;
-	float E_F;	// data use to store the normal flag(sign bit) and the uv epsilon value
-};
-
-void PrecomputeAccelTri(const KTriVertPos1& tri, UINT32 tri_id, KAccelTriangleOpt &triAccel);
 
 class KTriMesh
 {

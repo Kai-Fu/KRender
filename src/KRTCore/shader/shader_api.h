@@ -139,6 +139,7 @@ public:
 public:
 	KCamera::EvalContext mCameraContext;
 
+	KMemCacher mCachedTriPosData;
 	std::vector<RayTriIntersect> mTmpRayTriIntsct;
 private:
 	const KAccelStruct_BVH* mpScene;

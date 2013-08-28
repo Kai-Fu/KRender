@@ -1,5 +1,6 @@
 #include "geometry.h"
 #include <assert.h>
+#include "../os/api_wrapper.h"
 
 KBSphere::KBSphere()
 {
@@ -251,5 +252,83 @@ void Vec3TransformNormal(KVec3& res, const KVec3& v, const KMatrix4& mat)
 	Vec3TransformCoord(dst, v, mat);
 	res = dst - orig;
 	res.normalize();
+}
+
+KMemCacher::KMemCacher(UINT32 bucketSize, UINT32 alignment)
+{
+	if (bucketSize < 10)
+		bucketSize = 10;
+
+	mEntries.resize(bucketSize);
+	mAllocAlignment = alignment;
+	for (size_t i = 0; i < mEntries.size(); ++i) {
+		mEntries[i].pMem = NULL;
+	}
+
+	Reset();
+}
+
+KMemCacher::~KMemCacher()
+{
+	Reset();
+}
+
+void KMemCacher::Reset()
+{
+	mLRU_TimeStamp = 0;
+	for (size_t i = 0; i < mEntries.size(); ++i) {
+		mEntries[i].id = INVALID_ENTRY_IDX;
+		if (mEntries[i].pMem)
+			Aligned_Free(mEntries[i].pMem);
+		mEntries[i].pMem = NULL;
+		mEntries[i].memSize = 0;
+		mEntries[i].lru_flag = 0;
+	}
+}
+
+bool KMemCacher::EntryExists(UINT64 id)
+{
+	UINT32 hashedIdx = id % (UINT32)mEntries.size();
+	for (size_t i = 0; i < mEntries.size(); ++i) {
+		UINT32 curIdx = (hashedIdx + i) % (UINT32)mEntries.size();
+		if (mEntries[curIdx].id == id)
+			return true;
+	}
+
+	return false;
+}
+
+void* KMemCacher::LRU_OpenEntry(UINT64 id,  UINT32 memSize)
+{
+	UINT32 targetIdx = INVALID_INDEX;
+	UINT32 hashedIdx = id % (UINT32)mEntries.size();
+	UINT64 oldestEntryTS = INVALID_ENTRY_IDX;
+	UINT32 oldestEntryIdx = INVALID_INDEX;
+	++mLRU_TimeStamp;
+	for (size_t i = 0; i < mEntries.size(); ++i) {
+		UINT32 curIdx = (hashedIdx + i) % (UINT32)mEntries.size();
+		if (mEntries[curIdx].id == id || mEntries[curIdx].id == INVALID_ENTRY_IDX) {
+			targetIdx = curIdx;
+			break;
+		}
+
+		if (oldestEntryTS < mEntries[curIdx].lru_flag) {
+			oldestEntryTS = mEntries[curIdx].lru_flag;
+			oldestEntryIdx = curIdx;
+		}
+
+	}
+
+	if (targetIdx == INVALID_INDEX) {
+		targetIdx = oldestEntryIdx;
+	}
+
+	mEntries[targetIdx].lru_flag = mLRU_TimeStamp;
+	if (mEntries[targetIdx].pMem == NULL || mEntries[targetIdx].memSize < memSize) {
+		mEntries[targetIdx].pMem = Aligned_Realloc(mEntries[targetIdx].pMem, memSize, mAllocAlignment);
+		mEntries[targetIdx].memSize = memSize;
+	}
+
+	return mEntries[targetIdx].pMem;
 }
 
