@@ -139,7 +139,7 @@ void RayIntersectStaticTriArray(const float* ray_org, const float* ray_dir, cons
 {
 	const float* cur_tri = tri_pos;
 	float* cur_tuv = tuv;
-	for (unsigned int tri_i = 0; tri_i < cnt; ++tri_i) {
+	for (unsigned int tri_i = 0; tri_i < cnt; ++tri_i, cur_tri += 9, cur_tuv += 3) {
 
 		float edge1[3], edge2[3], tvec[3], pvec[3], qvec[3], nface[3];
 		float det,inv_det;
@@ -166,14 +166,14 @@ void RayIntersectStaticTriArray(const float* ray_org, const float* ray_dir, cons
 
 		float dot_nd = nface[0]*ray_dir[0] + nface[1]*ray_dir[1] + nface[2]*ray_dir[2];
 		if (dot_nd > 0)
-			return; // Backward face, ignore it
+			continue; // Backward face, ignore it
 
 		/* if determinant is near zero, ray lies in plane of triangle */
 		//det = DOT(edge1, pvec);
 		det = edge1[0]*pvec[0] + edge1[1]*pvec[1] + edge1[2]*pvec[2];
 
 		if (det > -EPSILON && det < EPSILON)
-			return;
+			continue;
 		inv_det = 1.0f / det;
 
 		/* calculate distance from vert0 to ray origin */
@@ -186,7 +186,7 @@ void RayIntersectStaticTriArray(const float* ray_org, const float* ray_dir, cons
 		//*u = DOT(tvec, pvec) * inv_det;
 		cur_tuv[1] = (tvec[0]*pvec[0] + tvec[1]*pvec[1] + tvec[2]*pvec[2]) * inv_det;
 		if (cur_tuv[1] < 0.0 || cur_tuv[1] > 1.0)
-			return;
+			continue;
 
 		/* prepare to test V parameter */
 		//CROSS(qvec, tvec, edge1);
@@ -198,13 +198,11 @@ void RayIntersectStaticTriArray(const float* ray_org, const float* ray_dir, cons
 		//*v = DOT(dir, qvec) * inv_det;
 		cur_tuv[2] = (ray_dir[0]*qvec[0] + ray_dir[1]*qvec[1] + ray_dir[2]*qvec[2]) * inv_det;
 		if (cur_tuv[2] < 0.0 || cur_tuv[1] + cur_tuv[2] > 1.0)
-			return;
+			continue;
 
 		/* calculate t, ray intersects triangle */
-		cur_tuv[0] = (edge2[0]*qvec[0] + edge2[1]*qvec[1] + edge2[2]*qvec[2]) * inv_det;
-
-		cur_tri += 9;
-		cur_tuv += 3;
+		float tmpT = (edge2[0]*qvec[0] + edge2[1]*qvec[1] + edge2[2]*qvec[2]) * inv_det;
+		if (tmpT > 0) cur_tuv[0] = tmpT;
 	}
 }
 
@@ -212,24 +210,25 @@ void RayIntersectAnimTriArray(const float* ray_org, const float* ray_dir, float 
 {
 	const float* cur_tri = tri_pos;
 	float* cur_tuv = tuv;
-	for (unsigned int tri_i = 0; tri_i < cnt; ++tri_i) {
+	for (unsigned int tri_i = 0; tri_i < cnt; ++tri_i, cur_tri += 18, cur_tuv += 3) {
 
+		cur_tuv[0] = FLT_MAX;
 		float edge1[3], edge2[3], tvec[3], pvec[3], qvec[3], nface[3];
 		float det,inv_det;
 		
 		float vert0[3];
-		vert0[0] = cur_tri[0] + cur_tri[1]*cur_t;
-		vert0[1] = cur_tri[2] + cur_tri[3]*cur_t;
-		vert0[2] = cur_tri[4] + cur_tri[5]*cur_t;
+		vert0[0] = cur_tri[0] + cur_tri[9]*cur_t;
+		vert0[1] = cur_tri[1] + cur_tri[10]*cur_t;
+		vert0[2] = cur_tri[2] + cur_tri[11]*cur_t;
 		/* find vectors for two edges sharing vert0 */
 		//SUB(edge1, vert1, vert0);
-		edge1[0] = cur_tri[3*2] + cur_tri[3*2+1]*cur_t - vert0[0];
-		edge1[1] = cur_tri[4*2] + cur_tri[4*2+1]*cur_t - vert0[1];
-		edge1[2] = cur_tri[5*2] + cur_tri[5*2+1]*cur_t - vert0[2];
+		edge1[0] = cur_tri[3] + cur_tri[3+9]*cur_t - vert0[0];
+		edge1[1] = cur_tri[4] + cur_tri[4+9]*cur_t - vert0[1];
+		edge1[2] = cur_tri[5] + cur_tri[5+9]*cur_t - vert0[2];
 		//SUB(edge2, vert2, vert0);
-		edge2[0] = cur_tri[6*2] + cur_tri[6*2+1]*cur_t - vert0[0];
-		edge2[1] = cur_tri[7*2] + cur_tri[7*2+1]*cur_t - vert0[1];
-		edge2[2] = cur_tri[8*2] + cur_tri[8*2+1]*cur_t - vert0[2];
+		edge2[0] = cur_tri[6] + cur_tri[6+9]*cur_t - vert0[0];
+		edge2[1] = cur_tri[7] + cur_tri[7+9]*cur_t - vert0[1];
+		edge2[2] = cur_tri[8] + cur_tri[8+9]*cur_t - vert0[2];
 
 		/* begin calculating determinant - also used to calculate U parameter */
 		//CROSS(pvec, dir, edge2);
@@ -243,14 +242,14 @@ void RayIntersectAnimTriArray(const float* ray_org, const float* ray_dir, float 
 
 		float dot_nd = nface[0]*ray_dir[0] + nface[1]*ray_dir[1] + nface[2]*ray_dir[2];
 		if (dot_nd > 0)
-			return; // Backward face, ignore it
+			continue; // Backward face, ignore it
 
 		/* if determinant is near zero, ray lies in plane of triangle */
 		//det = DOT(edge1, pvec);
 		det = edge1[0]*pvec[0] + edge1[1]*pvec[1] + edge1[2]*pvec[2];
 
 		if (det > -EPSILON && det < EPSILON)
-			return;
+			continue;
 		inv_det = 1.0f / det;
 
 		/* calculate distance from vert0 to ray origin */
@@ -263,7 +262,7 @@ void RayIntersectAnimTriArray(const float* ray_org, const float* ray_dir, float 
 		//*u = DOT(tvec, pvec) * inv_det;
 		cur_tuv[1] = (tvec[0]*pvec[0] + tvec[1]*pvec[1] + tvec[2]*pvec[2]) * inv_det;
 		if (cur_tuv[1] < 0.0 || cur_tuv[1] > 1.0)
-			return;
+			continue;
 
 		/* prepare to test V parameter */
 		//CROSS(qvec, tvec, edge1);
@@ -275,12 +274,10 @@ void RayIntersectAnimTriArray(const float* ray_org, const float* ray_dir, float 
 		//*v = DOT(dir, qvec) * inv_det;
 		cur_tuv[2] = (ray_dir[0]*qvec[0] + ray_dir[1]*qvec[1] + ray_dir[2]*qvec[2]) * inv_det;
 		if (cur_tuv[2] < 0.0 || cur_tuv[1] + cur_tuv[2] > 1.0)
-			return;
+			continue;
 
 		/* calculate t, ray intersects triangle */
-		cur_tuv[0] = (edge2[0]*qvec[0] + edge2[1]*qvec[1] + edge2[2]*qvec[2]) * inv_det;
-
-		cur_tri += 18;
-		cur_tuv += 3;
+		float tmpT = (edge2[0]*qvec[0] + edge2[1]*qvec[1] + edge2[2]*qvec[2]) * inv_det;
+		if (tmpT > 0) cur_tuv[0] = tmpT;
 	}
 }

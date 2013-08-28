@@ -168,6 +168,7 @@ bool KAccelStruct_BVH::IntersectBBoxLeaf(const KRay& ray, UINT32 idx, IntersectC
 			else
 				transRay.mExcludeTriID = ray.mExcludeTriID;
 
+			inst->mCurBVHIndex = scene_node_idx;
 			if (mpAccelStructs[scene_idx]->IntersectRay_KDTree(transRay, inst, ctx)) {
 				ret = true;
 				ctx.bbox_node_idx = scene_node_idx;

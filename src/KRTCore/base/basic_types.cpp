@@ -259,6 +259,7 @@ KMemCacher::KMemCacher(UINT32 bucketSize)
 	if (bucketSize < 10)
 		bucketSize = 10;
 
+	mAllocAlignment = 1;
 	mEntries.resize(bucketSize);
 	for (size_t i = 0; i < mEntries.size(); ++i) {
 		mEntries[i].pMem = NULL;
@@ -306,7 +307,7 @@ void* KMemCacher::LRU_OpenEntry(UINT64 id,  UINT32 memSize)
 {
 	UINT32 targetIdx = INVALID_INDEX;
 	UINT32 hashedIdx = id % (UINT32)mEntries.size();
-	UINT64 oldestEntryTS = INVALID_ENTRY_IDX;
+	UINT64 oldestEntryTS = 0;
 	UINT32 oldestEntryIdx = INVALID_INDEX;
 	++mLRU_TimeStamp;
 	for (size_t i = 0; i < mEntries.size(); ++i) {
@@ -328,6 +329,7 @@ void* KMemCacher::LRU_OpenEntry(UINT64 id,  UINT32 memSize)
 	}
 
 	mEntries[targetIdx].lru_flag = mLRU_TimeStamp;
+	mEntries[targetIdx].id = id;
 	if (mEntries[targetIdx].pMem == NULL || mEntries[targetIdx].memSize < memSize) {
 		mEntries[targetIdx].pMem = Aligned_Realloc(mEntries[targetIdx].pMem, memSize, mAllocAlignment);
 		mEntries[targetIdx].memSize = memSize;
