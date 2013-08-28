@@ -183,7 +183,8 @@ const BitmapObject* RenderBuffers::GetOutputImagePtr() const
 	return output_image.get();
 }
 
-TracingInstance::TracingInstance(const KAccelStruct_BVH* scene, const RenderBuffers* pBuffers)
+TracingInstance::TracingInstance(const KAccelStruct_BVH* scene, const RenderBuffers* pBuffers) :
+	mCachedTriPosData(MAX_REFLECTION_BOUNCE * 3 + 11)
 {
 	mpScene = scene;
 	mpRenderBuffers = pBuffers;
