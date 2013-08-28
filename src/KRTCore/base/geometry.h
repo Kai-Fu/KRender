@@ -13,9 +13,10 @@
 class KMemCacher
 {
 public:
-	KMemCacher(UINT32 bucketSize, UINT32 alignment = 0);
+	KMemCacher(UINT32 bucketSize);
 	~KMemCacher();
 
+	void SetMemAllocAlignment(UINT32 alignment);
 	void Reset();
 
 	bool EntryExists(UINT64 id);

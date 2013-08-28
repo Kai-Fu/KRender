@@ -254,13 +254,12 @@ void Vec3TransformNormal(KVec3& res, const KVec3& v, const KMatrix4& mat)
 	res.normalize();
 }
 
-KMemCacher::KMemCacher(UINT32 bucketSize, UINT32 alignment)
+KMemCacher::KMemCacher(UINT32 bucketSize)
 {
 	if (bucketSize < 10)
 		bucketSize = 10;
 
 	mEntries.resize(bucketSize);
-	mAllocAlignment = alignment;
 	for (size_t i = 0; i < mEntries.size(); ++i) {
 		mEntries[i].pMem = NULL;
 	}
@@ -284,6 +283,11 @@ void KMemCacher::Reset()
 		mEntries[i].memSize = 0;
 		mEntries[i].lru_flag = 0;
 	}
+}
+
+void KMemCacher::SetMemAllocAlignment(UINT32 alignment)
+{
+	mAllocAlignment = alignment;
 }
 
 bool KMemCacher::EntryExists(UINT64 id)
