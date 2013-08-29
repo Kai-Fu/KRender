@@ -208,13 +208,13 @@ FORCE_LEAF_NODE:
 	// 4. Calculate the splitting position
 	{
 		// Use the middle plan splitting, may be used for testing
-		det_value = (bbox.mMax[det_axis] + bbox.mMin[det_axis]) * 0.5f;
-		/*det_value = CalcuSplittingPosition(
+		//det_value = (bbox.mMax[det_axis] + bbox.mMin[det_axis]) * 0.5f;
+		det_value = CalcuSplittingPosition(
 			triangles, cnt, 
 			bbox,
 			&mTempDataForKD->mTriBBox[0],
 			det_axis,
-			mTempDataForKD->mPigeonHoles[splitData.in_splitThreadIdx]);*/
+			mTempDataForKD->mPigeonHoles[splitData.in_splitThreadIdx]);
 	}
 	node.split_value = det_value;
 	left_bbox.mMin[det_axis] = det_value;
