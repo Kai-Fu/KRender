@@ -20,7 +20,7 @@ public:
 	void Reset();
 
 	bool EntryExists(UINT64 id);
-	void* LRU_OpenEntry(UINT64 id,  UINT32 memSize);
+	void* LRU_OpenEntry(UINT64 id,  UINT32 memSize, bool& needUpdate);
 
 protected:
 
@@ -294,6 +294,8 @@ public:
 	UINT32 GetMeshCnt() const {return (UINT32)mpMesh.size();}
 	void SetNodeTM(UINT32 nodeIdx, const KMatrix4& tm);
 	void GetAccelTriPos(const KTriDesc& tri, KTriVertPos2& triPos, const KBoxNormalizer* pNorm = NULL) const;
+	bool IsTriPosAnimated(const KTriDesc& tri) const;
+	void GetTriPosData(const KTriDesc& tri, bool anim, float* out_data, const KBoxNormalizer* pNorm = NULL) const;
 
 	// Functions used to calculate accelerated data structure for ray tracing
 	void InitAccelTriangleCache(std::vector<KTriDesc>& triCache) const;

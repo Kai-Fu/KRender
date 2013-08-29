@@ -303,7 +303,7 @@ bool KMemCacher::EntryExists(UINT64 id)
 	return false;
 }
 
-void* KMemCacher::LRU_OpenEntry(UINT64 id,  UINT32 memSize)
+void* KMemCacher::LRU_OpenEntry(UINT64 id,  UINT32 memSize, bool& needUpdate)
 {
 	UINT32 targetIdx = INVALID_INDEX;
 	UINT32 hashedIdx = id % (UINT32)mEntries.size();
@@ -324,8 +324,12 @@ void* KMemCacher::LRU_OpenEntry(UINT64 id,  UINT32 memSize)
 
 	}
 
+	needUpdate = true;
 	if (targetIdx == INVALID_INDEX) {
 		targetIdx = oldestEntryIdx;
+	}
+	else {
+		needUpdate = !(mEntries[targetIdx].id == id);
 	}
 
 	mEntries[targetIdx].lru_flag = mLRU_TimeStamp;

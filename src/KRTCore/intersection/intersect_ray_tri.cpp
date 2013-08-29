@@ -141,6 +141,7 @@ void RayIntersectStaticTriArray(const float* ray_org, const float* ray_dir, cons
 	float* cur_tuv = tuv;
 	for (unsigned int tri_i = 0; tri_i < cnt; ++tri_i, cur_tri += 9, cur_tuv += 3) {
 
+		cur_tuv[0] = FLT_MAX;
 		float edge1[3], edge2[3], tvec[3], pvec[3], qvec[3], nface[3];
 		float det,inv_det;
 

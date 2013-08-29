@@ -147,6 +147,59 @@ UINT32 KScene::GenAccelTriangle(UINT32 nodeIdx, UINT32 subMeshIdx, KTriDesc* acc
 	return faceCnt;
 }
 
+bool KScene::IsTriPosAnimated(const KTriDesc& tri) const
+{
+	KNode* pNode = mpNode[tri.GetNodeIdx()];
+	KTriMesh* pMesh = mpMesh[tri.GetMeshIdx()];
+	return pMesh->mHasPNAnim;
+}
+
+void KScene::GetTriPosData(const KTriDesc& tri, bool anim, float* out_data, const KBoxNormalizer* pNorm) const
+{
+	KNode* pNode = mpNode[tri.GetNodeIdx()];
+	KTriMesh* pMesh = mpMesh[tri.GetMeshIdx()];
+	KMatrix4 mat = pNode->GetObjectTM();
+	if (pNorm)
+		pNorm->ApplyToMatrix(mat);
+
+	float* outPos = out_data;
+	float* outDelta = out_data + 9;
+	for (int i_vert = 0; i_vert < 3; ++i_vert) {
+
+		const KTriMesh::PN_Data* pPN_Data = pMesh->GetVertPN(pMesh->mFaces[tri.mTriIdx].pn_idx[i_vert]);
+
+		const KVec3& pos = pPN_Data->pos;
+		KVec4 out_pos;
+		out_pos = KVec4(pos, 1.0f) * mat;
+		outPos[0] = out_pos[0] / out_pos[3];
+		outPos[1] = out_pos[1] / out_pos[3];
+		outPos[2] = out_pos[2] / out_pos[3];
+
+		if (anim) {
+
+			if (pMesh->mHasPNAnim) {
+				++pPN_Data;
+
+				const KVec3& pos = pPN_Data->pos;
+				KVec4 out_pos;
+				out_pos = KVec4(pos, 1.0f) * mat;
+				outDelta[i_vert*3 + 0 + 9] = out_pos[0] / out_pos[3] - out_data[i_vert*3 + 0];
+				outDelta[i_vert*3 + 1 + 9] = out_pos[1] / out_pos[3] - out_data[i_vert*3 + 1];
+				outDelta[i_vert*3 + 2 + 9] = out_pos[2] / out_pos[3] - out_data[i_vert*3 + 2];
+			}
+			else {
+				outDelta[i_vert*3 + 0 + 9] = out_data[i_vert*3 + 0];
+				outDelta[i_vert*3 + 1 + 9] = out_data[i_vert*3 + 1];
+				outDelta[i_vert*3 + 2 + 9] = out_data[i_vert*3 + 2];
+			}
+			outDelta += 3;
+		}
+			
+		outPos += 3;
+
+	}
+}
+
 void KScene::GetAccelTriPos(const KTriDesc& tri, KTriVertPos2& triPos, const KBoxNormalizer* pNorm) const
 {
 	KNode* pNode = mpNode[tri.GetNodeIdx()];

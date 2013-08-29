@@ -154,6 +154,14 @@ FORCE_LEAF_NODE:
 			leafData.box_norm.InitFromBBox(bbox);
 			leafData.tri_cnt = cnt;
 			leafData.tri_list.leaf_triangles = leafTriIdx;
+			leafData.hasAnim = false;
+			// Check whether this tri-leaf node contains animation
+			for (UINT32 i = 0; i < cnt; ++i) {
+				if (mpSourceScene->IsTriPosAnimated(mAccelTriangle[i])) {
+					leafData.hasAnim = true;
+					break;
+				}
+			}
 
 			EnterSpinLockCriticalSection(mTempDataForKD->mLeafAddingCS);
 			mTotalLeafTriCnt += cnt;
@@ -494,17 +502,23 @@ bool KAccelStruct_KDTree::IntersectLeaf(UINT32 idx, const KRay& ray, TracingInst
 		RayIntersect((const float*)&tempRayOrg, (const float*)&tempRayDir, triPos, inst->mCameraContext.inMotionTime, inst->mTmpRayTriIntsct[i]);
 	}
 #else
-	float* pCachedTriData = (float*)inst->mCachedTriPosData.LRU_OpenEntry(inst->mCurBVHIndex*117 + idx, leafData.tri_cnt*sizeof(float)*18);
-	KVec3* pCurTriData = (KVec3*)pCachedTriData;
-	for (UINT32 i = 0; i < leafData.tri_cnt; ++i) {
-		UINT32 tri_idx = leafData.tri_list.leaf_triangles[i];
-		KTriVertPos2 triPos;
-		mpSourceScene->GetAccelTriPos(mAccelTriangle[tri_idx], triPos, &leafData.box_norm);
-		pCurTriData[0] = triPos.mVertPos[0]; pCurTriData[1] = triPos.mVertPos[1]; pCurTriData[2] = triPos.mVertPos[2];
-		pCurTriData[3] = triPos.mVertPos_Delta[0]; pCurTriData[4] = triPos.mVertPos_Delta[1]; pCurTriData[5] = triPos.mVertPos_Delta[2];
-		pCurTriData += 6;
+	UINT32 triStep = leafData.hasAnim ? 18 : 9;
+	bool needUpdate = false;
+	float* pCachedTriData = (float*)inst->mCachedTriPosData.LRU_OpenEntry(inst->mCurBVHIndex*117 + idx, leafData.tri_cnt*sizeof(float)*triStep, needUpdate);
+
+	if (needUpdate) {
+		float* pCurTriData = (float*)pCachedTriData;
+		for (UINT32 i = 0; i < leafData.tri_cnt; ++i) {
+			UINT32 tri_idx = leafData.tri_list.leaf_triangles[i];
+			mpSourceScene->GetTriPosData(mAccelTriangle[tri_idx], leafData.hasAnim, pCurTriData, &leafData.box_norm);
+			pCurTriData += triStep;
+		}
 	}
-	RayIntersectAnimTriArray((const float*)&tempRayOrg, (const float*)&tempRayDir, inst->mCameraContext.inMotionTime, pCachedTriData, (float*)&inst->mTmpRayTriIntsct[0], leafData.tri_cnt);
+
+	if (leafData.hasAnim)
+		RayIntersectAnimTriArray((const float*)&tempRayOrg, (const float*)&tempRayDir, inst->mCameraContext.inMotionTime, pCachedTriData, (float*)&inst->mTmpRayTriIntsct[0], leafData.tri_cnt);
+	else
+		RayIntersectStaticTriArray((const float*)&tempRayOrg, (const float*)&tempRayDir, pCachedTriData, (float*)&inst->mTmpRayTriIntsct[0], leafData.tri_cnt);
 #endif
 	double min_ray_t = (ctx.ray_t - t0) * tScale;
 	UINT32 min_i;
