@@ -183,14 +183,14 @@ void KScene::GetTriPosData(const KTriDesc& tri, bool anim, float* out_data, cons
 				const KVec3& pos = pPN_Data->pos;
 				KVec4 out_pos;
 				out_pos = KVec4(pos, 1.0f) * mat;
-				outDelta[i_vert*3 + 0 + 9] = out_pos[0] / out_pos[3] - out_data[i_vert*3 + 0];
-				outDelta[i_vert*3 + 1 + 9] = out_pos[1] / out_pos[3] - out_data[i_vert*3 + 1];
-				outDelta[i_vert*3 + 2 + 9] = out_pos[2] / out_pos[3] - out_data[i_vert*3 + 2];
+				outDelta[0] = out_pos[0] / out_pos[3] - outPos[0];
+				outDelta[1] = out_pos[1] / out_pos[3] - outPos[1];
+				outDelta[2] = out_pos[2] / out_pos[3] - outPos[2];
 			}
 			else {
-				outDelta[i_vert*3 + 0 + 9] = out_data[i_vert*3 + 0];
-				outDelta[i_vert*3 + 1 + 9] = out_data[i_vert*3 + 1];
-				outDelta[i_vert*3 + 2 + 9] = out_data[i_vert*3 + 2];
+				outDelta[0] = outPos[0];
+				outDelta[1] = outPos[1];
+				outDelta[2] = outPos[2];
 			}
 			outDelta += 3;
 		}

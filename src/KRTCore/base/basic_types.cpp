@@ -335,7 +335,9 @@ void* KMemCacher::LRU_OpenEntry(UINT64 id,  UINT32 memSize, bool& needUpdate)
 	mEntries[targetIdx].lru_flag = mLRU_TimeStamp;
 	mEntries[targetIdx].id = id;
 	if (mEntries[targetIdx].pMem == NULL || mEntries[targetIdx].memSize < memSize) {
-		mEntries[targetIdx].pMem = Aligned_Realloc(mEntries[targetIdx].pMem, memSize, mAllocAlignment);
+		mEntries[targetIdx].pMem = mEntries[targetIdx].pMem ?
+			Aligned_Realloc(mEntries[targetIdx].pMem, memSize, mAllocAlignment) :
+			Aligned_Malloc(memSize, mAllocAlignment);
 		mEntries[targetIdx].memSize = memSize;
 	}
 
