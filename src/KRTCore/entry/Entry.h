@@ -40,7 +40,7 @@ namespace KRayTracer {
 		EventNotifier mEventCB;
 	};
 
-	KRayTracer_Root* InitializeKRayTracer();
+	bool InitializeKRayTracer();
 	void DestroyKRayTracer();
 
 } // namespace KRayTracer

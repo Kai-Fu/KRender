@@ -9,6 +9,8 @@
 #include <Alembic/AbcCoreAbstract/TimeSampling.h>
 
 #include "../scene/KKDBBoxScene.h"
+#include "../material/material_library.h"
+
 #include <assert.h>
 
 
@@ -254,7 +256,7 @@ void AbcLoader::ProcessMesh(const AbcG::IPolyMesh& mesh)
 	KNode* pNode = targetSubScene->GetNode(nodeIdx);
 	pNode->mMesh.push_back(meshIdx);
 	targetSubScene->SetNodeTM(nodeIdx, localMat);
-	pNode->mpSurfShader = NULL;
+	pNode->mpSurfShader = KMaterialLibrary::GetInstance()->GetDefaultMaterial();
 
 	// Convert the mesh representation
 	ConvertMesh(mesh.getSchema(), mCurTime, *pMesh);

@@ -34,9 +34,6 @@ public:
 
 	virtual const char* GetType() const = 0;
 
-	virtual bool Save(FILE* pFile) = 0;
-	virtual bool Load(FILE* pFile) = 0;
-
 	static float RandomFloat();
 	static void ConfigAreaLightSampCnt(UINT32 cntSqrt);
 protected:
@@ -61,11 +58,8 @@ public:
 		const KVec2& samplePos, const KVec3& shading_point,
 		KVec3& outLightPos, LightIterator& outLightIter) const;
 
-
 	virtual const char* GetType() const {return POINT_LIGHT_TYPE;}
 
-	virtual bool Save(FILE* pFile);
-	virtual bool Load(FILE* pFile);
 protected:
 	KVec3 mPos;
 	KMatrix4 mLightMat;
@@ -87,13 +81,9 @@ public:
 		const KVec2& samplePos, const KVec3& shading_point,
 		KVec3& outLightPos, LightIterator& outLightIter) const;;
 
-
 	virtual void SetParam(const char* paramName, void* pData);
 
 	virtual const char* GetType() const {return RECT_LIGHT_TYPE;}
-
-	virtual bool Save(FILE* pFile);
-	virtual bool Load(FILE* pFile);
 protected:
 
 	struct PARAM {
@@ -130,9 +120,6 @@ public:
 		const ShadingContext& shadingCtx, 
 		const IntersectContext& hit_ctx, 
 		KColor& out_color) const;
-
-	bool Save(FILE* pFile);
-	bool Load(FILE* pFile);
 
 	static LightScheme* GetInstance();
 	static void Initialize();

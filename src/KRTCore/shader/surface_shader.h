@@ -42,9 +42,6 @@ public:
 	virtual void ShaderTransmission(const TransContext& shadingCtx, KColor& out_clr) const = 0;
 	virtual void Shade(const SurfaceContext& shadingCtx, KColor& out_clr) const = 0;
 
-	virtual bool Save(FILE* pFile) = 0;
-	virtual bool Load(FILE* pFile) = 0;
-
 	const char* GetTypeName() const {return mTypeName.c_str();}
 	const char* GetName() const {return mName.c_str();}
 

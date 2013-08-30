@@ -37,10 +37,12 @@ bool LightScheme::GetLightIter(TracingInstance* pLocalData, const KVec2& sampleP
 {
 	const ILightObject* pLightObj = GetLightPtr(lightIdx);
 		
+	KVec3 lightPos_f;
 	KVec3d lightPos;
 	KColor litClr;
-	if (pLightObj->EvaluateLighting(samplePos, shadingCtx->position, ToVec3f(lightPos), out_iter)) {
+	if (pLightObj->EvaluateLighting(samplePos, shadingCtx->position, lightPos_f, out_iter)) {
 
+		lightPos = ToVec3d(lightPos_f);
 		bool isOccluded = false;
 		KColor transmission(out_iter.intensity);
 		{

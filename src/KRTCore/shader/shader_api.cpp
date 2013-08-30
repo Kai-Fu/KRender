@@ -525,6 +525,9 @@ KSC_Shader::KSC_Shader(const KSC_Shader& ref)
 
 	mUnifomArgType = ref.mUnifomArgType;
 	mpUniformData = KSC_AllocMemForType(ref.mUnifomArgType, 0);
+
+	assert(mUnifomArgType.hStruct);
+	memcpy(mpUniformData, ref.mpUniformData, KSC_GetStructSize(mUnifomArgType.hStruct));
 }
 
 bool KSC_Shader::LoadTemplate(const char* templateFile)

@@ -20,6 +20,7 @@ SceneLoader::SceneLoader()
 	KMaterialLibrary::Initialize();
 	CameraManager::Initialize();
 	Texture::TextureManager::Initialize();
+
 	mIsFromOBJ = false;
 	mIsSceneLoaded = false;
 	mpScene = new KSceneSet();

@@ -16,35 +16,27 @@ namespace KRayTracer {
 
 static KRayTracer_Root* g_pRoot = NULL;
 
-KRayTracer_Root* InitializeKRayTracer()
+bool InitializeKRayTracer()
 {
 	FreeImage_Initialise();
-
-	KMaterialLibrary::Initialize();
-	CameraManager::Initialize();
-	LightScheme::Initialize();
 	KEnvShader::Initialize();
 
 	g_pRoot = new KRayTracer_Root();
-	return g_pRoot;
+	return true;
 }
 
 void DestroyKRayTracer()
 {
-	KEnvShader::Shutdown();
-	LightScheme::Shutdown();
-	CameraManager::Shutdown();
-	KMaterialLibrary::Shutdown();
-
 	if (g_pRoot)
 		delete g_pRoot;
 	g_pRoot = NULL;
+
+	KEnvShader::Shutdown();
 	FreeImage_DeInitialise();
 }
 
 KRayTracer_Root::KRayTracer_Root()
 {
-	mpSceneLoader.reset(new SceneLoader());
 }
 
 KRayTracer_Root::~KRayTracer_Root()

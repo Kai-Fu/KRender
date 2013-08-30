@@ -13,22 +13,21 @@ public:
 	KMaterialLibrary();
 	~KMaterialLibrary();
 
-	ISurfaceShader* CreateMaterial(const char* shaderTemplate, const char* pMtlName);
+	ISurfaceShader* CreateMaterial(const char* templateName, const char* pMtlName);
 	ISurfaceShader* OpenMaterial(const char* pMtlName);
+	ISurfaceShader* GetDefaultMaterial();
 	
 	static KMaterialLibrary* GetInstance();
-	static void Initialize();
+	static bool Initialize();
 	static void Shutdown();
-
-	bool Save(FILE* pFile);
-	bool Load(FILE* pFile);
 
 	void Clear();
 
 private:
 	typedef std_hash_map<std::string, ISurfaceShader*> MTL_MAP;
 	MTL_MAP mMaterialInstances;
-	std_hash_map<std::string, KSC_SurfaceShader*> mShaderDefaultInstances;
+	std_hash_map<std::string, KSC_SurfaceShader*> mShaderTemplates;
+	ISurfaceShader* mpDefaultShader;
 
 	UniqueStringMaker mUniqueStrMaker;
 	static KMaterialLibrary* s_pInstance;
@@ -51,9 +50,6 @@ public:
 	virtual void SetParam(const char* paramName, void* pData, UINT32 dataSize);
 	virtual void Shade(const SurfaceContext& shadingCtx, KColor& out_clr) const;
 	virtual void ShaderTransmission(const TransContext& shadingCtx, KColor& out_clr) const;
-
-	virtual bool Save(FILE* pFile);
-	virtual bool Load(FILE* pFile);
 
 private:
 	void* mpEmissionFuncPtr;
