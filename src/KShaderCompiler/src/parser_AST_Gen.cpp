@@ -1962,8 +1962,14 @@ bool Exp_BinaryOp::CheckSemantic(TypeInfo& outType, std::string& errMsg, std::ve
 
 		if (leftType.type != rightType.type) {
 			if (TypeElementCnt(leftType.type) > TypeElementCnt(rightType.type)) {
-				errMsg = "Cannot do binary operation with right argument of less elements.";
-				return false;
+				if ((isArithmetric ||  mOperator == "=") && TypeElementCnt(rightType.type) == 1) {
+					// If the right value is scalar, it means "splats" for arithmetric or assign operator
+
+				}
+				else {
+					errMsg = "Cannot do binary operation with right argument of less elements.";
+					return false;
+				}
 			}
 			if (IsIntegerType(leftType.type) && !IsIntegerType(rightType.type))
 				warnMsg.push_back("Integer implicitly converted to float type.");

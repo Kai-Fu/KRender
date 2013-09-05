@@ -585,8 +585,6 @@ llvm::Value* CG_Context::CastValueType(llvm::Value* srcValue, VarType srcType, V
 		else
 			return truncatedValue;
 	}
-	if (srcElemCnt < destElemCnt) 
-		return NULL;
 	else
 		return srcValue;
 }

@@ -697,7 +697,7 @@ void AbcLoader::UpdateAnimSubScene(std::vector<size_t>::const_iterator nodeIdIt,
 				KNode* pNode = pScene->GetNode(nodeIdx);
 				pNode->mMesh.push_back(meshIdx);
 				pScene->SetNodeTM(nodeIdx, nvmath::cIdentity44f);
-				pNode->mpSurfShader = NULL;
+				pNode->mpSurfShader = KMaterialLibrary::GetInstance()->GetDefaultMaterial();
 
 				ConvertMesh(pmesh.getSchema(), mCurTime, *pMesh);
             }
