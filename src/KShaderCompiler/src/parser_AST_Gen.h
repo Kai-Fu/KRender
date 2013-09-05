@@ -178,7 +178,7 @@ namespace SC {
 		Token mVarName;
 		Exp_ValueEval* mpInitValue;
 		VarType mVarType;
-		int mArrayCnt;  // zero means this variable is not an array
+		int mArrayCnt;  // 0 means this variable is not an array, -1 means it is a pointer to the type(variable length array)
 		const Exp_StructDef* mpStructDef;
 
 	public:
@@ -194,6 +194,7 @@ namespace SC {
 		VarType GetVarType() const;
 		const Exp_StructDef* GetStructDef() const;
 		int GetArrayCnt() const;
+		void MakeIntoArraryPtr();
 	};
 
 	class Exp_StructDef : public CodeDomain
@@ -386,6 +387,7 @@ namespace SC {
 			Exp_ValueEval::TypeInfo typeInfo;
 			bool isByRef;
 			bool needJITPacked;
+			bool isArrayPtr;
 			Token token;
 			Token typeString;
 		};

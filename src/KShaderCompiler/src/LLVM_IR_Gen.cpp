@@ -38,7 +38,16 @@ llvm::Value* Exp_VarDef::GenerateCode(CG_Context* context) const
 	std::string varName = mVarName.ToStdString();
 	llvm::Value* varPtr = context->NewVariable(this, NULL);
 	if (mpInitValue) {
-		llvm::Value* initValue = context->CastValueType(mpInitValue->GenerateCode(context), mpInitValue->GetCachedTypeInfo().type, mVarType);
+
+		llvm::Value* pInitValue = mpInitValue->GenerateCode(context);
+		if (mpInitValue->GetCachedTypeInfo().type == VarType::kBoolean) {
+			llvm::Value* falseValue = Constant::getIntegerValue(SC_INT_TYPE, APInt(sizeof(Int)*8, (uint64_t)0));
+			llvm::Value* trueValue = Constant::getIntegerValue(SC_INT_TYPE, APInt(sizeof(Int)*8, (uint64_t)1));
+			llvm::Value* thisBoolValue = CG_Context::sBuilder.CreateSelect(pInitValue, trueValue, falseValue);
+			pInitValue = thisBoolValue;
+		}
+
+		llvm::Value* initValue = context->CastValueType(pInitValue, mpInitValue->GetCachedTypeInfo().type, mVarType);
 		CG_Context::sBuilder.CreateStore(initValue, varPtr);
 	}
 	return varPtr;

@@ -1423,6 +1423,11 @@ int Exp_VarDef::GetArrayCnt() const
 	return mArrayCnt;
 }
 
+void Exp_VarDef::MakeIntoArraryPtr()
+{
+	mArrayCnt = -1;
+}
+
 RootDomain::RootDomain(CodeDomain* pRefDomain) :
 	CodeDomain(pRefDomain)
 {
@@ -2182,7 +2187,9 @@ Exp_FunctionDecl* Exp_FunctionDecl::Parse(CompilingContext& context, CodeDomain*
 		if (!context.ExpectTypeAndEat(curDomain, argDesc.typeInfo.type, argDesc.typeInfo.pStructDef))
 			return NULL;
 
+		argDesc.needJITPacked = false;
 		argDesc.isByRef = false;
+		argDesc.isArrayPtr = false;
 		if (context.PeekNextToken(0).IsEqual("&") || context.PeekNextToken(0).IsEqual("%")) {
 			argDesc.needJITPacked = context.GetNextToken().IsEqual("&");
 			argDesc.isByRef = true;
@@ -2193,6 +2200,21 @@ Exp_FunctionDecl* Exp_FunctionDecl::Parse(CompilingContext& context, CodeDomain*
 				context.AddErrorMessage(curT, "Function argument redefined.");
 				return NULL;
 			}
+		}
+		// function argument can be of array type, e.g. "float3% var[]". Note it cannot have JIT-Packed directive for arguments of array type.
+		if (context.PeekNextToken(0).IsEqual("[")) {
+			context.GetNextToken(); // eat the "["
+
+			curT = context.GetNextToken();
+			if (!curT.IsEqual("]")) {
+				context.AddErrorMessage(curT, "\"]\" is expected.");
+				return NULL;
+			}
+			if (argDesc.needJITPacked) {
+				context.AddErrorMessage(curT, "Argument of array type cannot be JIT-Packed.");
+				return NULL;
+			}
+			argDesc.isArrayPtr = true;
 		}
 		argDesc.token = argT;
 		argDesc.typeString = argTypeString;
@@ -2234,6 +2256,8 @@ Exp_FunctionDecl* Exp_FunctionDecl::Parse(CompilingContext& context, CodeDomain*
 			Exp_VarDef* pExp = new Exp_VarDef(pFuncDef->mArgments[i].typeInfo.type, pFuncDef->mArgments[i].token, NULL);
 			if (pFuncDef->mArgments[i].typeInfo.type == VarType::kStructure)
 				pExp->SetStructDef(pFuncDef->mArgments[i].typeInfo.pStructDef);
+			if (pFuncDef->mArgments[i].isArrayPtr)
+				pExp->MakeIntoArraryPtr();
 			pFuncDef->AddVarDefExpression(pExp);
 		}
 

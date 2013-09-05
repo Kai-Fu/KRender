@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
 		// The the type info of the second argument
 		KSC_TypeInfo typeInfo = KSC_GetFunctionArgumentType(hFunc, 1);
 		printf("Argument(1) type stirng is %s, size is %d.\n", typeInfo.typeString, KSC_GetStructSize(typeInfo.hStruct));
-		assert(KSC_GetStructHandleByName(typeInfo.typeString, hModule));
+		assert(KSC_GetStructTypeByName(typeInfo.typeString, hModule).hStruct);
 
 		void* tempStruct1 = KSC_AllocMemForType(typeInfo, 1);
 		float* pVar0 = (float*)KSC_GetStructMemberPtr(typeInfo.hStruct, tempStruct1, "var0");

@@ -210,11 +210,19 @@ void CG_Context::ConvertValueToPacked(llvm::Value* srcValue, llvm::Value* destPt
 	}
 	else if (srcType->isArrayTy() || srcType->isStructTy()) {
 
-		llvm::CompositeType* pCompType = dyn_cast<llvm::CompositeType>(srcType);
-		unsigned int Idx = 0;
-		while (1) {
-			if (!pCompType->indexValid(Idx))
-				break;
+		unsigned int idxCnt = 0;
+		if (srcType->isStructTy()) {
+			llvm::StructType* pStructType = dyn_cast<llvm::StructType>(srcType);
+			if (pStructType)
+				idxCnt = pStructType->getNumElements();
+		}
+		else {
+			llvm::ArrayType* pArrayType = dyn_cast<llvm::ArrayType>(srcType);
+			if (pArrayType)
+				idxCnt = pArrayType->getNumElements();
+		}
+
+		for (unsigned int Idx = 0; Idx < idxCnt; ++Idx) {
 
 			llvm::Value* destIdx = Constant::getIntegerValue(SC_INT_TYPE, APInt(sizeof(Int)*8, (uint64_t)Idx));
 			std::vector<llvm::Value*> indices(2);
@@ -281,11 +289,18 @@ llvm::Value* CG_Context::ConvertValueFromPacked(llvm::Value* srcValue, llvm::Typ
 	}
 	else if (destActualType->isStructTy() || destActualType->isArrayTy()) {
 
-		llvm::CompositeType* pCompType = dyn_cast<llvm::CompositeType>(destActualType);
-		unsigned int Idx = 0;
-		while (1) {
-			if (!pCompType->indexValid(Idx))
-				break;
+		unsigned int idxCnt = 0;
+		if (destActualType->isStructTy()) {
+			llvm::StructType* pStructType = dyn_cast<llvm::StructType>(destActualType);
+			if (pStructType)
+				idxCnt = pStructType->getNumElements();
+		}
+		else {
+			llvm::ArrayType* pArrayType = dyn_cast<llvm::ArrayType>(destActualType);
+			if (pArrayType)
+				idxCnt = pArrayType->getNumElements();
+		}
+		for (unsigned int Idx = 0; Idx < idxCnt; ++Idx) {
 
 			llvm::Value* destIdx = Constant::getIntegerValue(SC_INT_TYPE, APInt(sizeof(Int)*8, (uint64_t)Idx));
 			std::vector<llvm::Value*> indices(2);
@@ -300,8 +315,6 @@ llvm::Value* CG_Context::ConvertValueFromPacked(llvm::Value* srcValue, llvm::Typ
 
 			llvm::Value* convertedSrcValue = ConvertValueFromPacked(srcElemValue, destElemPtrType->getElementType());
 			sBuilder.CreateStore(convertedSrcValue, destElemPtr);
-
-			++Idx;
 		}
 
 	}
