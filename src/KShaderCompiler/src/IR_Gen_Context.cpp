@@ -116,7 +116,15 @@ llvm::Type* CG_Context::ConvertToLLVMType(VarType tp)
 	case VarType::kInt8:
 		return VectorType::get(SC_INT_TYPE, 8);
 	case VarType::kBoolean:
-		return SC_INT_TYPE; // Use integer to represent boolean value
+		return SC_BOOL_TYPE;
+	case VarType::kBoolean2:
+		return VectorType::get(SC_BOOL_TYPE, 2);
+	case VarType::kBoolean3:
+		return VectorType::get(SC_BOOL_TYPE, 3);
+	case VarType::kBoolean4:
+		return VectorType::get(SC_BOOL_TYPE, 4);
+	case VarType::kBoolean8:
+		return VectorType::get(SC_BOOL_TYPE, 8);
 	case VarType::kExternType:
 		return llvm::PointerType::get(Type::getInt8Ty(getGlobalContext()), 0);
 	case VarType::kVoid:
@@ -518,22 +526,19 @@ bool RootDomain::CompileToIR(CG_Context* pPredefine, KSC_ModuleDesc& mouduleDesc
 
 llvm::Value* CG_Context::CastValueType(llvm::Value* srcValue, VarType srcType, VarType destType)
 {
-
-	bool srcIorF = !IsFloatType(srcType);
 	int srcElemCnt = TypeElementCnt(srcType);
-	bool destIorF = !IsFloatType(destType);
 	int destElemCnt = TypeElementCnt(destType);
+
+	bool isI2F = IsFloatType(destType) && IsIntegerType(srcType);
+	bool isF2I = IsFloatType(srcType) && IsIntegerType(destType);
+	bool needTypeConvert = isI2F || isF2I;
 
 	if (srcElemCnt == 1 && destElemCnt == 1) {
 		//
 		// For scalar types
 		//
-		if (srcType == VarType::kBoolean && destType == VarType::kBoolean) {
-			return srcValue;
-		}
-
-		if (srcIorF != destIorF) {
-			if (destIorF)
+		if (needTypeConvert) {
+			if (isF2I)
 				return sBuilder.CreateFPToSI(srcValue, SC_INT_TYPE);
 			else
 				return sBuilder.CreateSIToFP(srcValue, SC_FLOAT_TYPE);
@@ -546,14 +551,14 @@ llvm::Value* CG_Context::CastValueType(llvm::Value* srcValue, VarType srcType, V
 		// For vector types of the same element count
 		//
 
-		if (srcIorF != destIorF) {
-			if (destIorF) {
-				llvm::Type* destType = ConvertToLLVMType(MakeType(destIorF, destElemCnt));
-				return sBuilder.CreateFPToSI(srcValue, destType);
+		if (needTypeConvert) {
+			if (isF2I) {
+				llvm::Type* pDestType = ConvertToLLVMType(MakeType(destType, destElemCnt));
+				return sBuilder.CreateFPToSI(srcValue, pDestType);
 			}
 			else {
-				llvm::Type* destType = ConvertToLLVMType(MakeType(destIorF, destElemCnt));
-				return sBuilder.CreateSIToFP(srcValue, destType);
+				llvm::Type* pDestType = ConvertToLLVMType(MakeType(destType, destElemCnt));
+				return sBuilder.CreateSIToFP(srcValue, pDestType);
 			}
 		}
 		else {
@@ -565,19 +570,17 @@ llvm::Value* CG_Context::CastValueType(llvm::Value* srcValue, VarType srcType, V
 		//
 		// For vector types of different element count
 		//
-		llvm::Type* destType = ConvertToLLVMType(MakeType(destIorF, destElemCnt));
+		llvm::Type* pDestType = ConvertToLLVMType(MakeType(destType, destElemCnt));
 		llvm::SmallVector<Constant*, 4> Idxs;
 		for (int i = 0; i < destElemCnt; ++i) 
 			Idxs.push_back(sBuilder.getInt32(i));
 		llvm::Value* truncatedValue = sBuilder.CreateShuffleVector(srcValue, llvm::UndefValue::get(srcValue->getType()), llvm::ConstantVector::get(Idxs));
-		if (srcIorF != destIorF) {
-			if (destIorF) {
-				llvm::Type* destType = ConvertToLLVMType(MakeType(destIorF, destElemCnt));
-				return sBuilder.CreateFPToSI(truncatedValue, destType);
+		if (needTypeConvert) {
+			if (isF2I) {
+				return sBuilder.CreateFPToSI(truncatedValue, pDestType);
 			}
 			else {
-				llvm::Type* destType = ConvertToLLVMType(MakeType(destIorF, destElemCnt));
-				return sBuilder.CreateSIToFP(truncatedValue, destType);
+				return sBuilder.CreateSIToFP(truncatedValue, pDestType);
 			}
 		}
 		else
@@ -587,8 +590,8 @@ llvm::Value* CG_Context::CastValueType(llvm::Value* srcValue, VarType srcType, V
 		//
 		// Perform the "SPLATS"
 		//
-		llvm::Type* destType = ConvertToLLVMType(MakeType(destIorF, destElemCnt));
-		llvm::Value* destValue = llvm::UndefValue::get(destType);
+		llvm::Type* pDestType = ConvertToLLVMType(MakeType(destType, destElemCnt));
+		llvm::Value* destValue = llvm::UndefValue::get(pDestType);
 		for (int i = 0; i < destElemCnt; ++i) {
 			llvm::Value* idx = Constant::getIntegerValue(SC_INT_TYPE, APInt(sizeof(Int)*8, (uint64_t)i));
 			destValue = sBuilder.CreateInsertElement(destValue, srcValue, idx);

@@ -17,6 +17,10 @@ bool IsBuiltInType(VarType type)
 	case kInt4:
 	case kInt8:
 	case kBoolean:
+	case kBoolean2:
+	case kBoolean3:
+	case kBoolean4:
+	case kBoolean8:
 		return true;
 	}
 	return false;
@@ -38,17 +42,24 @@ bool IsFloatType(VarType type)
 bool IsIntegerType(VarType type)
 {
 	switch (type) {
-	case kFloat:
-	case kFloat2:
-	case kFloat3:
-	case kFloat4:
-	case kFloat8:
-		return false;
 	case kInt:
 	case kInt2:
 	case kInt3:
 	case kInt4:
 	case kInt8:
+		return true;
+	}
+	return false;
+}
+
+bool IsBooleanType(VarType type)
+{
+	switch (type) {
+	case kBoolean:
+	case kBoolean2:
+	case kBoolean3:
+	case kBoolean4:
+	case kBoolean8:
 		return true;
 	}
 	return false;
@@ -68,7 +79,12 @@ bool IsValueType(VarType type)
 	case kInt3:
 	case kInt4:
 	case kInt8:
+
 	case kBoolean:
+	case kBoolean2:
+	case kBoolean3:
+	case kBoolean4:
+	case kBoolean8:
 		return true;
 	}
 	return false;
@@ -99,6 +115,14 @@ int TypeElementCnt(VarType type)
 		return 8;
 	case kBoolean:
 		return 1;
+	case kBoolean2:
+		return 2;
+	case kBoolean3:
+		return 3;
+	case kBoolean4:
+		return 4;
+	case kBoolean8:
+		return 8;
 	case kVoid:
 		return 0;
 	}
@@ -128,22 +152,37 @@ int TypeSize(VarType type)
 		return 4*sizeof(Int);
 	case kInt8:
 		return 8*sizeof(Int);
-	case kBoolean:
-		return sizeof(Int);
 	case kExternType:
 		return sizeof(void*);
 	}
 	return 0;
 }
 
-VarType MakeType(bool I_or_F, int elemCnt)
+VarType MakeType(VarType baseType, int elemCnt)
 {
-	if (I_or_F) {
-		return VarType(VarType::kInt + elemCnt - 1);
-	}
-	else {
+	switch (baseType) {
+	case kFloat:
+	case kFloat2:
+	case kFloat3:
+	case kFloat4:
+	case kFloat8:
 		return VarType(VarType::kFloat + elemCnt - 1);
+	case kInt:
+	case kInt2:
+	case kInt3:
+	case kInt4:
+	case kInt8:
+		return VarType(VarType::kInt + elemCnt - 1);
+	case kBoolean:
+	case kBoolean2:
+	case kBoolean3:
+	case kBoolean4:
+	case kBoolean8:
+		return VarType(VarType::kBoolean + elemCnt - 1);
 	}
+
+	assert(0);
+	return VarType::kInvalid;
 }
 
 int ConvertSwizzle(const char* swizzleStr, int swizzleIdx[4])
@@ -185,9 +224,6 @@ bool IsTypeCompatible(VarType dest, VarType from, bool& FtoIwarning)
 	bool destIsI = false;
 	FtoIwarning = false;
 
-	if (dest == VarType::kBoolean && from == VarType::kBoolean)
-		return true;
-
 	if (dest == VarType::kExternType && from == VarType::kExternType)
 		return true;
 
@@ -203,10 +239,16 @@ bool IsTypeCompatible(VarType dest, VarType from, bool& FtoIwarning)
 	case kFloat3:
 	case kFloat4:
 	case kFloat8:
+
+	case kBoolean:
+	case kBoolean2:
+	case kBoolean3:
+	case kBoolean4:
+	case kBoolean8:
 		ret = TypeElementCnt(dest) <= TypeElementCnt(from);
 	}
 
-	if (destIsI && !IsIntegerType(from))
+	if (destIsI && IsFloatType(from))
 		FtoIwarning = true;
 
 	return ret;

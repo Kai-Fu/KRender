@@ -40,12 +40,6 @@ llvm::Value* Exp_VarDef::GenerateCode(CG_Context* context) const
 	if (mpInitValue) {
 
 		llvm::Value* pInitValue = mpInitValue->GenerateCode(context);
-		if (mpInitValue->GetCachedTypeInfo().type == VarType::kBoolean) {
-			llvm::Value* falseValue = Constant::getIntegerValue(SC_INT_TYPE, APInt(sizeof(Int)*8, (uint64_t)0));
-			llvm::Value* trueValue = Constant::getIntegerValue(SC_INT_TYPE, APInt(sizeof(Int)*8, (uint64_t)1));
-			llvm::Value* thisBoolValue = CG_Context::sBuilder.CreateSelect(pInitValue, trueValue, falseValue);
-			pInitValue = thisBoolValue;
-		}
 
 		llvm::Value* initValue = context->CastValueType(pInitValue, mpInitValue->GetCachedTypeInfo().type, mVarType);
 		CG_Context::sBuilder.CreateStore(initValue, varPtr);
@@ -66,13 +60,7 @@ llvm::Value* Exp_TrueOrFalse::GenerateCode(CG_Context* context) const
 
 llvm::Value* Exp_VariableRef::GenerateCode(CG_Context* context) const
 {
-	if (mpDef->GetVarType() == VarType::kBoolean) {
-		llvm::Value* intValue = context->GetVariableValue(mVariable.ToStdString(), true);
-		llvm::Value* falseValue = Constant::getIntegerValue(SC_INT_TYPE, APInt(sizeof(Int)*8, (uint64_t)0));
-		return CG_Context::sBuilder.CreateICmpNE(intValue, falseValue);
-	}
-	else
-		return context->GetVariableValue(mVariable.ToStdString(), true);
+	return context->GetVariableValue(mVariable.ToStdString(), true);
 }
 
 llvm::Value* Exp_UnaryOp::GenerateCode(CG_Context* context) const
@@ -95,14 +83,7 @@ llvm::Value* Exp_UnaryOp::GenerateCode(CG_Context* context) const
 void Exp_VariableRef::GenerateAssignCode(CG_Context* context, llvm::Value* pValue) const
 {
 	llvm::Value* varPtr = context->GetVariablePtr(mpDef->GetVarName().ToStdString(), true);
-	if (mpDef->GetVarType() == VarType::kBoolean) {
-		llvm::Value* falseValue = Constant::getIntegerValue(SC_INT_TYPE, APInt(sizeof(Int)*8, (uint64_t)0));
-		llvm::Value* trueValue = Constant::getIntegerValue(SC_INT_TYPE, APInt(sizeof(Int)*8, (uint64_t)1));
-		llvm::Value* thisBoolValue = CG_Context::sBuilder.CreateSelect(pValue, trueValue, falseValue);
-		CG_Context::sBuilder.CreateStore(thisBoolValue, varPtr);
-	}
-	else
-		CG_Context::sBuilder.CreateStore(pValue, varPtr);
+	CG_Context::sBuilder.CreateStore(pValue, varPtr);
 }
 
 
@@ -262,14 +243,7 @@ void Exp_DotOp::GenerateAssignCode(CG_Context* context, llvm::Value* pValue) con
 	Exp_ValueEval::ValuePtrInfo valuePtrInfo = GetValuePtr(context);
 	assert(valuePtrInfo.valuePtr);
 	if (!valuePtrInfo.belongToVector) {
-		if (GetCachedTypeInfo().type == VarType::kBoolean) {
-			llvm::Value* falseValue = Constant::getIntegerValue(SC_INT_TYPE, APInt(sizeof(Int)*8, (uint64_t)0));
-			llvm::Value* trueValue = Constant::getIntegerValue(SC_INT_TYPE, APInt(sizeof(Int)*8, (uint64_t)1));
-			llvm::Value* intValue = CG_Context::sBuilder.CreateSelect(pValue, trueValue, falseValue);
-			CG_Context::sBuilder.CreateStore(intValue, valuePtrInfo.valuePtr);
-		}
-		else
-			CG_Context::sBuilder.CreateStore(pValue, valuePtrInfo.valuePtr);
+		CG_Context::sBuilder.CreateStore(pValue, valuePtrInfo.valuePtr);
 	}
 	else {
 		llvm::Value* idx = Constant::getIntegerValue(SC_INT_TYPE, APInt(sizeof(Int)*8, (uint64_t)valuePtrInfo.vecElemIdx));
@@ -476,7 +450,7 @@ llvm::Value* Exp_If::GenerateCode(CG_Context* context) const
 		if (mpCondValue->GetCachedTypeInfo().type == VarType::kFloat) {
 			condValue = CG_Context::sBuilder.CreateFCmpONE(condValue, ConstantFP::get(getGlobalContext(), APFloat(0.0f)));
 		}
-		else if (mpCondValue->GetCachedTypeInfo().type == VarType::kInt || mpCondValue->GetCachedTypeInfo().type == VarType::kBoolean) {
+		else if (mpCondValue->GetCachedTypeInfo().type == VarType::kInt) {
 			condValue = CG_Context::sBuilder.CreateICmpNE(condValue, Constant::getIntegerValue(SC_INT_TYPE, APInt(sizeof(Int)*8, (uint64_t)0, true)));
 		}
 		else if (mpCondValue->GetCachedTypeInfo().type == VarType::kExternType) {

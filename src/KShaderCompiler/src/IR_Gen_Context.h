@@ -26,6 +26,7 @@ using namespace llvm;
 #endif
 
 #define SC_INT_TYPE Type::getInt32Ty(getGlobalContext())
+#define SC_BOOL_TYPE Type::getInt1Ty(getGlobalContext())
 
 namespace SC {
 

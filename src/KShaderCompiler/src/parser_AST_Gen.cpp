@@ -33,7 +33,11 @@ void Initialize_AST_Gen()
 	s_BuiltInTypes["int4"] = TypeDesc(kInt4, 4, true);
 	s_BuiltInTypes["int8"] = TypeDesc(kInt8, 8, true);
 
-	s_BuiltInTypes["bool"] = TypeDesc(kBoolean, 4, true);
+	s_BuiltInTypes["bool"] = TypeDesc(kBoolean, 1, true);
+	s_BuiltInTypes["bool2"] = TypeDesc(kBoolean2, 2, true);
+	s_BuiltInTypes["bool3"] = TypeDesc(kBoolean3, 3, true);
+	s_BuiltInTypes["bool4"] = TypeDesc(kBoolean4, 4, true);
+	s_BuiltInTypes["bool8"] = TypeDesc(kBoolean8, 8, true);
 	s_BuiltInTypes["void"] = TypeDesc(kVoid, 0, true);
 
 	s_KeyWords["struct"] = kStructDef;
@@ -1853,7 +1857,7 @@ bool Exp_UnaryOp::CheckSemantic(TypeInfo& outType, std::string& errMsg, std::vec
 		return false;
 	}
 
-	if (mOpType == "!" && outType.type != VarType::kBoolean) {
+	if (mOpType == "!" && IsBooleanType(outType.type)) {
 		errMsg = "\"!\" must be followed with boolean expression.";
 		return false;
 	}
@@ -1929,21 +1933,21 @@ bool Exp_BinaryOp::CheckSemantic(TypeInfo& outType, std::string& errMsg, std::ve
 		}
 		else {
 			// "greater than" or "less than" operators can only be performed on numerical scalar values
-			if (leftType.type == VarType::kBoolean || rightType.type == VarType::kBoolean) {
+			if (IsBooleanType(leftType.type) || IsBooleanType(rightType.type)) {
 				errMsg = mOperator;
 				errMsg += " operator cannot be performed with boolean values.";
 				return false;
 			}
 
-			if (TypeElementCnt(leftType.type) > 1 || TypeElementCnt(rightType.type) > 1) {
+			if (TypeElementCnt(leftType.type) > TypeElementCnt(rightType.type)) {
 				errMsg = mOperator;
-				errMsg += " operator can only be performed on scalar values.";
+				errMsg += " Cannot do comparison with right argument of less elements.";
 				return false;
 			}
 		}
 
 		outType.pStructDef = NULL;
-		outType.type = VarType::kBoolean;
+		outType.type = MakeType(VarType::kBoolean, TypeElementCnt(leftType.type));
 		outType.arraySize = 0;
 		outType.assignable = false;
 		mCachedTypeInfo = outType;
@@ -1976,7 +1980,7 @@ bool Exp_BinaryOp::CheckSemantic(TypeInfo& outType, std::string& errMsg, std::ve
 		}
 
 		if (isArithmetric) {
-			if (leftType.type == VarType::kBoolean || rightType.type == VarType::kBoolean) {
+			if (IsBooleanType(leftType.type) || IsBooleanType(rightType.type)) {
 				errMsg = "Cannot do binary operation with boolean values.";
 				return false;
 			}
@@ -1998,12 +2002,12 @@ bool Exp_BinaryOp::CheckSemantic(TypeInfo& outType, std::string& errMsg, std::ve
 	}
 	
 	if (isLogicOp) {
-		if (leftType.type != VarType::kBoolean || rightType.type != VarType::kBoolean) {
+		if (!IsBooleanType(leftType.type) || !IsBooleanType(rightType.type)) {
 			errMsg = "Cannot do logic operation with non-boolean types.";
 			return false;
 		}
 		else {
-			outType.type = VarType::kBoolean;
+			outType.type = MakeType(VarType::kBoolean, TypeElementCnt(leftType.type));
 			outType.pStructDef = NULL;
 			outType.arraySize = 0;
 			outType.assignable = false;
@@ -2071,7 +2075,7 @@ bool Exp_DotOp::CheckSemantic(TypeInfo& outType, std::string& errMsg, std::vecto
 			}
 		}
 
-		outType.type = MakeType(IsIntegerType(parentType.type), elemCnt);
+		outType.type = MakeType(parentType.type, elemCnt);
 		outType.pStructDef = NULL;
 		outType.arraySize = 0;
 		outType.assignable = (parentType.assignable && elemCnt == 1) ? true : false;

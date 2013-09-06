@@ -22,5 +22,10 @@ int PFN_RW_Structure(TestStructure& arg, TestStructure% arg1, float3% arg3_array
 
 void DotProductFloat8(float8% arg0, float8% arg1, float8% outArg) 
 {
+	bool myB = true;
+	bool4 myB1 = float4(1,2,3,4) > float4(2,1,3,4);
+	bool4 myB2 = float4(1,2,3,4) > float4(2,1,4,3);
+	myB1 = myB1 && myB2;
+	myB1.y = myB;
 	outArg = arg0 * arg1 * 0.5 + 0.7;
 }

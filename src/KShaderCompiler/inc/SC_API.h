@@ -59,6 +59,10 @@ namespace SC {
 		kInt8 = kInt4 + 4,
 
 		kBoolean,
+		kBoolean2,
+		kBoolean3,
+		kBoolean4,
+		kBoolean8 = kBoolean4 + 4,
 
 		kStructure,
 		kVoid,
