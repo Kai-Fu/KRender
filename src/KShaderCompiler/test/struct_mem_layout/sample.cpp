@@ -8,8 +8,10 @@
 
 struct TestStructure
 {
-	float var0[4];  // float3
-	int var1[2]; // int2
+	SC::Float var0[4];
+	SC::Int var1[2];
+	SC::Boolean var3;
+	SC::Boolean var4[2];
 };
 
 int main(int argc, char* argv[])

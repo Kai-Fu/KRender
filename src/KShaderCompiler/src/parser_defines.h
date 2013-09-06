@@ -16,7 +16,7 @@ namespace SC {
 	bool IsBooleanType(VarType type);
 	bool IsValueType(VarType type);
 	int TypeElementCnt(VarType type);
-	int TypeSize(VarType type);
+	int TypePackedSize(VarType type);
 	VarType MakeType(VarType baseType, int elemCnt);
 	int ConvertSwizzle(const char* swizzleStr, int swizzleIdx[4]);
 	bool IsTypeCompatible(VarType dest, VarType from, bool& FtoIwarning);

@@ -2,8 +2,10 @@
 
 struct TestStructure
 {
-	float4 var0;  // float3
-	int2 var1; // int2
+	float4 var0;
+	int2 var1;
+	bool var3;
+	bool2 var4;
 };
 
 int PFN_RW_Structure(TestStructure& arg, TestStructure% arg1, float3% arg3_array[]) 
@@ -17,6 +19,11 @@ int PFN_RW_Structure(TestStructure& arg, TestStructure% arg1, float3% arg3_array
 	arg3_array[3] = float3(2,3,4);
 	float2 tmpArray[12];
 	tmpArray[5] = float2(4,5);
+	
+	arg.var3 = true;
+	arg.var4.x = false;
+	arg.var4.y = true;
+	
 	return 123;
 }
 

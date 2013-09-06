@@ -161,6 +161,8 @@ llvm::Type* CG_Context::ConvertToPackedType(llvm::Type* srcType)
 		llvm::VectorType* vType = dyn_cast<llvm::VectorType>(srcActualType);
 		llvm::Type* elemType = vType->getElementType();
 		unsigned int elemCnt = vType->getNumElements();
+		if (elemType == SC_BOOL_TYPE) 
+			elemType = SC_INT_TYPE;
 		destType = llvm::ArrayType::get(elemType, elemCnt);
 	}
 	else if (srcActualType->isStructTy()) {
@@ -208,6 +210,11 @@ void CG_Context::ConvertValueToPacked(llvm::Value* srcValue, llvm::Value* destPt
 		for (unsigned int i = 0; i < vType->getNumElements(); ++i) {
 			llvm::Value* idx = Constant::getIntegerValue(SC_INT_TYPE, APInt(sizeof(Int)*8, (uint64_t)i));
 			llvm::Value* elemValue = sBuilder.CreateExtractElement(srcActualValue, idx);
+			if (vType->getElementType() == SC_BOOL_TYPE) {
+				elemValue = CG_Context::sBuilder.CreateSelect(elemValue, 
+					Constant::getIntegerValue(SC_INT_TYPE, APInt(sizeof(Int)*8, (uint64_t)1, true)),
+					Constant::getIntegerValue(SC_INT_TYPE, APInt(sizeof(Int)*8, (uint64_t)0, true)));
+			}
 			std::vector<llvm::Value*> indices(2);
 			indices[1] = idx;
 			indices[0] = Constant::getIntegerValue(SC_INT_TYPE, APInt(sizeof(Int)*8, (uint64_t)0));
@@ -278,6 +285,7 @@ llvm::Value* CG_Context::ConvertValueFromPacked(llvm::Value* srcValue, llvm::Typ
 
 		llvm::Value* newVecValue = llvm::UndefValue::get(destActualType);
 		llvm::VectorType* vType = dyn_cast<llvm::VectorType>(destActualType);
+		llvm::Type* elemType = vType->getElementType();
 		assert(vType);
 		assert(srcType->isArrayTy());
 		for (unsigned int i = 0; i < vType->getNumElements(); ++i) {
@@ -289,7 +297,9 @@ llvm::Value* CG_Context::ConvertValueFromPacked(llvm::Value* srcValue, llvm::Typ
 			std::vector<unsigned int> srcIdx(1);
 			srcIdx[0] = i;
 			llvm::Value* elemValue = sBuilder.CreateExtractValue(srcActualValue, srcIdx);
-
+			if (elemType == SC_BOOL_TYPE) {
+				elemValue = sBuilder.CreateICmpNE(elemValue, Constant::getIntegerValue(SC_INT_TYPE, APInt(sizeof(Int)*8, (uint64_t)0, true)));
+			}
 			newVecValue = sBuilder.CreateInsertElement(newVecValue, elemValue, idx);
 			
 		}
@@ -355,7 +365,7 @@ llvm::Function* CG_Context::CreateFunctionWithPackedArguments(const KSC_Function
 	sBuilder.SetInsertPoint(BB);
 
 	std::vector<llvm::Value*> args;
-	// Convert the non-packed arguments to packed ones
+	// Convert the packed arguments to non-packed ones
 	//
 	Idx = 0;
 	for (Function::arg_iterator AI = wrapperF->arg_begin(); AI != wrapperF->arg_end(); ++AI, ++Idx) {
@@ -364,7 +374,7 @@ llvm::Function* CG_Context::CreateFunctionWithPackedArguments(const KSC_Function
 	// Invoke the target function
 	//
 	llvm::Value* retValue = sBuilder.CreateCall(fDesc.F, args);
-	// Convert back the packed arguments to non-packed ones(if they're passed-by-reference)
+	// Convert back the non-packed arguments to packed ones(if they're passed-by-reference)
 	//
 	Idx = 0;
 	for (Function::arg_iterator wrapperAI = wrapperF->arg_begin(); wrapperAI != wrapperF->arg_end(); ++wrapperAI, ++Idx) {

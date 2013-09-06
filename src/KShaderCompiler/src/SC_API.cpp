@@ -374,7 +374,7 @@ void KSC_FreeMem(void* pData)
 int KSC_GetTypePackedSize(const KSC_TypeInfo& typeInfo)
 {
 	if (typeInfo.hStruct == NULL) {
-		return SC::TypeSize(typeInfo.type);
+		return SC::TypePackedSize(typeInfo.type);
 	}
 	else {
 		KSC_StructDesc* pStructDesc = (KSC_StructDesc*)typeInfo.hStruct;
@@ -384,7 +384,7 @@ int KSC_GetTypePackedSize(const KSC_TypeInfo& typeInfo)
 		std::vector<KSC_TypeInfo>::iterator it = pStructDesc->begin();
 		for (; it != pStructDesc->end(); ++it) {
 			if (it->hStruct == NULL) {
-				packedSize += SC::TypeSize(it->type);
+				packedSize += SC::TypePackedSize(it->type);
 			}
 			else {
 				packedSize += KSC_GetTypePackedSize(*it);

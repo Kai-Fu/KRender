@@ -129,7 +129,7 @@ int TypeElementCnt(VarType type)
 	return 0;
 }
 
-int TypeSize(VarType type)
+int TypePackedSize(VarType type)
 {
 	switch (type) {
 	case kFloat:
@@ -142,15 +142,20 @@ int TypeSize(VarType type)
 		return 4*sizeof(Float);
 	case kFloat8:
 		return 8*sizeof(Float);
+	case kBoolean:
 	case kInt:
 		return 1*sizeof(Int);
+	case kBoolean2:
 	case kInt2:
 		return 2*sizeof(Int);
+	case kBoolean3:
 	case kInt3:
 		return 3*sizeof(Int);
+	case kBoolean4:
 	case kInt4:
 		return 4*sizeof(Int);
 	case kInt8:
+	case kBoolean8:
 		return 8*sizeof(Int);
 	case kExternType:
 		return sizeof(void*);
