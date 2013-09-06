@@ -45,11 +45,11 @@ int main(int argc, char* argv[])
 			return -1;
 		}
 
-		typedef int (*PFN_RW_Structure)(TestStructure* arg, void* arg1);
+		typedef int (*PFN_RW_Structure)(TestStructure* arg, void* arg1, void* arg3_array);
 		
 		TestStructure tempStruct;
 		FunctionHandle hFunc = KSC_GetFunctionHandleByName("PFN_RW_Structure", hModule);
-		assert(KSC_GetFunctionArgumentCount(hFunc) == 2);
+		assert(KSC_GetFunctionArgumentCount(hFunc) == 3);
 
 		// The the type info of the second argument
 		KSC_TypeInfo typeInfo = KSC_GetFunctionArgumentType(hFunc, 1);
@@ -66,8 +66,11 @@ int main(int argc, char* argv[])
 		pVar1[0] = 6;
 		pVar1[1] = 7;
 
+		typeInfo = KSC_GetFunctionArgumentType(hFunc, 2);
+		void* tempArray = KSC_AllocMemForType(typeInfo, 10);
+
 		PFN_RW_Structure RW_Structure = (PFN_RW_Structure)KSC_GetFunctionPtr(hFunc);
-		int ret = RW_Structure(&tempStruct, tempStruct1);
+		int ret = RW_Structure(&tempStruct, tempStruct1, tempArray);
 		assert(ret == 123);
 
 		{
@@ -87,7 +90,7 @@ int main(int argc, char* argv[])
 			}
 
 			PFN_DotProductFloat8 DotProductFloat8 = (PFN_DotProductFloat8)KSC_GetFunctionPtr(hFunc);
-			DotProductFloat8(arg0, arg1, arg2);
+			DotProductFloat8(arg0, arg1, tempArray);
 			printf("Test finished.\n");
 		}
 	}

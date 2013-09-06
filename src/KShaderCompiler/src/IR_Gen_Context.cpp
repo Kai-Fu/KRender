@@ -565,8 +565,6 @@ llvm::Value* CG_Context::CastValueType(llvm::Value* srcValue, VarType srcType, V
 		//
 		// For vector types of different element count
 		//
-
-		llvm::Value* destValue = NULL;
 		llvm::Type* destType = ConvertToLLVMType(MakeType(destIorF, destElemCnt));
 		llvm::SmallVector<Constant*, 4> Idxs;
 		for (int i = 0; i < destElemCnt; ++i) 
@@ -584,6 +582,18 @@ llvm::Value* CG_Context::CastValueType(llvm::Value* srcValue, VarType srcType, V
 		}
 		else
 			return truncatedValue;
+	}
+	else if (srcElemCnt == 1 && destElemCnt > 1) {
+		//
+		// Perform the "SPLATS"
+		//
+		llvm::Type* destType = ConvertToLLVMType(MakeType(destIorF, destElemCnt));
+		llvm::Value* destValue = llvm::UndefValue::get(destType);
+		for (int i = 0; i < destElemCnt; ++i) {
+			llvm::Value* idx = Constant::getIntegerValue(SC_INT_TYPE, APInt(sizeof(Int)*8, (uint64_t)i));
+			destValue = sBuilder.CreateInsertElement(destValue, srcValue, idx);
+		}
+		return destValue;
 	}
 	else
 		return srcValue;

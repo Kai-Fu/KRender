@@ -50,13 +50,13 @@ namespace SC {
 		kFloat2,
 		kFloat3,
 		kFloat4,
-		kFloat8,
+		kFloat8 = kFloat4 + 4,
 
 		kInt,
 		kInt2,
 		kInt3,
 		kInt4,
-		kInt8,
+		kInt8 = kInt4 + 4,
 
 		kBoolean,
 

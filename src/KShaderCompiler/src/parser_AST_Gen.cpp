@@ -2216,6 +2216,11 @@ Exp_FunctionDecl* Exp_FunctionDecl::Parse(CompilingContext& context, CodeDomain*
 				context.AddErrorMessage(curT, "\"]\" is expected.");
 				return NULL;
 			}
+			if (!argDesc.isByRef) {
+				context.AddErrorMessage(curT, "Argument of array type must be passed by reference.");
+				return NULL;
+			}
+
 			if (argDesc.needJITPacked) {
 				context.AddErrorMessage(curT, "Argument of array type cannot be JIT-Packed.");
 				return NULL;
@@ -2396,6 +2401,7 @@ Exp_ValueEval::ValuePtrInfo Exp_ValueEval::GetValuePtr(CG_Context* context) cons
 {
 	ValuePtrInfo ptrInfo;
 	ptrInfo.belongToVector = false;
+	ptrInfo.isFixedArray = false;
 	ptrInfo.valuePtr = NULL;
 	ptrInfo.vecElemIdx = -1;
 	return ptrInfo;

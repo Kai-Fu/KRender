@@ -238,6 +238,7 @@ namespace SC {
 		struct ValuePtrInfo {
 			llvm::Value* valuePtr;
 			bool belongToVector;
+			bool isFixedArray;
 			int vecElemIdx;
 		};
 

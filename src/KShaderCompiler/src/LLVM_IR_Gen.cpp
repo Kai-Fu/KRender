@@ -289,6 +289,7 @@ Exp_ValueEval::ValuePtrInfo Exp_DotOp::GetValuePtr(CG_Context* context) const
 	retValuePtr.vecElemIdx = -1;
 	retValuePtr.valuePtr = NULL;
 	retValuePtr.belongToVector = false;
+	retValuePtr.isFixedArray = false;
 
 	if (parentPtrInfo.valuePtr != NULL && parentPtrInfo.vecElemIdx == -1) {
 		
@@ -399,6 +400,8 @@ Exp_ValueEval::ValuePtrInfo Exp_VariableRef::GetValuePtr(CG_Context* context) co
 {
 	Exp_ValueEval::ValuePtrInfo retValuePtr;
 	retValuePtr.belongToVector = false;
+	retValuePtr.isFixedArray = mpDef->GetArrayCnt() > 0 ? true : false;
+
 	retValuePtr.valuePtr = context->GetVariablePtr(mpDef->GetVarName().ToStdString(), true);
 	retValuePtr.vecElemIdx = -1;
 	return retValuePtr;
@@ -416,13 +419,21 @@ Exp_ValueEval::ValuePtrInfo Exp_Indexer::GetValuePtr(CG_Context* context) const
 	Exp_ValueEval::ValuePtrInfo retValuePtr;
 	retValuePtr.vecElemIdx = -1;
 	retValuePtr.belongToVector = false;
+	retValuePtr.isFixedArray = false;
 	llvm::Value* idx = mpIndex->GenerateCode(context);
 	Exp_ValueEval::ValuePtrInfo parentPtrInfo = mpExp->GetValuePtr(context);
 	assert(parentPtrInfo.valuePtr != NULL && parentPtrInfo.belongToVector == false);
 
-	std::vector<llvm::Value*> indices(2);
-	indices[1] = idx;
-	indices[0] = Constant::getIntegerValue(SC_INT_TYPE, APInt(sizeof(Int)*8, (uint64_t)0));
+
+	std::vector<llvm::Value*> indices(1);
+	
+	if (parentPtrInfo.isFixedArray) {
+		indices[0] = Constant::getIntegerValue(SC_INT_TYPE, APInt(sizeof(Int)*8, (uint64_t)0));
+		indices.push_back(idx);
+	}
+	else
+		indices[0] = idx;
+
 	retValuePtr.valuePtr = CG_Context::sBuilder.CreateGEP(parentPtrInfo.valuePtr, indices);
 	return retValuePtr;
 }
