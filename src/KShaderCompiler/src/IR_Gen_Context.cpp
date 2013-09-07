@@ -212,8 +212,8 @@ void CG_Context::ConvertValueToPacked(llvm::Value* srcValue, llvm::Value* destPt
 			llvm::Value* elemValue = sBuilder.CreateExtractElement(srcActualValue, idx);
 			if (vType->getElementType() == SC_BOOL_TYPE) {
 				elemValue = CG_Context::sBuilder.CreateSelect(elemValue, 
-					Constant::getIntegerValue(SC_INT_TYPE, APInt(sizeof(Int)*8, (uint64_t)1, true)),
-					Constant::getIntegerValue(SC_INT_TYPE, APInt(sizeof(Int)*8, (uint64_t)0, true)));
+					Constant::getIntegerValue(SC_INT_TYPE, APInt(1, (uint64_t)1, true)),
+					Constant::getIntegerValue(SC_INT_TYPE, APInt(1, (uint64_t)0, true)));
 			}
 			std::vector<llvm::Value*> indices(2);
 			indices[1] = idx;
@@ -256,6 +256,11 @@ void CG_Context::ConvertValueToPacked(llvm::Value* srcValue, llvm::Value* destPt
 
 	}
 	else {
+		if (srcType == SC_BOOL_TYPE) {
+			srcActualValue = CG_Context::sBuilder.CreateSelect(srcActualValue, 
+				Constant::getIntegerValue(SC_INT_TYPE, APInt(1, (uint64_t)1, true)),
+				Constant::getIntegerValue(SC_INT_TYPE, APInt(1, (uint64_t)0, true)));
+		}
 		sBuilder.CreateStore(srcActualValue, destValuePtr);
 	}
 }
@@ -337,6 +342,9 @@ llvm::Value* CG_Context::ConvertValueFromPacked(llvm::Value* srcValue, llvm::Typ
 
 	}
 	else {
+		if (srcType == SC_BOOL_TYPE) {
+			srcActualValue = sBuilder.CreateICmpNE(srcActualValue, Constant::getIntegerValue(SC_INT_TYPE, APInt(sizeof(Int)*8, (uint64_t)0, true)));
+		}
 		sBuilder.CreateStore(srcActualValue, destValuePtr);
 	}
 
