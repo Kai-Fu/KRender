@@ -178,8 +178,12 @@ llvm::Type* CG_Context::ConvertToPackedType(llvm::Type* srcType)
 		llvm::Type* newElemType = ConvertToPackedType(arrayType->getElementType());
 		destType = llvm::ArrayType::get(newElemType, arrayType->getNumElements());
 	}
-	else
-		destType = srcActualType;
+	else {
+		if (srcActualType == SC_BOOL_TYPE) 
+			return SC_INT_TYPE;
+		else
+			destType = srcActualType;
+	}
 
 	if (srcType->isPointerTy()) {
 		return llvm::PointerType::get(destType, 0);

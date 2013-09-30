@@ -25,6 +25,7 @@ add_subdirectory( test/for_expression )
 add_subdirectory( test/basic_expressions )
 add_subdirectory( test/generic_tests )
 add_subdirectory( test/struct_mem_layout )
+add_subdirectory( test/ray_tri_test )
 
 
 

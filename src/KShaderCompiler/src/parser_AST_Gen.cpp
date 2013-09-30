@@ -2688,7 +2688,8 @@ Exp_For* Exp_For::Parse(CompilingContext& context, CodeDomain* curDomain)
 	}
 	assert(result->mStartStepCond->GetExpressionCnt() == 1);
 	
-	context.GetNextToken(); // Eat the ending ";"
+	if (context.PeekNextToken(0).IsEqual(";"))
+		context.GetNextToken(); // Eat the ending ";"
 	// Parse continuing condition expression
 	Exp_ValueEval* condValue = context.ParseComplexExpression(result->mStartStepCond, ";");
 	if (condValue == NULL) {

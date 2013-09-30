@@ -137,23 +137,26 @@ static void vcross(float v[3], float a[3], float b[3])
 
 void RayIntersectStaticTriArray(const float* ray_org, const float* ray_dir, const float* tri_pos, float* tuv, unsigned int cnt)
 {
-	const float* cur_tri = tri_pos;
-	float* cur_tuv = tuv;
-	for (unsigned int tri_i = 0; tri_i < cnt; ++tri_i, cur_tri += 9, cur_tuv += 3) {
+	int pos_idx = 0;
+	int tuv_idx = 0;
+	for (unsigned int tri_i = 0; tri_i < cnt; ++tri_i) {
 
-		cur_tuv[0] = FLT_MAX;
+		pos_idx = tri_i * 9;
+		tuv_idx = tri_i * 3;
+		tuv[tuv_idx+0] = FLT_MAX;
+		bool is_valid = true;
 		float edge1[3], edge2[3], tvec[3], pvec[3], qvec[3], nface[3];
 		float det,inv_det;
 
 		/* find vectors for two edges sharing vert0 */
 		//SUB(edge1, vert1, vert0);
-		edge1[0] = cur_tri[3] - cur_tri[0];
-		edge1[1] = cur_tri[4] - cur_tri[1];
-		edge1[2] = cur_tri[5] - cur_tri[2];
+		edge1[0] = tri_pos[pos_idx+3] - tri_pos[pos_idx+0];
+		edge1[1] = tri_pos[pos_idx+4] - tri_pos[pos_idx+1];
+		edge1[2] = tri_pos[pos_idx+5] - tri_pos[pos_idx+2];
 		//SUB(edge2, vert2, vert0);
-		edge2[0] = cur_tri[6] - cur_tri[0];
-		edge2[1] = cur_tri[7] - cur_tri[1];
-		edge2[2] = cur_tri[8] - cur_tri[2];
+		edge2[0] = tri_pos[pos_idx+6] - tri_pos[pos_idx+0];
+		edge2[1] = tri_pos[pos_idx+7] - tri_pos[pos_idx+1];
+		edge2[2] = tri_pos[pos_idx+8] - tri_pos[pos_idx+2];
 
 		/* begin calculating determinant - also used to calculate U parameter */
 		//CROSS(pvec, dir, edge2);
@@ -167,27 +170,27 @@ void RayIntersectStaticTriArray(const float* ray_org, const float* ray_dir, cons
 
 		float dot_nd = nface[0]*ray_dir[0] + nface[1]*ray_dir[1] + nface[2]*ray_dir[2];
 		if (dot_nd > 0)
-			continue; // Backward face, ignore it
+			is_valid = false; // Backward face, ignore it
 
 		/* if determinant is near zero, ray lies in plane of triangle */
 		//det = DOT(edge1, pvec);
 		det = edge1[0]*pvec[0] + edge1[1]*pvec[1] + edge1[2]*pvec[2];
 
 		if (det > -EPSILON && det < EPSILON)
-			continue;
+			is_valid = false;
 		inv_det = 1.0f / det;
 
 		/* calculate distance from vert0 to ray origin */
 		//SUB(tvec, orig, vert0);
-		tvec[0] = ray_org[0] - cur_tri[0];
-		tvec[1] = ray_org[1] - cur_tri[1];
-		tvec[2] = ray_org[2] - cur_tri[2];
+		tvec[0] = ray_org[0] - tri_pos[pos_idx+0];
+		tvec[1] = ray_org[1] - tri_pos[pos_idx+1];
+		tvec[2] = ray_org[2] - tri_pos[pos_idx+2];
 
 		/* calculate U parameter and test bounds */
 		//*u = DOT(tvec, pvec) * inv_det;
-		cur_tuv[1] = (tvec[0]*pvec[0] + tvec[1]*pvec[1] + tvec[2]*pvec[2]) * inv_det;
-		if (cur_tuv[1] < 0.0 || cur_tuv[1] > 1.0)
-			continue;
+		tuv[tuv_idx+1] = (tvec[0]*pvec[0] + tvec[1]*pvec[1] + tvec[2]*pvec[2]) * inv_det;
+		if (tuv[tuv_idx+1] < 0.0 || tuv[tuv_idx+1] > 1.0)
+			is_valid = false;
 
 		/* prepare to test V parameter */
 		//CROSS(qvec, tvec, edge1);
@@ -197,13 +200,13 @@ void RayIntersectStaticTriArray(const float* ray_org, const float* ray_dir, cons
 
 		/* calculate V parameter and test bounds */
 		//*v = DOT(dir, qvec) * inv_det;
-		cur_tuv[2] = (ray_dir[0]*qvec[0] + ray_dir[1]*qvec[1] + ray_dir[2]*qvec[2]) * inv_det;
-		if (cur_tuv[2] < 0.0 || cur_tuv[1] + cur_tuv[2] > 1.0)
-			continue;
+		tuv[tuv_idx+2] = (ray_dir[0]*qvec[0] + ray_dir[1]*qvec[1] + ray_dir[2]*qvec[2]) * inv_det;
+		if (tuv[tuv_idx+2] < 0.0 || tuv[tuv_idx+1] + tuv[tuv_idx+2] > 1.0)
+			is_valid = false;
 
 		/* calculate t, ray intersects triangle */
 		float tmpT = (edge2[0]*qvec[0] + edge2[1]*qvec[1] + edge2[2]*qvec[2]) * inv_det;
-		if (tmpT > 0) cur_tuv[0] = tmpT;
+		if (tmpT > 0 && is_valid) tuv[tuv_idx+0] = tmpT;
 	}
 }
 
