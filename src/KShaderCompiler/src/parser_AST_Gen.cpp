@@ -397,13 +397,22 @@ Token CompilingContext::ScanForToken(std::string& errorMsg)
 
 		bool isFloat = false;
 		if (isFirstCharNumber) {
-			// check for decimal point, e.g. 123.456f
+			// check for decimal point, e.g. 123.456e-8f
 			if (*mCurParsingPtr == '.') {
 				isFloat = true;
 				mCurParsingPtr++;
 				while (_isNumber(*mCurParsingPtr)) 
 					mCurParsingPtr++;
 			}
+
+			if (*mCurParsingPtr == 'e' || *mCurParsingPtr == 'E')
+				mCurParsingPtr++;
+
+			if (*mCurParsingPtr == '+' || *mCurParsingPtr == '-')
+				mCurParsingPtr++;
+
+			while (_isNumber(*mCurParsingPtr)) 
+					mCurParsingPtr++;
 
 			if (*mCurParsingPtr == 'f' || *mCurParsingPtr == 'F')
 				mCurParsingPtr++;
