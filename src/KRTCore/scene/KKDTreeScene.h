@@ -46,6 +46,9 @@ protected:
 class KAccelStruct_KDTree : public KAccelStruct
 {
 public:
+	typedef void (*PFN_RayIntersectStaticTriArray)(const float* ray_org, const float* ray_dir, const float* tri_pos, float* tuv, int cnt);
+	static PFN_RayIntersectStaticTriArray s_pPFN_RayIntersectStaticTriArray;
+public:
 	KAccelStruct_KDTree(const KScene* scene);
 	virtual ~KAccelStruct_KDTree();
 
