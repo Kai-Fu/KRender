@@ -38,6 +38,11 @@ bool KSC_Initialize(const char* sharedCode)
 
 	printf("KSC running on CPU %s.\n", llvm::sys::getHostCPUName().c_str());
 	if (ret) {
+		StringMap<bool> features;
+		ret = llvm::sys::getHostCPUFeatures(features);
+		for (StringMap<bool>::iterator it = features.begin(); it != features.end(); ++it)
+			printf("\t%s\n", it->first().data());
+
 		SC::CompilingContext preContext(NULL);
 		const char* intrinsicFuncDecal = 
 			"float sin(float arg);\n"
