@@ -318,7 +318,6 @@ bool KRT_Initialize()
 "	int pos_idx = 0;\n"
 "	int tuv_idx = 0;\n"
 "	for (int tri_i = 0; tri_i < cnt; tri_i = tri_i+1) {\n"
-
 "		pos_idx = tri_i * 18;\n"
 "		tuv_idx = tri_i * 3;\n"
 "		tuv[tuv_idx+0] = 3.402823466e+38F;\n"
@@ -327,7 +326,7 @@ bool KRT_Initialize()
 "		float det,inv_det;\n"
 	
 "		float vert0[3];\n"
-"		vert0[0] = tri_pos[pos_idx+0] + tri_pos[pos_idx+9]*cur_t;\n"
+"		vert0[0] = tri_pos[pos_idx+0] + tri_pos[pos_idx+9 ]*cur_t;\n"
 "		vert0[1] = tri_pos[pos_idx+1] + tri_pos[pos_idx+10]*cur_t;\n"
 "		vert0[2] = tri_pos[pos_idx+2] + tri_pos[pos_idx+11]*cur_t;\n"
 		// find vectors for two edges sharing vert0 
@@ -405,7 +404,17 @@ bool KRT_Initialize()
 				void* pFuncTriRay = KSC_GetFunctionPtr(hRayIntersectStaticTriArray);
 				KAccelStruct_KDTree::s_pPFN_RayIntersectStaticTriArray = (KAccelStruct_KDTree::PFN_RayIntersectStaticTriArray)pFuncTriRay;
 			}
+
+			FunctionHandle hRayIntersectAnimTriArray = KSC_GetFunctionHandleByName("RayIntersectAnimTriArray", hTriRay);
+			if (hRayIntersectAnimTriArray) {
+				void* pFuncTriRay = KSC_GetFunctionPtr(hRayIntersectAnimTriArray);
+				KAccelStruct_KDTree::s_pPFN_RayIntersectAnimTriArray = (KAccelStruct_KDTree::PFN_RayIntersectAnimTriArray)pFuncTriRay;
+			}
 		}
+
+		if (KAccelStruct_KDTree::s_pPFN_RayIntersectStaticTriArray == NULL || 
+			KAccelStruct_KDTree::s_pPFN_RayIntersectAnimTriArray == NULL)
+			ret = false;
 	}
 	return ret;
 }

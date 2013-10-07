@@ -405,14 +405,15 @@ Token CompilingContext::ScanForToken(std::string& errorMsg)
 					mCurParsingPtr++;
 			}
 
-			if (*mCurParsingPtr == 'e' || *mCurParsingPtr == 'E')
+			if (*mCurParsingPtr == 'e' || *mCurParsingPtr == 'E') {
 				mCurParsingPtr++;
 
-			if (*mCurParsingPtr == '+' || *mCurParsingPtr == '-')
-				mCurParsingPtr++;
-
-			while (_isNumber(*mCurParsingPtr)) 
+				if (*mCurParsingPtr == '+' || *mCurParsingPtr == '-')
 					mCurParsingPtr++;
+
+				while (_isNumber(*mCurParsingPtr)) 
+					mCurParsingPtr++;
+			}
 
 			if (*mCurParsingPtr == 'f' || *mCurParsingPtr == 'F')
 				mCurParsingPtr++;

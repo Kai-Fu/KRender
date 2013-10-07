@@ -10,6 +10,7 @@
 
 
 KAccelStruct_KDTree::PFN_RayIntersectStaticTriArray KAccelStruct_KDTree::s_pPFN_RayIntersectStaticTriArray = NULL;
+KAccelStruct_KDTree::PFN_RayIntersectAnimTriArray KAccelStruct_KDTree::s_pPFN_RayIntersectAnimTriArray = NULL;
 
 KAccelStruct_KDTree::KAccelStruct_KDTree(const KScene* scene)
 {
@@ -518,7 +519,7 @@ bool KAccelStruct_KDTree::IntersectLeaf(UINT32 idx, const KRay& ray, TracingInst
 	}
 
 	if (leafData.hasAnim)
-		RayIntersectAnimTriArray((const float*)&tempRayOrg, (const float*)&tempRayDir, inst->mCameraContext.inMotionTime, pCachedTriData, (float*)&inst->mTmpRayTriIntsct[0], leafData.tri_cnt);
+		s_pPFN_RayIntersectAnimTriArray((const float*)&tempRayOrg, (const float*)&tempRayDir, inst->mCameraContext.inMotionTime, pCachedTriData, (float*)&inst->mTmpRayTriIntsct[0], leafData.tri_cnt);
 	else
 		s_pPFN_RayIntersectStaticTriArray((const float*)&tempRayOrg, (const float*)&tempRayDir, pCachedTriData, (float*)&inst->mTmpRayTriIntsct[0], leafData.tri_cnt);
 
