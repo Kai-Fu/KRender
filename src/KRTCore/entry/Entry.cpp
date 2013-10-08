@@ -415,6 +415,22 @@ bool KRT_Initialize()
 		if (KAccelStruct_KDTree::s_pPFN_RayIntersectStaticTriArray == NULL || 
 			KAccelStruct_KDTree::s_pPFN_RayIntersectAnimTriArray == NULL)
 			ret = false;
+		else {
+			// This is the urgly way to detect if certain SIMD instruction set is supported on current machine
+			int alloc_size, alignment;
+			KSC_GetBuiltInTypeInfo(SC::VarType::kFloat8, alloc_size, alignment);
+			if (alloc_size == alignment) {
+				// AVX support?
+				KAccelStruct_KDTree::s_bSupportAVX = true;
+			}
+			else {
+				KSC_GetBuiltInTypeInfo(SC::VarType::kFloat4, alloc_size, alignment);
+				if (alloc_size == alignment) {
+					// SSE support?
+					KAccelStruct_KDTree::s_bSupportSSE = true;
+				}
+			}
+		}
 	}
 	return ret;
 }

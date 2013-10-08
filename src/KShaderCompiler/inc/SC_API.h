@@ -207,5 +207,10 @@ extern "C" {
 	*/
 	KSC_API int KSC_GetTypePackedSize(const KSC_TypeInfo& typeInfo);
 
+	/**
+		This function returns the allocation size and alignment requirement for the built-in types.
+	*/
+	KSC_API bool KSC_GetBuiltInTypeInfo(SC::VarType type, int& alloc_size, int& alignment);
+
 }
 

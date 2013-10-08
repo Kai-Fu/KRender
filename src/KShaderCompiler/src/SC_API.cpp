@@ -38,10 +38,6 @@ bool KSC_Initialize(const char* sharedCode)
 
 	printf("KSC running on CPU %s.\n", llvm::sys::getHostCPUName().c_str());
 	if (ret) {
-		StringMap<bool> features;
-		ret = llvm::sys::getHostCPUFeatures(features);
-		for (StringMap<bool>::iterator it = features.begin(); it != features.end(); ++it)
-			printf("\t%s\n", it->first().data());
 
 		SC::CompilingContext preContext(NULL);
 		const char* intrinsicFuncDecal = 
@@ -397,4 +393,16 @@ int KSC_GetTypePackedSize(const KSC_TypeInfo& typeInfo)
 		}
 		return packedSize;
 	}
+}
+
+bool KSC_GetBuiltInTypeInfo(SC::VarType type, int& alloc_size, int& alignment)
+{
+	llvm::Type* pType = SC::CG_Context::ConvertToLLVMType(type);
+	if (pType) {
+		alloc_size = (int)SC::CG_Context::TheDataLayout->getTypeAllocSize(pType);
+		alignment = (int)SC::CG_Context::TheDataLayout->getPrefTypeAlignment(pType);
+		return true;
+	}
+	else
+		return false;
 }
