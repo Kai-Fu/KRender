@@ -366,6 +366,14 @@ Token CompilingContext::ScanForToken(std::string& errorMsg)
 		ret = Token(mCurParsingPtr, 1, mCurParsingLOC, Token::kUnaryOp);
 		++mCurParsingPtr;
 	}
+	else if(*mCurParsingPtr == ':') {
+		ret = Token(mCurParsingPtr, 1, mCurParsingLOC, Token::kQuotation);
+		++mCurParsingPtr;
+	}
+	else if(*mCurParsingPtr == '?') {
+		ret = Token(mCurParsingPtr, 1, mCurParsingLOC, Token::kQuestion);
+		++mCurParsingPtr;
+	}
 	else {
 		// Now handling for constants for identifiers
 		bool isFirstCharNumber = _isNumber(*mCurParsingPtr);
@@ -1704,6 +1712,17 @@ Exp_ValueEval* CompilingContext::ParseComplexExpression(CodeDomain* curDomain, c
 				return simpleExpRet;
 			}
 		}
+		else if (nextT.GetType() == Token::kQuestion) {
+			std::auto_ptr<Exp_ValueEval> condValue(ParseComplexExpression(curDomain, ":"));
+			if (!condValue.get()) {
+				AddErrorMessage(curT, "Invalid condition expression for select operation.");
+				return NULL;
+			}
+
+			if (!Exp_Select::Parse(*this, curDomain, condValue.release())) {
+				return NULL;
+			}
+		}
 	}
 
 	return ret;
@@ -2771,6 +2790,89 @@ bool Exp_Nop::CheckSemantic(Exp_ValueEval::TypeInfo& outType, std::string& errMs
 	outType.type = VarType::kInvalid;
 	mCachedTypeInfo = outType;
 	return true;
+}
+
+Exp_Select::Exp_Select()
+{
+	mpCondValue = NULL;
+	mpFirstValue = NULL;
+	mpSecondValue = NULL;
+}
+
+Exp_Select::~Exp_Select()
+{
+	if (mpCondValue)
+		delete mpCondValue;
+	if (mpFirstValue)
+		delete mpFirstValue;
+	if (mpSecondValue)
+		delete mpSecondValue;
+}
+
+
+bool Exp_Select::CheckSemantic(TypeInfo& outType, std::string& errMsg, std::vector<std::string>& warnMsg)
+{
+	TypeInfo condType;
+	if (!mpCondValue->CheckSemantic(condType, errMsg, warnMsg))
+		return false;
+
+	TypeInfo trueType;
+	if (!mpFirstValue->CheckSemantic(trueType, errMsg, warnMsg))
+		return false;
+
+	TypeInfo falseType;
+	if (!mpSecondValue->CheckSemantic(falseType, errMsg, warnMsg))
+		return false;
+
+	if (!IsBooleanType(condType.type)) {
+		errMsg = "Conditional type must be boolean.";
+		return false;
+	}
+
+	if (trueType.type != falseType.type) {
+		errMsg = "Select operation must be applied to the same types.";
+		return false;
+	}
+
+	if (TypeElementCnt(condType.type) != TypeElementCnt(trueType.type)) {
+		return false;
+	}
+	return true;
+}
+
+Exp_Select* Exp_Select::Parse(CompilingContext& context, CodeDomain* curDomain, Exp_ValueEval* pCondValue)
+{
+	if (context.PeekNextToken(0).IsEqual("?")) {
+		Token curT = context.GetNextToken();
+		if (!curT.IsEqual("?")) {
+			context.AddErrorMessage(curT, "Invalid expression for select.");
+			return NULL;
+		}
+	}
+
+	Token curT = context.PeekNextToken(0);
+	std::auto_ptr<Exp_ValueEval> pTrueValue(context.ParseComplexExpression(curDomain, ":"));
+	if (!pTrueValue.get()) {
+		context.AddErrorMessage(curT, "Invalid true expression for select.");
+		return NULL;
+	}
+	if (context.PeekNextToken(0).IsEqual(":"))
+		context.GetNextToken();
+
+	std::auto_ptr<Exp_ValueEval> pFalseValue(context.ParseComplexExpression(curDomain, ";"));
+	if (!pFalseValue.get()) {
+		context.AddErrorMessage(curT, "Invalid false expression for select.");
+		return NULL;
+	}
+	if (context.PeekNextToken(0).IsEqual(";"))
+		context.GetNextToken();
+
+	Exp_Select* ret = new Exp_Select();
+	ret->mpCondValue = pCondValue;
+	ret->mpFirstValue = pTrueValue.release();
+	ret->mpSecondValue = pFalseValue.release();
+
+	return ret;
 }
 
 #ifdef WANT_MEM_LEAK_CHECK

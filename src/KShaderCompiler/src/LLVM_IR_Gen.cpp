@@ -573,6 +573,11 @@ llvm::Value* Exp_ConstString::GenerateCode(CG_Context* context) const
 	return NULL;
 }
 
+llvm::Value* Exp_Select::GenerateCode(CG_Context* context) const
+{
+	return CG_Context::sBuilder.CreateSelect(mpCondValue->GenerateCode(context), mpFirstValue->GenerateCode(context), mpSecondValue->GenerateCode(context));
+}
+
 int Exp_StructDef::GetStructSize() const
 {
 	int totalSize = 0;

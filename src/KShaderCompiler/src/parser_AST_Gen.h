@@ -59,6 +59,8 @@ namespace SC {
 			kUnaryOp, // !,
 			kComma,
 			kSemiColon,
+			kQuotation,
+			kQuestion,
 			kPeriod,
 			kString,
 			kUnknown
@@ -453,6 +455,21 @@ namespace SC {
 		virtual llvm::Value* GenerateCode(CG_Context* context) const;
 
 		virtual bool CheckSemantic(TypeInfo& outType, std::string& errMsg, std::vector<std::string>& warnMsg);
+	};
+
+	class Exp_Select : public Exp_ValueEval
+	{
+	private:
+		Exp_ValueEval* mpCondValue;
+		Exp_ValueEval* mpFirstValue;
+		Exp_ValueEval* mpSecondValue;
+	public:
+		Exp_Select();
+		virtual ~Exp_Select();
+		virtual llvm::Value* GenerateCode(CG_Context* context) const;
+		virtual bool CheckSemantic(TypeInfo& outType, std::string& errMsg, std::vector<std::string>& warnMsg);
+
+		static Exp_Select* Parse(CompilingContext& context, CodeDomain* curDomain, Exp_ValueEval* pCondValue);
 	};
 
 	class Exp_If : public Expression

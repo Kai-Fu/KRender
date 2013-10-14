@@ -418,7 +418,7 @@ bool KRT_Initialize()
 		else {
 			// This is the urgly way to detect if certain SIMD instruction set is supported on current machine
 			int alloc_size, alignment;
-			KSC_GetBuiltInTypeInfo(SC::VarType::kFloat8, alloc_size, alignment);
+			KSC_GetBuiltInTypeInfo(SC::VarType::kBoolean, alloc_size, alignment);
 			if (alloc_size == alignment) {
 				// AVX support?
 				KAccelStruct_KDTree::s_bSupportAVX = true;
