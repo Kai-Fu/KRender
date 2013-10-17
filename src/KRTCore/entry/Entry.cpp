@@ -247,7 +247,7 @@ bool KRT_Initialize()
 "		pos_idx = tri_i * 9;\n"
 "		tuv_idx = tri_i * 3;\n"
 "		tuv[tuv_idx+0] = 3.402823466e+38F;\n"
-"		bool is_valid = true;\n"
+"		bool is_valid;\n"
 "		float edge1[3], edge2[3], tvec[3], pvec[3], qvec[3], nface[3];\n"
 "		float det,inv_det;\n"
 
@@ -272,15 +272,13 @@ bool KRT_Initialize()
 "		nface[2] = edge1[0]*edge2[1] - edge1[1]*edge2[0];\n"
 
 "		float dot_nd = nface[0]*ray_dir[0] + nface[1]*ray_dir[1] + nface[2]*ray_dir[2];\n"
-"		if (dot_nd > 0)\n"
-"			is_valid = false;\n" // Backward face, ignore it
+"		is_valid = (dot_nd <= 0);\n"// Backward face, ignore it
 
 		// if determinant is near zero, ray lies in plane of triangle
 "		//det = DOT(edge1, pvec);\n"
 "		det = edge1[0]*pvec[0] + edge1[1]*pvec[1] + edge1[2]*pvec[2];\n"
 
-"		if (det > -0.000001 && det < 0.000001)\n"
-"			is_valid = false;\n"
+"		is_valid = (det <= -0.000001 || det >= 0.000001) && is_valid;\n"
 "		inv_det = 1.0f / det;\n"
 
 		// calculate distance from vert0 to ray origin 
@@ -291,9 +289,8 @@ bool KRT_Initialize()
 
 		// calculate U parameter and test bounds
 		//*u = DOT(tvec, pvec) * inv_det;
-"		tuv[tuv_idx+1] = (tvec[0]*pvec[0] + tvec[1]*pvec[1] + tvec[2]*pvec[2]) * inv_det;\n"
-"		if (tuv[tuv_idx+1] < 0.0 || tuv[tuv_idx+1] > 1.0)\n"
-"			is_valid = false;\n"
+"		float tmpU = (tvec[0]*pvec[0] + tvec[1]*pvec[1] + tvec[2]*pvec[2]) * inv_det;\n"
+"		is_valid = (tmpU >= 0.0 && tmpU <= 1.0) && is_valid;\n"
 
 		// prepare to test V parameter
 		//CROSS(qvec, tvec, edge1);
@@ -303,13 +300,17 @@ bool KRT_Initialize()
 
 		// calculate V parameter and test bounds
 		//*v = DOT(dir, qvec) * inv_det;
-"		tuv[tuv_idx+2] = (ray_dir[0]*qvec[0] + ray_dir[1]*qvec[1] + ray_dir[2]*qvec[2]) * inv_det;\n"
-"		if (tuv[tuv_idx+2] < 0.0 || tuv[tuv_idx+1] + tuv[tuv_idx+2] > 1.0)\n"
-"			is_valid = false;\n"
+"		float tmpV = (ray_dir[0]*qvec[0] + ray_dir[1]*qvec[1] + ray_dir[2]*qvec[2]) * inv_det;\n"
+"		is_valid = (tmpV >= 0.0 && tmpU + tmpV <= 1.0) && is_valid;\n"
 
 		// calculate t, ray intersects triangle
 "		float tmpT = (edge2[0]*qvec[0] + edge2[1]*qvec[1] + edge2[2]*qvec[2]) * inv_det;\n"
-"		if (tmpT > 0 && is_valid) tuv[tuv_idx+0] = tmpT;\n"
+"		is_valid = (tmpT > 0) && is_valid;\n"
+
+"		tuv[tuv_idx+0] = is_valid ? tmpT : tuv[tuv_idx+0];\n"
+"		tuv[tuv_idx+1] = is_valid ? tmpU : tuv[tuv_idx+1];\n"
+"		tuv[tuv_idx+2] = is_valid ? tmpV : tuv[tuv_idx+2];\n"
+
 "	}\n"
 "}\n"
 
@@ -321,7 +322,7 @@ bool KRT_Initialize()
 "		pos_idx = tri_i * 18;\n"
 "		tuv_idx = tri_i * 3;\n"
 "		tuv[tuv_idx+0] = 3.402823466e+38F;\n"
-"		bool is_valid = true;\n"
+"		bool is_valid;\n"
 "		float edge1[3], edge2[3], tvec[3], pvec[3], qvec[3], nface[3];\n"
 "		float det,inv_det;\n"
 	
@@ -350,15 +351,13 @@ bool KRT_Initialize()
 "		nface[2] = edge1[0]*edge2[1] - edge1[1]*edge2[0];\n"
 
 "		float dot_nd = nface[0]*ray_dir[0] + nface[1]*ray_dir[1] + nface[2]*ray_dir[2];\n"
-"		if (dot_nd > 0)\n"
-"			is_valid = false;\n" // Backward face, ignore it
+"		is_valid = (dot_nd <= 0);\n"// Backward face, ignore it
 
 		// if determinant is near zero, ray lies in plane of triangle
 		//det = DOT(edge1, pvec);
 "		det = edge1[0]*pvec[0] + edge1[1]*pvec[1] + edge1[2]*pvec[2];\n"
 
-"		if (det > -0.000001 && det < 0.000001)\n"
-"			is_valid = false;\n"
+"		is_valid = (det <= -0.000001 || det >= 0.000001) && is_valid;\n"
 "		inv_det = 1.0f / det;\n"
 
 		// calculate distance from vert0 to ray origin
@@ -369,9 +368,8 @@ bool KRT_Initialize()
 
 		// calculate U parameter and test bounds
 		//*u = DOT(tvec, pvec) * inv_det;
-"		tuv[tuv_idx+1] = (tvec[0]*pvec[0] + tvec[1]*pvec[1] + tvec[2]*pvec[2]) * inv_det;\n"
-"		if (tuv[tuv_idx+1] < 0.0 || tuv[tuv_idx+1] > 1.0)\n"
-"			is_valid = false;\n"
+"		float tmpU = (tvec[0]*pvec[0] + tvec[1]*pvec[1] + tvec[2]*pvec[2]) * inv_det;\n"
+"		is_valid = (tmpU >= 0.0 && tmpU <= 1.0) && is_valid;\n"
 
 		// prepare to test V parameter
 		//CROSS(qvec, tvec, edge1);
@@ -381,13 +379,17 @@ bool KRT_Initialize()
 
 		// calculate V parameter and test bounds
 		//*v = DOT(dir, qvec) * inv_det;
-"		tuv[tuv_idx+2] = (ray_dir[0]*qvec[0] + ray_dir[1]*qvec[1] + ray_dir[2]*qvec[2]) * inv_det;\n"
-"		if (tuv[tuv_idx+2] < 0.0 || tuv[tuv_idx+1] + tuv[tuv_idx+2] > 1.0)\n"
-"			is_valid = false;\n"
+"		float tmpV = (ray_dir[0]*qvec[0] + ray_dir[1]*qvec[1] + ray_dir[2]*qvec[2]) * inv_det;\n"
+"		is_valid = (tmpV >= 0.0 && tmpU + tmpV <= 1.0) && is_valid;\n"
 
 		// calculate t, ray intersects triangle
 "		float tmpT = (edge2[0]*qvec[0] + edge2[1]*qvec[1] + edge2[2]*qvec[2]) * inv_det;\n"
-"		if (tmpT > 0 && is_valid) tuv[tuv_idx+0] = tmpT;\n"
+"		is_valid = (tmpT > 0) && is_valid;\n"
+
+"		tuv[tuv_idx+0] = is_valid ? tmpT : tuv[tuv_idx+0];\n"
+"		tuv[tuv_idx+1] = is_valid ? tmpU : tuv[tuv_idx+1];\n"
+"		tuv[tuv_idx+2] = is_valid ? tmpV : tuv[tuv_idx+2];\n"
+
 "	}\n"
 "}\n"
 ;

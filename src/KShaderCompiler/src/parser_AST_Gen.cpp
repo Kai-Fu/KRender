@@ -105,6 +105,8 @@ int Token::GetBinaryOpLevel() const
 			return 200;
 		case '=':
 			return 50;
+		case '?':
+			return 300;
 		}
 	}
 
@@ -371,7 +373,7 @@ Token CompilingContext::ScanForToken(std::string& errorMsg)
 		++mCurParsingPtr;
 	}
 	else if(*mCurParsingPtr == '?') {
-		ret = Token(mCurParsingPtr, 1, mCurParsingLOC, Token::kQuestion);
+		ret = Token(mCurParsingPtr, 1, mCurParsingLOC, Token::kBinaryOp);
 		++mCurParsingPtr;
 	}
 	else {
@@ -1699,28 +1701,24 @@ Exp_ValueEval* CompilingContext::ParseComplexExpression(CodeDomain* curDomain, c
 			int op1_level = nextT.GetBinaryOpLevel();
 			std::string op1_str = nextT.ToStdString();
 
-			if (op1_level > op0_level) {
-				Exp_ValueEval* simpleExpRight = ParseComplexExpression(curDomain, pEndToken0, pEndToken1, simpleExp1.release(), nextT);
-				if (simpleExpRight) {
-					Exp_BinaryOp* pBinaryOp = new Exp_BinaryOp(op0_str, simpleExp0.release(), simpleExpRight);
-					ret = pBinaryOp;
+			if (op1_str != "?") {
+				if (op1_level > op0_level) {
+					Exp_ValueEval* simpleExpRight = ParseComplexExpression(curDomain, pEndToken0, pEndToken1, simpleExp1.release(), nextT);
+					if (simpleExpRight) {
+						Exp_BinaryOp* pBinaryOp = new Exp_BinaryOp(op0_str, simpleExp0.release(), simpleExpRight);
+						ret = pBinaryOp;
+					}
+				}
+				else {
+					Exp_BinaryOp* pBinaryOpLeft = new Exp_BinaryOp(op0_str, simpleExp0.release(), simpleExp1.release());
+					Exp_ValueEval* simpleExpRet = ParseComplexExpression(curDomain, pEndToken0, pEndToken1, pBinaryOpLeft, nextT);
+					ret = simpleExpRet;
 				}
 			}
 			else {
-				Exp_BinaryOp* pBinaryOpLeft = new Exp_BinaryOp(op0_str, simpleExp0.release(), simpleExp1.release());
-				Exp_ValueEval* simpleExpRet = ParseComplexExpression(curDomain, pEndToken0, pEndToken1, pBinaryOpLeft, nextT);
-				return simpleExpRet;
-			}
-		}
-		else if (nextT.GetType() == Token::kQuestion) {
-			std::auto_ptr<Exp_ValueEval> condValue(ParseComplexExpression(curDomain, ":"));
-			if (!condValue.get()) {
-				AddErrorMessage(curT, "Invalid condition expression for select operation.");
-				return NULL;
-			}
-
-			if (!Exp_Select::Parse(*this, curDomain, condValue.release())) {
-				return NULL;
+				std::auto_ptr<Exp_ValueEval> selectValue(Exp_Select::Parse(*this, curDomain, simpleExp1.release()));
+				Exp_BinaryOp* pBinaryOp = new Exp_BinaryOp(op0_str, simpleExp0.release(), selectValue.release());
+				ret = pBinaryOp;
 			}
 		}
 	}
@@ -2835,8 +2833,11 @@ bool Exp_Select::CheckSemantic(TypeInfo& outType, std::string& errMsg, std::vect
 	}
 
 	if (TypeElementCnt(condType.type) != TypeElementCnt(trueType.type)) {
+		errMsg = "Select operation must be applied to the same types with same element number.";
 		return false;
 	}
+
+	outType.type = trueType.type;
 	return true;
 }
 
@@ -2864,8 +2865,6 @@ Exp_Select* Exp_Select::Parse(CompilingContext& context, CodeDomain* curDomain, 
 		context.AddErrorMessage(curT, "Invalid false expression for select.");
 		return NULL;
 	}
-	if (context.PeekNextToken(0).IsEqual(";"))
-		context.GetNextToken();
 
 	Exp_Select* ret = new Exp_Select();
 	ret->mpCondValue = pCondValue;
@@ -2874,6 +2873,7 @@ Exp_Select* Exp_Select::Parse(CompilingContext& context, CodeDomain* curDomain, 
 
 	return ret;
 }
+
 
 #ifdef WANT_MEM_LEAK_CHECK
 std::set<Expression*> Expression::s_instances;

@@ -60,7 +60,6 @@ namespace SC {
 			kComma,
 			kSemiColon,
 			kQuotation,
-			kQuestion,
 			kPeriod,
 			kString,
 			kUnknown

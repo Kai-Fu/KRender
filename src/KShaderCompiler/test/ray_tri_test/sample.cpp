@@ -40,7 +40,8 @@ int main(int argc, char* argv[])
 			return -1;
 		}
 
-		
+		FunctionHandle hFunc = KSC_GetFunctionHandleByName("RayIntersectAnimTriArray", hModule);
+		KSC_GetFunctionPtr(hFunc);
 	}
 	
 

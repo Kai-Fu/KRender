@@ -655,13 +655,13 @@ void AbcLoader::UpdateXformNode(std::vector<size_t>::const_iterator nodeIdIt, st
 	const Abc::ObjectHeader &ohead = parentObj.getChildHeader(*nodeIdIt);
 	Abc::IObject childObj(parentObj, ohead.getName());
 	if (nodeIdIt+1 == nodeItEnd) {
-		if (AbcG::IXform::matches(ohead)) {
-            AbcG::IXform xform(parentObj, ohead.getName());
-            if (xform) {
-				std::cout << "updating xform: " << xform.getName() << std::endl;
+		if (AbcG::IPolyMesh::matches(ohead)) {
+            AbcG::IPolyMesh xform_mesh(parentObj, ohead.getName());
+            if (xform_mesh) {
+				std::cout << "updating mesh's xform: " << xform_mesh.getName() << std::endl;
 				KMatrix4 trans[2];
 				bool isAnim = false;
-				GetObjectWorldTransform(xform, trans, isAnim);
+				GetObjectWorldTransform(xform_mesh, trans, isAnim);
 				if (isAnim)
 					mpScene->SceneNodeTM_SetMovingNode(nodeIdx, trans[0], trans[1]);
 				else
