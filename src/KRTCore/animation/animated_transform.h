@@ -1,6 +1,7 @@
 #pragma once
 #include "../base/BaseHeader.h"
 #include "../base/geometry.h"
+#include <common/math/Trafo.h>
 
 namespace KAnimation {
 
@@ -12,9 +13,7 @@ namespace KAnimation {
 class LocalTRSFrame {
 public:
 	struct LclTRS {
-		KMatrix4 node_tm;
-		KMatrix4 inv_node_tm;
-		nvmath::Quatf node_rot;
+		nvmath::Trafo trs;
 	};
 
 	void Reset(const KMatrix4& single_trans);

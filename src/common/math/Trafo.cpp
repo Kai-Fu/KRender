@@ -71,6 +71,15 @@ Mat44f Trafo::getMatrix( void ) const
   return( m0 * m1 );
 }
 
+Mat33f Trafo::getRotation( void ) const
+{
+  Mat33f rot( m_orientation );
+  Mat33f m1( (Vec3f( m_scaling[0] * rot[0] ))
+           , (Vec3f( m_scaling[1] * rot[1] ))
+           , (Vec3f( m_scaling[2] * rot[2] )) );
+  return m1;
+}
+
 Mat44f Trafo::getInverse( void ) const
 {
   //NVSG_TRACE();

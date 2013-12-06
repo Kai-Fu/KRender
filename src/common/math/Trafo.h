@@ -63,6 +63,9 @@ namespace nvmath
        *  \sa getInverse */
       Mat44f getMatrix( void ) const;
 
+
+	  Mat33f getRotation( void ) const;
+
       /*! \brief Get the current inverse transformation.
        *  \return The \c Mat44f that describes the inverse transformation.
        *  \remarks The inverse transformation is the concatenation of the center translation C,

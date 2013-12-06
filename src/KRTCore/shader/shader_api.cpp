@@ -279,7 +279,8 @@ void TracingInstance::CalcuShadingContext(const KRay& hitRay, const IntersectCon
 	const KScene* pKDScene = pPlainScene->GetNodeKDScene(hit_ctx.bbox_node_idx);
 	KAnimation::LocalTRSFrame::LclTRS nodeTRS;
 	pPlainScene->GetNodeTransform(nodeTRS, hit_ctx.bbox_node_idx, mCameraContext.inMotionTime);
-	const KQuat& scene_rot = nodeTRS.node_rot;
+	const nvmath::Mat33f scene_rot = nodeTRS.trs.getRotation();
+	const nvmath::Mat44f scene_trans = nodeTRS.trs.getMatrix();
 	const KTriDesc* pTri = mpScene->GetAccelTriData(hit_ctx.bbox_node_idx, hit_ctx.tri_id);
 	UINT32 mesh_idx = pTri->GetMeshIdx();
 	UINT32 node_idx = pTri->GetNodeIdx();
@@ -326,9 +327,9 @@ void TracingInstance::CalcuShadingContext(const KRay& hitRay, const IntersectCon
 						 pn_vert[1].pos * hit_ctx.u +
 						 pn_vert[2].pos * hit_ctx.v;
 	Vec3TransformCoord(temp_vec, out_shading_ctx.position, pNode->GetObjectTM());
-	Vec3TransformCoord(out_shading_ctx.position, temp_vec, nodeTRS.node_tm);
+	Vec3TransformCoord(out_shading_ctx.position, temp_vec, scene_trans);
 	
-	const nvmath::Quatf world_rot = pNode->GetObjectRot() * scene_rot;
+	const nvmath::Mat33f world_rot = nvmath::Mat33f(pNode->GetObjectRot()) * scene_rot;
 	KVec3 edge[3];
 	edge[0] = (pn_vert[1].pos - pn_vert[0].pos) * world_rot;
 	edge[1] = (pn_vert[2].pos - pn_vert[1].pos) * world_rot;
@@ -378,14 +379,15 @@ void TracingInstance::CalcuHitInfo(const IntersectContext& hit_ctx, IntersectInf
 	const KScene* pKDScene = pPlainScene->GetNodeKDScene(hit_ctx.bbox_node_idx);
 	KAnimation::LocalTRSFrame::LclTRS nodeTRS;
 	pPlainScene->GetNodeTransform(nodeTRS, hit_ctx.bbox_node_idx, mCameraContext.inMotionTime);
-	const KQuat& scene_rot = nodeTRS.node_rot;
+	const nvmath::Mat33f scene_rot = nodeTRS.trs.getRotation();
+	const nvmath::Mat44f scene_trans = nodeTRS.trs.getMatrix();
 	const KTriDesc* pTri = mpScene->GetAccelTriData(hit_ctx.bbox_node_idx, hit_ctx.tri_id);
 	UINT32 mesh_idx = pTri->GetMeshIdx();
 	UINT32 node_idx = pTri->GetNodeIdx();
 	UINT32 tri_idx = pTri->mTriIdx;
 	const KTriMesh* pMesh = pKDScene->GetMesh(mesh_idx);
 	const KNode* pNode = pKDScene->GetNode(node_idx);
-	const nvmath::Quatf world_rot = pNode->GetObjectRot() * scene_rot;
+	const nvmath::Mat33f world_rot = nvmath::Mat33f(pNode->GetObjectRot()) * scene_rot;
 
 	KTriMesh::PN_Data pn_vert[3];
 	pMesh->ComputePN_Data(pn_vert[0], pMesh->mFaces[tri_idx].pn_idx[0], mCameraContext.inMotionTime);
@@ -397,7 +399,7 @@ void TracingInstance::CalcuHitInfo(const IntersectContext& hit_ctx, IntersectInf
 		pn_vert[2].pos * hit_ctx.v;
 	KVec3 temp_vec;
 	Vec3TransformCoord(temp_vec, out_info.pos, pNode->GetObjectTM());
-	Vec3TransformCoord(out_info.pos, temp_vec, nodeTRS.node_tm);
+	Vec3TransformCoord(out_info.pos, temp_vec, scene_trans);
 
 	// interpolate the normal
 	temp_vec =	pn_vert[0].nor * hit_ctx.w +
