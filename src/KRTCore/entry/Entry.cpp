@@ -238,19 +238,18 @@ bool KRT_Initialize()
 ;
 
 	char* tri_ray_hit = 
-"void RayIntersectStaticTriArray(float% ray_org[], float% ray_dir[], float% tri_pos[], float% tuv[], int cnt)\n"
+"void RayIntersectStaticTriArray(float% ray_org[], float% ray_dir[], float% tri_pos[], int% tri_id[], float% tuv[], int% hit_idx[], int cnt, int excluding_tri_id)\n"
 "{\n"
 "	int pos_idx = 0;\n"
-"	int tuv_idx = 0;\n"
+"	tuv[0] = 3.402823466e+38F;\n"
 "	for (int tri_i = 0; tri_i < cnt; tri_i = tri_i+1) {\n"
 
 "		pos_idx = tri_i * 9;\n"
-"		tuv_idx = tri_i * 3;\n"
-"		tuv[tuv_idx+0] = 3.402823466e+38F;\n"
 "		bool is_valid;\n"
 "		float edge1[3], edge2[3], tvec[3], pvec[3], qvec[3], nface[3];\n"
 "		float det,inv_det;\n"
 
+"		is_valid = (tri_id[tri_i] != excluding_tri_id);\n"
 		// find vectors for two edges sharing vert0 
 		//SUB(edge1, vert1, vert0);
 "		edge1[0] = tri_pos[pos_idx+3] - tri_pos[pos_idx+0];\n"
@@ -272,7 +271,7 @@ bool KRT_Initialize()
 "		nface[2] = edge1[0]*edge2[1] - edge1[1]*edge2[0];\n"
 
 "		float dot_nd = nface[0]*ray_dir[0] + nface[1]*ray_dir[1] + nface[2]*ray_dir[2];\n"
-"		is_valid = (dot_nd <= 0);\n"// Backward face, ignore it
+"		is_valid = is_valid && (dot_nd <= 0);\n"// Backward face, ignore it
 
 		// if determinant is near zero, ray lies in plane of triangle
 "		//det = DOT(edge1, pvec);\n"
@@ -307,14 +306,14 @@ bool KRT_Initialize()
 "		float tmpT = (edge2[0]*qvec[0] + edge2[1]*qvec[1] + edge2[2]*qvec[2]) * inv_det;\n"
 "		is_valid = (tmpT > 0) && is_valid;\n"
 
-"		tuv[tuv_idx+0] = is_valid ? tmpT : tuv[tuv_idx+0];\n"
-"		tuv[tuv_idx+1] = is_valid ? tmpU : tuv[tuv_idx+1];\n"
-"		tuv[tuv_idx+2] = is_valid ? tmpV : tuv[tuv_idx+2];\n"
-
+"		tuv[0] = is_valid ? tmpT : tuv[0];\n"
+"		tuv[1] = is_valid ? tmpU : tuv[1];\n"
+"		tuv[2] = is_valid ? tmpV : tuv[2];\n"
+"		hit_idx[0] = is_valid ? tri_id[tri_i] : hit_idx[0];\n"
 "	}\n"
 "}\n"
 
-"void RayIntersectAnimTriArray(float% ray_org[], float% ray_dir[], float cur_t, float% tri_pos[], float% tuv[], int cnt)\n"
+"void RayIntersectAnimTriArray(float% ray_org[], float% ray_dir[], float cur_t, float% tri_pos[], int% tri_id[], float% tuv[], int% hit_idx[], int cnt, int excluding_tri_id)\n"
 "{\n"
 "	int pos_idx = 0;\n"
 "	int tuv_idx = 0;\n"
@@ -325,7 +324,8 @@ bool KRT_Initialize()
 "		bool is_valid;\n"
 "		float edge1[3], edge2[3], tvec[3], pvec[3], qvec[3], nface[3];\n"
 "		float det,inv_det;\n"
-	
+
+"		is_valid = (tri_id[tri_i] != excluding_tri_id);\n"
 "		float vert0[3];\n"
 "		vert0[0] = tri_pos[pos_idx+0] + tri_pos[pos_idx+9 ]*cur_t;\n"
 "		vert0[1] = tri_pos[pos_idx+1] + tri_pos[pos_idx+10]*cur_t;\n"
@@ -351,7 +351,7 @@ bool KRT_Initialize()
 "		nface[2] = edge1[0]*edge2[1] - edge1[1]*edge2[0];\n"
 
 "		float dot_nd = nface[0]*ray_dir[0] + nface[1]*ray_dir[1] + nface[2]*ray_dir[2];\n"
-"		is_valid = (dot_nd <= 0);\n"// Backward face, ignore it
+"		is_valid = is_valid && (dot_nd <= 0);\n"// Backward face, ignore it
 
 		// if determinant is near zero, ray lies in plane of triangle
 		//det = DOT(edge1, pvec);
@@ -389,6 +389,7 @@ bool KRT_Initialize()
 "		tuv[tuv_idx+0] = is_valid ? tmpT : tuv[tuv_idx+0];\n"
 "		tuv[tuv_idx+1] = is_valid ? tmpU : tuv[tuv_idx+1];\n"
 "		tuv[tuv_idx+2] = is_valid ? tmpV : tuv[tuv_idx+2];\n"
+"		hit_idx[0] = is_valid ? tri_id[tri_i] : hit_idx[0];\n"
 
 "	}\n"
 "}\n"

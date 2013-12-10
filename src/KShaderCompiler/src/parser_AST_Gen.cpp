@@ -112,7 +112,7 @@ int Token::GetBinaryOpLevel() const
 
 	if (IsEqual("||") || IsEqual("&&"))
 		return 70;
-	else if (IsEqual("==") || IsEqual(">=") || IsEqual(">") || IsEqual("<=") || IsEqual("<"))
+	else if (IsEqual("==") || IsEqual("!=") || IsEqual(">=") || IsEqual(">") || IsEqual("<=") || IsEqual("<"))
 		return 80;
 
 	return 0;
@@ -309,6 +309,7 @@ Token CompilingContext::ScanForToken(std::string& errorMsg)
 		_isFirstN_Equal(mCurParsingPtr, "||") ||
 		_isFirstN_Equal(mCurParsingPtr, "&&") ||
 		_isFirstN_Equal(mCurParsingPtr, "==") ||
+		_isFirstN_Equal(mCurParsingPtr, "!=") ||
 		_isFirstN_Equal(mCurParsingPtr, ">=") ||
 		_isFirstN_Equal(mCurParsingPtr, "<=") ) {
 
@@ -1884,7 +1885,7 @@ bool Exp_UnaryOp::CheckSemantic(TypeInfo& outType, std::string& errMsg, std::vec
 		return false;
 	}
 
-	if (mOpType == "!" && IsBooleanType(outType.type)) {
+	if (mOpType == "!" && !IsBooleanType(outType.type)) {
 		errMsg = "\"!\" must be followed with boolean expression.";
 		return false;
 	}
@@ -1946,15 +1947,15 @@ bool Exp_BinaryOp::CheckSemantic(TypeInfo& outType, std::string& errMsg, std::ve
 	}
 
 	bool isArithmetric = (mOperator == "+" || mOperator == "-" || mOperator == "*" || mOperator == "/");
-	bool isCompareOp = (mOperator == "==" || mOperator == ">=" || mOperator == ">" || mOperator == "<=" || mOperator == "<");
+	bool isCompareOp = (mOperator == "==" || mOperator == "!=" || mOperator == ">=" || mOperator == ">" || mOperator == "<=" || mOperator == "<");
 	bool isLogicOp = (mOperator == "||" || mOperator == "&&");
 	bool isBitwizeOp = (mOperator == "|" || mOperator == "&");
 
 	if (isCompareOp) {
 
-		if (mOperator == "==") {
+		if (mOperator == "==" || mOperator == "!=") {
 			if (leftType.type != rightType.type || leftType.type == VarType::kStructure || rightType.type == VarType::kStructure) {
-				errMsg = "\"==\" operator cannot be performed with structures or two different built-in types.";
+				errMsg = "\"==\" or \"!=\" operator cannot be performed with structures or two different built-in types.";
 				return false;
 			}
 		}

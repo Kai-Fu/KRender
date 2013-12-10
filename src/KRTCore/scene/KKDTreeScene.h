@@ -46,8 +46,19 @@ protected:
 class KAccelStruct_KDTree : public KAccelStruct
 {
 public:
-	typedef void (*PFN_RayIntersectStaticTriArray)(const float* ray_org, const float* ray_dir, const float* tri_pos, float* tuv, int cnt);
-	typedef void (*PFN_RayIntersectAnimTriArray)(const float* ray_org, const float* ray_dir, float cur_t, const float* tri_pos, float* tuv, int cnt);
+	typedef void (*PFN_RayIntersectStaticTriArray)(
+		const float* ray_org, const float* ray_dir, 
+		const float* tri_pos, const int* tri_id, 
+		float* tuv, int* hit_idx, 
+		int cnt, int excluding_id);
+
+	typedef void (*PFN_RayIntersectAnimTriArray)(
+		const float* ray_org, const float* ray_dir, 
+		float cur_t, 
+		const float* tri_pos, const int* tri_id, 
+		float* tuv, int* hit_idx, 
+		int cnt, int excluding_id);
+
 	static PFN_RayIntersectStaticTriArray s_pPFN_RayIntersectStaticTriArray;
 	static PFN_RayIntersectAnimTriArray s_pPFN_RayIntersectAnimTriArray;
 	static bool s_bSupportAVX;

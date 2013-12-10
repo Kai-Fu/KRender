@@ -649,6 +649,8 @@ llvm::Value* CG_Context::CreateBinaryExpression(const std::string& opStr,
 			return sBuilder.CreateFCmpOLE(pL, R_Value);
 		else if (opStr == "==") 
 			return sBuilder.CreateFCmpOEQ(pL, R_Value);
+		else if (opStr == "!=") 
+			return sBuilder.CreateFCmpONE(pL, R_Value);
 	}
 	else {
 		// Generate instruction for integer type
@@ -670,6 +672,8 @@ llvm::Value* CG_Context::CreateBinaryExpression(const std::string& opStr,
 			return sBuilder.CreateICmpSLE(pL, R_Value);
 		else if (opStr == "==") 
 			return sBuilder.CreateICmpEQ(pL, R_Value);
+		else if (opStr == "!=") 
+			return sBuilder.CreateICmpNE(pL, R_Value);
 		else if (opStr == "||" || opStr == "|") 
 			return sBuilder.CreateOr(pL, R_Value); // boolean values are treated as i1 integer
 		else if (opStr == "&&" || opStr == "&") 

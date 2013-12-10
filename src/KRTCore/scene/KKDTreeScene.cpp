@@ -509,45 +509,54 @@ bool KAccelStruct_KDTree::IntersectLeaf(UINT32 idx, const KRay& ray, TracingInst
 #else
 	UINT32 triStep = leafData.hasAnim ? 18 : 9;
 	bool needUpdate = false;
-	float* pCachedTriData = (float*)inst->mCachedTriPosData.LRU_OpenEntry(inst->mCurBVHIndex*117 + idx, leafData.tri_cnt*sizeof(float)*triStep, needUpdate);
+	UINT64 leafId = ((UINT64)inst->mCurBVHIndex << 32) + idx;
+	UINT32 triPosDataSize = leafData.tri_cnt*sizeof(float)*triStep;
+	UINT32 triIdDataSize = leafData.tri_cnt*sizeof(int);
+	BYTE* pCachedTriData = (BYTE*)inst->mCachedTriPosData.LRU_OpenEntry(leafId, triPosDataSize + triIdDataSize, needUpdate);
+	float* pCachedTriPosData = (float*)pCachedTriData;
+	int* pCacheTriIdData = (int*)(pCachedTriData + triPosDataSize);
 
 	if (needUpdate) {
-		float* pCurTriData = (float*)pCachedTriData;
+		float* pCurTriData = pCachedTriPosData;
 		for (UINT32 i = 0; i < leafData.tri_cnt; ++i) {
 			UINT32 tri_idx = leafData.tri_list.leaf_triangles[i];
 			mpSourceScene->GetTriPosData(mAccelTriangle[tri_idx], leafData.hasAnim, pCurTriData, &leafData.box_norm);
 			pCurTriData += triStep;
+			pCacheTriIdData[i] = (int)tri_idx;
 		}
 	}
 
-	if (leafData.hasAnim)
-		s_pPFN_RayIntersectAnimTriArray((const float*)&tempRayOrg, (const float*)&tempRayDir, inst->mCameraContext.inMotionTime, pCachedTriData, (float*)&inst->mTmpRayTriIntsct[0], leafData.tri_cnt);
-	else
-		s_pPFN_RayIntersectStaticTriArray((const float*)&tempRayOrg, (const float*)&tempRayDir, pCachedTriData, (float*)&inst->mTmpRayTriIntsct[0], leafData.tri_cnt);
+	int hit_idx = INVALID_INDEX;
+	if (leafData.hasAnim) {
+		s_pPFN_RayIntersectAnimTriArray(
+			(const float*)&tempRayOrg, (const float*)&tempRayDir, 
+			inst->mCameraContext.inMotionTime, 
+			pCachedTriPosData, pCacheTriIdData, 
+			(float*)&inst->mTmpRayTriIntsct[0], &hit_idx, 
+			leafData.tri_cnt, (int)ray.mExcludeTriID);
+	}
+	else {
+		s_pPFN_RayIntersectStaticTriArray(
+			(const float*)&tempRayOrg, (const float*)&tempRayDir, 
+			pCachedTriPosData, pCacheTriIdData, 
+			(float*)&inst->mTmpRayTriIntsct[0], &hit_idx, 
+			leafData.tri_cnt, (int)ray.mExcludeTriID);
+	}
 
 #endif
 	double min_ray_t = (ctx.ray_t - t0) * tScale;
-	UINT32 min_i;
-	for (UINT32 i = 0; i < leafData.tri_cnt; ++i) {
-		UINT32 tri_idx = leafData.tri_list.leaf_triangles[i];
-		// a new nearer triangle is hit
-		if (min_ray_t > inst->mTmpRayTriIntsct[i].ray_t &&
-			tri_idx != ray.mExcludeTriID) {
-
-			min_ray_t = inst->mTmpRayTriIntsct[i].ray_t;
-			min_i = i;
-			ret = true;
-		}
+	if (inst->mTmpRayTriIntsct[0].ray_t < min_ray_t) {
+		min_ray_t = inst->mTmpRayTriIntsct[0].ray_t;
+		ret = true;
 	}
-	
 
 	// If no triangle get hit, then I should restore it back.
 	if (ret) {
 		ctx.ray_t = t0 + min_ray_t / tScale;
-		ctx.u = inst->mTmpRayTriIntsct[min_i].u;
-		ctx.v = inst->mTmpRayTriIntsct[min_i].v;
+		ctx.u = inst->mTmpRayTriIntsct[0].u;
+		ctx.v = inst->mTmpRayTriIntsct[0].v;
 		ctx.w = 1.0f - ctx.u - ctx.v;
-		ctx.tri_id = leafData.tri_list.leaf_triangles[min_i];
+		ctx.tri_id = hit_idx;
 		ctx.kd_leaf_idx = idx;
 	}
 	else { 
