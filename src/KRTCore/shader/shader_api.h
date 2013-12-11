@@ -141,7 +141,7 @@ public:
 
 	KMemCacher mCachedTriPosData;
 	UINT32 mCurBVHIndex;
-	std::vector<RayTriIntersect> mTmpRayTriIntsct;
+
 private:
 	const KAccelStruct_BVH* mpScene;
 	const RenderBuffers* mpRenderBuffers;

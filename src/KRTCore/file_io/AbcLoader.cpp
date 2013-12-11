@@ -18,7 +18,7 @@ AbcLoader::AbcLoader()
 {
 	mCurTime = 0.0;
 	mpScene = NULL;
-	mSampleDuration = 0.25 / 24.0;
+	mSampleDuration = 2.0 / 24.0;
 }
 
 AbcLoader::~AbcLoader()

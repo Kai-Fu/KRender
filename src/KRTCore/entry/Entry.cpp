@@ -316,11 +316,10 @@ bool KRT_Initialize()
 "void RayIntersectAnimTriArray(float% ray_org[], float% ray_dir[], float cur_t, float% tri_pos[], int% tri_id[], float% tuv[], int% hit_idx[], int cnt, int excluding_tri_id)\n"
 "{\n"
 "	int pos_idx = 0;\n"
-"	int tuv_idx = 0;\n"
+"	tuv[0] = 3.402823466e+38F;\n"
+
 "	for (int tri_i = 0; tri_i < cnt; tri_i = tri_i+1) {\n"
 "		pos_idx = tri_i * 18;\n"
-"		tuv_idx = tri_i * 3;\n"
-"		tuv[tuv_idx+0] = 3.402823466e+38F;\n"
 "		bool is_valid;\n"
 "		float edge1[3], edge2[3], tvec[3], pvec[3], qvec[3], nface[3];\n"
 "		float det,inv_det;\n"
@@ -386,9 +385,9 @@ bool KRT_Initialize()
 "		float tmpT = (edge2[0]*qvec[0] + edge2[1]*qvec[1] + edge2[2]*qvec[2]) * inv_det;\n"
 "		is_valid = (tmpT > 0) && is_valid;\n"
 
-"		tuv[tuv_idx+0] = is_valid ? tmpT : tuv[tuv_idx+0];\n"
-"		tuv[tuv_idx+1] = is_valid ? tmpU : tuv[tuv_idx+1];\n"
-"		tuv[tuv_idx+2] = is_valid ? tmpV : tuv[tuv_idx+2];\n"
+"		tuv[0] = is_valid ? tmpT : tuv[0];\n"
+"		tuv[1] = is_valid ? tmpU : tuv[1];\n"
+"		tuv[2] = is_valid ? tmpV : tuv[2];\n"
 "		hit_idx[0] = is_valid ? tri_id[tri_i] : hit_idx[0];\n"
 
 "	}\n"

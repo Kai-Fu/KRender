@@ -496,9 +496,6 @@ bool KAccelStruct_KDTree::IntersectLeaf(UINT32 idx, const KRay& ray, TracingInst
 
 	double tScale = ray.mDirLen * leafData.box_norm.mRcpScaleLen;
 
-	if (leafData.tri_cnt > inst->mTmpRayTriIntsct.size())
-		inst->mTmpRayTriIntsct.resize(leafData.tri_cnt);
-
 #if 0
 	for (UINT32 i = 0; i < leafData.tri_cnt; ++i) {
 		UINT32 tri_idx = leafData.tri_list.leaf_triangles[i];
@@ -507,6 +504,7 @@ bool KAccelStruct_KDTree::IntersectLeaf(UINT32 idx, const KRay& ray, TracingInst
 		RayIntersect((const float*)&tempRayOrg, (const float*)&tempRayDir, triPos, inst->mCameraContext.inMotionTime, inst->mTmpRayTriIntsct[i]);
 	}
 #else
+	float tmp_tuv[3];
 	UINT32 triStep = leafData.hasAnim ? 18 : 9;
 	bool needUpdate = false;
 	UINT64 leafId = ((UINT64)inst->mCurBVHIndex << 32) + idx;
@@ -532,29 +530,29 @@ bool KAccelStruct_KDTree::IntersectLeaf(UINT32 idx, const KRay& ray, TracingInst
 			(const float*)&tempRayOrg, (const float*)&tempRayDir, 
 			inst->mCameraContext.inMotionTime, 
 			pCachedTriPosData, pCacheTriIdData, 
-			(float*)&inst->mTmpRayTriIntsct[0], &hit_idx, 
+			tmp_tuv, &hit_idx, 
 			leafData.tri_cnt, (int)ray.mExcludeTriID);
 	}
 	else {
 		s_pPFN_RayIntersectStaticTriArray(
 			(const float*)&tempRayOrg, (const float*)&tempRayDir, 
 			pCachedTriPosData, pCacheTriIdData, 
-			(float*)&inst->mTmpRayTriIntsct[0], &hit_idx, 
+			tmp_tuv, &hit_idx, 
 			leafData.tri_cnt, (int)ray.mExcludeTriID);
 	}
 
 #endif
 	double min_ray_t = (ctx.ray_t - t0) * tScale;
-	if (inst->mTmpRayTriIntsct[0].ray_t < min_ray_t) {
-		min_ray_t = inst->mTmpRayTriIntsct[0].ray_t;
+	if (tmp_tuv[0] < min_ray_t) {
+		min_ray_t = tmp_tuv[0];
 		ret = true;
 	}
 
 	// If no triangle get hit, then I should restore it back.
 	if (ret) {
 		ctx.ray_t = t0 + min_ray_t / tScale;
-		ctx.u = inst->mTmpRayTriIntsct[0].u;
-		ctx.v = inst->mTmpRayTriIntsct[0].v;
+		ctx.u = tmp_tuv[1];
+		ctx.v = tmp_tuv[2];
 		ctx.w = 1.0f - ctx.u - ctx.v;
 		ctx.tri_id = hit_idx;
 		ctx.kd_leaf_idx = idx;
