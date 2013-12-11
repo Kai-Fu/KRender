@@ -406,3 +406,9 @@ bool KSC_GetBuiltInTypeInfo(SC::VarType type, int& alloc_size, int& alignment)
 	else
 		return false;
 }
+
+int KSC_GetSIMDWidth()
+{
+	// TODO: determine the best optimized machine width for SIMD intructions
+	return 4;
+}

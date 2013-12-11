@@ -238,7 +238,11 @@ bool KRT_Initialize()
 ;
 
 	char* tri_ray_hit = 
-"void RayIntersectStaticTriArray(float% ray_org[], float% ray_dir[], float% tri_pos[], int% tri_id[], float% tuv[], int% hit_idx[], int cnt, int excluding_tri_id)\n"
+"void RayIntersectStaticTriArray(\
+	float% ray_org[], float% ray_dir[], \
+	float% tri_pos[], int% tri_id[], \
+	float% tuv[], int% hit_idx[], \
+	int cnt, int excluding_tri_id)\n"
 "{\n"
 "	int pos_idx = 0;\n"
 "	tuv[0] = 3.402823466e+38F;\n"
@@ -313,7 +317,11 @@ bool KRT_Initialize()
 "	}\n"
 "}\n"
 
-"void RayIntersectAnimTriArray(float% ray_org[], float% ray_dir[], float cur_t, float% tri_pos[], int% tri_id[], float% tuv[], int% hit_idx[], int cnt, int excluding_tri_id)\n"
+"void RayIntersectAnimTriArray(\
+	float% ray_org[], float% ray_dir[], \
+	float cur_t, float% tri_pos[], int% tri_id[], \
+	float% tuv[], int% hit_idx[], \
+	int cnt, int excluding_tri_id)\n"
 "{\n"
 "	int pos_idx = 0;\n"
 "	tuv[0] = 3.402823466e+38F;\n"

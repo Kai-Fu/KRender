@@ -212,5 +212,10 @@ extern "C" {
 	*/
 	KSC_API bool KSC_GetBuiltInTypeInfo(SC::VarType type, int& alloc_size, int& alignment);
 
+	/**
+		This function returns the optimized SIMD width on the target machine.
+	*/
+	KSC_API int KSC_GetSIMDWidth();
+
 }
 
