@@ -61,8 +61,6 @@ public:
 
 	static PFN_RayIntersectStaticTriArray s_pPFN_RayIntersectStaticTriArray;
 	static PFN_RayIntersectAnimTriArray s_pPFN_RayIntersectAnimTriArray;
-	static bool s_bSupportAVX;
-	static bool s_bSupportSSE;
 public:
 	KAccelStruct_KDTree(const KScene* scene);
 	virtual ~KAccelStruct_KDTree();

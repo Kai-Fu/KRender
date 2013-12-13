@@ -84,3 +84,22 @@ float ComputeWeightAndIndex(UINT32 frameCnt, float cur_t, UINT32& floorIdx, UINT
 		return fIdx - fFloor;
 	}
 }
+
+void SwizzleForSIMD(void* srcData, void* destData, int SIMD_cc, int SIMD_cw, int elemSize, int elemCount)
+{
+	int SIMD_size = SIMD_cc * SIMD_cw;
+	int SIMD_dataCount = elemSize * elemCount / SIMD_size;
+	int SIMD_perElem = elemSize / SIMD_size;
+	assert(elemCount % SIMD_cc == 0 && elemSize % SIMD_cw == 0);
+	
+	for (int elem_i = 0; elem_i < elemCount; ++elem_i) {
+		BYTE* curSrcElem = (BYTE*)srcData + elem_i * elemSize;
+		BYTE* curDestElem = (BYTE*)destData + (elem_i / SIMD_cc) * elemSize * SIMD_cc;
+		for (int elem_di = 0; elem_di < elemSize; elem_di += SIMD_cw) {
+			BYTE* curSrcSIMD_c = curSrcElem + elem_di;
+			BYTE* curDestSIMD_c = curDestElem + elem_di * SIMD_cc;
+
+			memcpy(curDestSIMD_c, curSrcSIMD_c, SIMD_cw);
+		}
+	}
+}

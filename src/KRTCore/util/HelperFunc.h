@@ -28,3 +28,5 @@ void IntToStr(int val, char* buf, int base);
 
 
 float ComputeWeightAndIndex(UINT32 frameCnt, float cur_t, UINT32& floorIdx, UINT32& ceilingIdx);
+
+void SwizzleForSIMD(void* srcData, void* destData, int SIMD_cc, int SIMD_cw, int elemSize, int elemCount);

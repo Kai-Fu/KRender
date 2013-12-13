@@ -11,8 +11,6 @@
 
 KAccelStruct_KDTree::PFN_RayIntersectStaticTriArray KAccelStruct_KDTree::s_pPFN_RayIntersectStaticTriArray = NULL;
 KAccelStruct_KDTree::PFN_RayIntersectAnimTriArray KAccelStruct_KDTree::s_pPFN_RayIntersectAnimTriArray = NULL;
-bool KAccelStruct_KDTree::s_bSupportAVX = false;
-bool KAccelStruct_KDTree::s_bSupportSSE = false;
 
 KAccelStruct_KDTree::KAccelStruct_KDTree(const KScene* scene)
 {
