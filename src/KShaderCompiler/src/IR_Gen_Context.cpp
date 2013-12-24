@@ -364,13 +364,22 @@ llvm::Function* CG_Context::CreateFunctionWithPackedArguments(const KSC_Function
 	std::vector<llvm::Type*> wrapperF_argTypes;
 	std::vector<llvm::Type*> orgArgTypes;
 	int Idx = 0;
+	bool hasJIRPacked = false;
 	for (Function::arg_iterator AI = fDesc.F->arg_begin(); AI != fDesc.F->arg_end(); ++AI, ++Idx) {
 		llvm::Type* argType = AI->getType();
 		orgArgTypes.push_back(argType);
+		if (fDesc.needJITPacked[Idx])
+			hasJIRPacked = true;
 		wrapperF_argTypes.push_back(fDesc.needJITPacked[Idx] ? SC::CG_Context::ConvertToPackedType(argType) : argType);
-		
 	}
-	FunctionType *FT = FunctionType::get(SC::CG_Context::ConvertToPackedType(fDesc.F->getReturnType()), wrapperF_argTypes, false);
+
+	llvm::Type* wrappedRetType = SC::CG_Context::ConvertToPackedType(fDesc.F->getReturnType());
+	if (!hasJIRPacked && wrappedRetType == fDesc.F->getReturnType()) {
+		// No argument needs to be JIT-packed, just return the original function
+		return fDesc.F;
+	}
+	
+	FunctionType *FT = FunctionType::get(wrappedRetType, wrapperF_argTypes, false);
 	wrapperF = Function::Create(FT, Function::ExternalLinkage, fDesc.F->getName() + "_packed", CG_Context::TheModule);
 
 	BasicBlock *BB = BasicBlock::Create(getGlobalContext(), "entry_packed", wrapperF);

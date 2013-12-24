@@ -3,8 +3,7 @@ project (KShaderCompiler)
 
 # Let Visual Studio arrange the projects by folder
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-# supported build types
-set( ${CMAKE_BUILD_TYPE} "Debug" "Release" )
+
 
 # The version number.
 set( KSC_VERSION_MAJOR 1 )

@@ -40,8 +40,15 @@ int main(int argc, char* argv[])
 			return -1;
 		}
 
-		FunctionHandle hFunc = KSC_GetFunctionHandleByName("RayIntersectAnimTriArray", hModule);
-		KSC_GetFunctionPtr(hFunc);
+
+		typedef void (*TestFunction)(void* ref, float v);
+		FunctionHandle hFunc = KSC_GetFunctionHandleByName("VectorAssign_N", hModule);
+		KSC_TypeInfo typeInfo = KSC_GetFunctionArgumentType(hFunc, 0);
+		TestFunction pFunc = (TestFunction)KSC_GetFunctionPtr(hFunc);
+		float* pData = (float*)KSC_AllocMemForType(typeInfo, 10);
+		pFunc(pData, 1.2345f);
+		pData[1] = 0;
+		
 	}
 	
 
