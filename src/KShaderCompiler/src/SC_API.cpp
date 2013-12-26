@@ -36,7 +36,24 @@ bool KSC_Initialize(const char* sharedCode)
 	SC::Initialize_AST_Gen();
 	bool ret = SC::InitializeCodeGen();
 
-	printf("KSC running on CPU %s.\n", llvm::sys::getHostCPUName().c_str());
+	int CPUInfo[4];
+	__cpuid(CPUInfo, 0x80000000);
+    int nExIds = CPUInfo[0];
+	char CPUBrandString[0x40];
+    memset(CPUBrandString, 0, sizeof(CPUBrandString));
+
+	for (int i = 0x80000000; i <= nExIds; ++i) {
+		__cpuid(CPUInfo, i);
+		if  (i == 0x80000002)
+            memcpy(CPUBrandString, CPUInfo, sizeof(CPUInfo));
+        else if  (i == 0x80000003)
+            memcpy(CPUBrandString + 16, CPUInfo, sizeof(CPUInfo));
+        else if  (i == 0x80000004)
+            memcpy(CPUBrandString + 32, CPUInfo, sizeof(CPUInfo));
+	}
+
+
+	printf("KSC running on CPU %s.\n", CPUBrandString);
 	if (ret) {
 
 		SC::CompilingContext preContext(NULL);
@@ -409,6 +426,12 @@ bool KSC_GetBuiltInTypeInfo(SC::VarType type, int& alloc_size, int& alignment)
 
 int KSC_GetSIMDWidth()
 {
-	// TODO: determine the best optimized machine width for SIMD intructions
-	return 4;
+	int CPUInfo[4];
+	__cpuid(CPUInfo, 1);
+
+	bool hasSSE = (CPUInfo[3] & (1 << 25));
+	const unsigned AVXBits = (1 << 27) | (1 << 28);
+	bool HasAVX = ((CPUInfo[2] & AVXBits) == AVXBits);
+
+	return HasAVX ? 8 : (hasSSE ? 4 : 0);
 }

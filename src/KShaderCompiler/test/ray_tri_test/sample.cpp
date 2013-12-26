@@ -41,12 +41,13 @@ int main(int argc, char* argv[])
 		}
 
 
-		typedef void (*TestFunction)(void* ref, float v);
+		typedef void (*TestFunction)(void* ref, float* v);
 		FunctionHandle hFunc = KSC_GetFunctionHandleByName("VectorAssign_N", hModule);
 		KSC_TypeInfo typeInfo = KSC_GetFunctionArgumentType(hFunc, 0);
 		TestFunction pFunc = (TestFunction)KSC_GetFunctionPtr(hFunc);
 		float* pData = (float*)KSC_AllocMemForType(typeInfo, 10);
-		pFunc(pData, 1.2345f);
+		float v_array[3] = {1.2345f, 3.456f, 5.678f};
+		pFunc(pData, v_array);
 		pData[1] = 0;
 		
 	}

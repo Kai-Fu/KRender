@@ -150,7 +150,10 @@ void RayIntersectAnimTriArray(float% ray_org[], float% ray_dir[], float cur_t, f
 	}
 }
 
-void VectorAssign_N(float_n% v_value[], float v) 
+void VectorAssign_N(float_n% v_value[], float% v[]) 
 {
-	v_value[0] = v;
+	v_value[0] = v[0];
+	v_value[1] = v[1];
+	v_value[2] = v_value[0] * v[2];
+	
 }
