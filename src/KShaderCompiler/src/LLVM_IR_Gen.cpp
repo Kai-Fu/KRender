@@ -277,8 +277,12 @@ Exp_ValueEval::ValuePtrInfo Exp_DotOp::GetValuePtr(CG_Context* context) const
 			indices[0] = Constant::getIntegerValue(SC_INT_TYPE, APInt(sizeof(Int)*8, (uint64_t)0));
 			indices[1] = Constant::getIntegerValue(SC_INT_TYPE, APInt(sizeof(Int)*8, (uint64_t)elemIdx));
 			llvm::Value* structElemPtr = CG_Context::sBuilder.CreateGEP(parentPtrInfo.valuePtr, indices);
+			const Exp_StructDef* dummyStructDef = NULL;
+			int subTypeArraySize = -1;
+			pParentStructDef->GetElementType(elemIdx, dummyStructDef, subTypeArraySize);
 			retValuePtr.valuePtr = structElemPtr;
 			retValuePtr.belongToVector = false;
+			retValuePtr.isFixedArray = subTypeArraySize > 0 ? true : false;
 			return retValuePtr;
 		}
 		else {

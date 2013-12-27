@@ -183,10 +183,17 @@ void* KSC_GetFunctionPtr(FunctionHandle hFunc)
 
 	llvm::AttrListPtr attrList = llvm::AttrListPtr::get(getGlobalContext(), attrWithIdxList);
 	wrapperF->setAttributes(attrList);*/
+	printf("------------- Function before JIT wrapping ------------------------\n");
 	pFuncDesc->F->dump();
-	wrapperF->dump();
+	if (pFuncDesc->F != wrapperF) {
+		printf("------------- Function after JIT wrapping ------------------------\n");
+		wrapperF->dump();
+	}
 
 	if (!llvm::verifyFunction(*wrapperF, llvm::PrintMessageAction)) {
+		SC::CG_Context::TheFPM->run(*wrapperF);
+		printf("------------- Function after FPM optimization ------------------------\n");
+		wrapperF->dump();
 		void* ret = SC::CG_Context::TheExecutionEngine->getPointerToFunction(wrapperF);
 		pFuncDesc->pJIT_Func = ret;
 		return ret;

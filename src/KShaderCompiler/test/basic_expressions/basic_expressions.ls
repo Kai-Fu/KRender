@@ -37,3 +37,11 @@ float TestSwizzle(_Float3& ref)
 	ref.v[2] = tmp2.z;
 	return ref.v[0];
 }
+
+float FuncX(float x)
+{
+	float a = (x + 7.0) / 8.0;
+	float b = (x + 7.0) / 8.0;
+	
+	return a + b;
+}

@@ -44,15 +44,26 @@ int main(int argc, char* argv[])
 			return -1;
 		}
 
-		typedef int (*PFN_TestBooleanValues)();
-		FunctionHandle hFunc = KSC_GetFunctionHandleByName("TestBooleanValues", hModule);
-		PFN_TestBooleanValues TestBooleanValues = (PFN_TestBooleanValues)KSC_GetFunctionPtr(hFunc);
-		int result = TestBooleanValues();
-		printf("result is %d\n", result);
+		int result = 0;
+
+		{
+			typedef float (*PFN_FuncX)(float x);
+			FunctionHandle hFunc = KSC_GetFunctionHandleByName("FuncX", hModule);
+			PFN_FuncX FuncX = (PFN_FuncX)KSC_GetFunctionPtr(hFunc);
+			float result = FuncX(123.0f);
+			printf("result is %f\n", result);
+		}
+		/*{
+			typedef int (*PFN_TestBooleanValues)();
+			FunctionHandle hFunc = KSC_GetFunctionHandleByName("TestBooleanValues", hModule);
+			PFN_TestBooleanValues TestBooleanValues = (PFN_TestBooleanValues)KSC_GetFunctionPtr(hFunc);
+			int result = TestBooleanValues();
+			printf("result is %d\n", result);
+		}
 
 		{
 			typedef float (*PFN_DotProduct)(float* l, float* r);
-			hFunc = KSC_GetFunctionHandleByName("DotProduct", hModule);
+			FunctionHandle hFunc = KSC_GetFunctionHandleByName("DotProduct", hModule);
 			PFN_DotProduct DotProduct = (PFN_DotProduct)KSC_GetFunctionPtr(hFunc);
 			float ll[3] = {0.7f, 0.6f, 0.3f};
 			float rr[3] = {0.2f, 0.8f, 0.13f};
@@ -62,12 +73,12 @@ int main(int argc, char* argv[])
 
 		{
 			typedef float (*PFN_TestSwizzle)(float* l);
-			hFunc = KSC_GetFunctionHandleByName("TestSwizzle", hModule);
+			FunctionHandle hFunc = KSC_GetFunctionHandleByName("TestSwizzle", hModule);
 			PFN_TestSwizzle TestSwizzle = (PFN_TestSwizzle)KSC_GetFunctionPtr(hFunc);
 			float ll[3] = {0.7f, 0.6f, 0.3f};
 			float fResult = TestSwizzle(ll);
 			printf("result is %f\n", fResult);
-		}
+		}*/
 	}
 	
 
