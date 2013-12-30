@@ -4,7 +4,8 @@
 
 int main(int arg_cnt, const char* args[])
 {
-	KRT_Initialize();
+	if (!KRT_Initialize())
+		return -1;
 	BindLuaFunc();
 	RunLuaCommandFromFile("startup.lua");
 

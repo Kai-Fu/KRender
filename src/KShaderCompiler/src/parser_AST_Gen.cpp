@@ -1958,20 +1958,20 @@ bool Exp_BinaryOp::CheckSemantic(TypeInfo& outType, std::string& errMsg, std::ve
 
 	if (isCompareOp) {
 
-		if (mOperator == "==" || mOperator == "!=") {
-			if (leftType.type != rightType.type || leftType.type == VarType::kStructure || rightType.type == VarType::kStructure) {
-				errMsg = "\"==\" or \"!=\" operator cannot be performed with structures or two different built-in types.";
-				return false;
-			}
-		}
-		else {
-			// "greater than" or "less than" operators can only be performed on numerical scalar values
-			if (IsBooleanType(leftType.type) || IsBooleanType(rightType.type)) {
-				errMsg = mOperator;
-				errMsg += " operator cannot be performed with boolean values.";
-				return false;
-			}
 
+		if (leftType.type == VarType::kStructure || rightType.type == VarType::kStructure) {
+			errMsg = "Comparison operator cannot be performed with structures.";
+			return false;
+		}
+
+		// "greater than" or "less than" operators can only be performed on numerical scalar values
+		if (IsBooleanType(leftType.type) || IsBooleanType(rightType.type)) {
+			errMsg = mOperator;
+			errMsg += " operator cannot be performed with boolean values.";
+			return false;
+		}
+
+		if (TypeElementCnt(rightType.type) > 1) {
 			if (TypeElementCnt(leftType.type) > TypeElementCnt(rightType.type)) {
 				errMsg = mOperator;
 				errMsg += " Cannot do comparison with right argument of less elements.";

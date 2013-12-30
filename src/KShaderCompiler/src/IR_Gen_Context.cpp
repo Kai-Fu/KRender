@@ -623,9 +623,18 @@ llvm::Value* CG_Context::CastValueType(llvm::Value* srcValue, VarType srcType, V
 		//
 		llvm::Type* pDestType = ConvertToLLVMType(MakeType(destType, destElemCnt));
 		llvm::Value* destValue = llvm::UndefValue::get(pDestType);
+		llvm::Value* convertSrcValue = srcValue;
+		if (needTypeConvert) {
+			if (isF2I) {
+				convertSrcValue = sBuilder.CreateFPToSI(srcValue, SC_INT_TYPE);
+			}
+			else {
+				convertSrcValue = sBuilder.CreateSIToFP(srcValue, SC_FLOAT_TYPE);
+			}
+		}
 		for (int i = 0; i < destElemCnt; ++i) {
 			llvm::Value* idx = Constant::getIntegerValue(SC_INT_TYPE, APInt(sizeof(Int)*8, (uint64_t)i));
-			destValue = sBuilder.CreateInsertElement(destValue, srcValue, idx);
+			destValue = sBuilder.CreateInsertElement(destValue, convertSrcValue, idx);
 		}
 		return destValue;
 	}
