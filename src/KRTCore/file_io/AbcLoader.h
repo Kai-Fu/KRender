@@ -22,7 +22,7 @@ public:
 	~AbcLoader();
 
 	bool Load(const char* filename, KSceneSet& scene);
-	bool Update(float time, std::list<UINT32>& changedScenes);
+	bool Update(float time, float duration, std::list<UINT32>& changedScenes);
 
 public:
 	double mAnimStartTime;

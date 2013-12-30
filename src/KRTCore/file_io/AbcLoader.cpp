@@ -628,9 +628,10 @@ void AbcLoader::GetCurNodeID(std::vector<size_t>& nodeId) const
 	nodeId.assign(&mCurNodeID[0], &mCurNodeID[mCurTreeDepth] + 1);
 }
 
-bool AbcLoader::Update(float time, std::list<UINT32>& changedScenes)
+bool AbcLoader::Update(float time, float duration, std::list<UINT32>& changedScenes)
 {
 	mCurTime = time;
+	mSampleDuration = duration;
 
 	Abc::IArchive archive(Alembic::AbcCoreHDF5::ReadArchive(), mFileName);
 	Abc::IObject topObj(archive, Abc::kTop);

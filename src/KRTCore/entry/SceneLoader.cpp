@@ -207,7 +207,7 @@ bool SceneLoader::UpdateTime(double timeInSec, double duration)
 	}
 		
 	std::list<UINT32> changedScenes;
-	if (mAbcLoader.Update((float)timeInSec, changedScenes)) {
+	if (mAbcLoader.Update((float)timeInSec, (float)duration, changedScenes)) {
 		// Let's update the accellerating structures
 		mpAccelData->SceneNode_BuildAccelData(&changedScenes);
 

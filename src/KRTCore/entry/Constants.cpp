@@ -83,6 +83,9 @@ bool SetRenderOptions(const char* name, const char* value)
 	else if (var == "ENABLE_DOF") {
 		sscanf_s(value, "%d", &ENABLE_DOF, sizeof(UINT32));
 	}
+	else if (var == "ENABLE_MB") {
+		sscanf_s(value, "%d", &ENABLE_MB, sizeof(UINT32));
+	}
 	else
 		return false;
 
