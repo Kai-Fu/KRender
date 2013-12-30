@@ -183,9 +183,14 @@ FORCE_LEAF_NODE:
 	// 3. According to the bounding box, determine how to split this node
 	KVec3 det = bbox.mMax - bbox.mMin;
 	float det_value;
+	bool  useMiddleSplit = false;
 	KBBox left_bbox(bbox), right_bbox(bbox);
 	if (tryOtherSplitAxis) {
 		det_axis = (det_axis + tryOtherSplitAxis) % 3;
+		if (tryOtherSplitAxis > 2) {
+			det_axis = bbox.LongestAxis();
+			useMiddleSplit = true;
+		}
 	}
 	else {
 		
@@ -211,13 +216,16 @@ FORCE_LEAF_NODE:
 	// 4. Calculate the splitting position
 	{
 		// Use the middle plan splitting, may be used for testing
-		//det_value = (bbox.mMax[det_axis] + bbox.mMin[det_axis]) * 0.5f;
-		det_value = CalcuSplittingPosition(
-			triangles, cnt, 
-			bbox,
-			&mTempDataForKD->mTriBBox[0],
-			det_axis,
-			mTempDataForKD->mPigeonHoles[splitData.in_splitThreadIdx]);
+		if (useMiddleSplit)
+			det_value = (bbox.mMax[det_axis] + bbox.mMin[det_axis]) * 0.5f;
+		else {
+			det_value = CalcuSplittingPosition(
+				triangles, cnt, 
+				bbox,
+				&mTempDataForKD->mTriBBox[0],
+				det_axis,
+				mTempDataForKD->mPigeonHoles[splitData.in_splitThreadIdx]);
+		}
 	}
 	node.split_value = det_value;
 	left_bbox.mMin[det_axis] = det_value;
@@ -287,9 +295,13 @@ FORCE_LEAF_NODE:
 		node.flag |= ePerfectSplit;
 	}
 
-	if ((float)stride_cnt >= (float)cnt * mNodeSplitThreshhold ) {
-		if (cnt <= mLeafTriCnt*10 || tryOtherSplitAxis == 2)
+	// If the splitting produces more striding triangles than the threshold, just try several other splitting methods.
+	// If all the splitting methods have been tried and it still cannot pass the threshold, just accept the middle splitting method
+	if ((float)stride_cnt >= (float)cnt * mNodeSplitThreshhold &&
+		tryOtherSplitAxis <= 2) {
+		if (cnt <= mLeafTriCnt*10) {
 			bForceLeafNode = true;
+		}
 		else
 			++tryOtherSplitAxis;
 
@@ -298,6 +310,16 @@ FORCE_LEAF_NODE:
 				mTempDataForKD->mThreadPool->ReleaseScheduledThread(addedThreadIdx[i]);
 		}
 
+		goto FORCE_LEAF_NODE;
+	}
+
+	if (cnt0 == cnt || cnt1 == cnt) {
+		// Ok...I surrender
+		bForceLeafNode = true;
+		for (int i = 0; i < 2; ++i) {
+			if (addedThreadIdx[i] != INVALID_INDEX) 
+				mTempDataForKD->mThreadPool->ReleaseScheduledThread(addedThreadIdx[i]);
+		}
 
 		goto FORCE_LEAF_NODE;
 	}

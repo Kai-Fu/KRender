@@ -149,6 +149,7 @@ public:
 	bool IsOverlapping(const KBSphere& sphere) const;
 	const KVec3 Center() const;
 	void GetFaceArea(float area[3]) const;
+	int LongestAxis() const;
 };
 
 

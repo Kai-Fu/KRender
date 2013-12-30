@@ -185,6 +185,15 @@ void KBBox::GetFaceArea(float area[3]) const
 	area[2] = fabs(len[0] * len[1]);
 }
 
+int KBBox::LongestAxis() const
+{
+	KVec3 diagnal = mMax - mMin;
+	if (diagnal[0] > diagnal[1]) 
+		return 	diagnal[0] > diagnal[2] ? 0 : 2;
+	else
+		return 	diagnal[1] > diagnal[2] ? 1 : 2;
+}	
+
 void KBoxNormalizer::InitFromBBox(const KBBox& box)
 {
 	mCenter = box.Center();

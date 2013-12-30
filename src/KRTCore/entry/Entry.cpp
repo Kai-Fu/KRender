@@ -308,7 +308,7 @@ bool KRT_Initialize()
 
 		// calculate t, ray intersects triangle
 "		float tmpT = (edge2[0]*qvec[0] + edge2[1]*qvec[1] + edge2[2]*qvec[2]) * inv_det;\n"
-"		is_valid = (tmpT > 0) && is_valid;\n"
+"		is_valid = (tmpT > 0 && tmpT < tuv[0]) && is_valid;\n"
 
 "		tuv[0] = is_valid ? tmpT : tuv[0];\n"
 "		tuv[1] = is_valid ? tmpU : tuv[1];\n"
@@ -391,7 +391,7 @@ bool KRT_Initialize()
 
 		// calculate t, ray intersects triangle
 "		float tmpT = (edge2[0]*qvec[0] + edge2[1]*qvec[1] + edge2[2]*qvec[2]) * inv_det;\n"
-"		is_valid = (tmpT > 0) && is_valid;\n"
+"		is_valid = (tmpT > 0 && tmpT < tuv[0]) && is_valid;\n"
 
 "		tuv[0] = is_valid ? tmpT : tuv[0];\n"
 "		tuv[1] = is_valid ? tmpU : tuv[1];\n"
