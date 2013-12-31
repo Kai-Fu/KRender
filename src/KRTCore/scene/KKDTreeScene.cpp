@@ -561,12 +561,12 @@ bool KAccelStruct_KDTree::IntersectLeaf(UINT32 idx, const KRay& ray, TracingInst
 	}
 
 	if (leafData.hasAnim) {
-		/*s_pPFN_RayIntersectAnimTriArray(
+		s_pPFN_RayIntersectAnimTriArray(
 			(const float*)&tempRayOrg, (const float*)&tempRayDir, 
 			inst->mCameraContext.inMotionTime, 
-			pCachedTriPosData, pCacheTriIdData, 
-			tmp_tuv, &hit_idx, 
-			leafData.tri_cnt, (int)ray.mExcludeTriID);*/
+			(float*)pSwizzledTriData, pSwizzledTriIdData, 
+			inst->mpTUV_SIMD, inst->mpHitIdx_SIMD, 
+			SIMD_tri_cnt, (int)ray.mExcludeTriID);
 	}
 	else {
 		for (int i = 0; i < inst->mSIMD_Width; ++i) 

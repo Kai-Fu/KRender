@@ -330,21 +330,31 @@ bool KRT_Initialize()
 
 "void RayIntersectAnimTriArray(\
 	float% ray_org[], float% ray_dir[], \
-	float cur_t, float% tri_pos[], int% tri_id[], \
-	float% tuv[], int% hit_idx[], \
+	float cur_t, float_n% tri_pos[], int_n% tri_id[], \
+	float_n% tuv[], int_n% hit_idx[], \
 	int cnt, int excluding_tri_id)\n"
 "{\n"
 "	int pos_idx = 0;\n"
 "	tuv[0] = 3.402823466e+38F;\n"
+"	int_n exc_tri_id_n;\n"
+"	exc_tri_id_n = excluding_tri_id;\n"
+"	float_n f_one_n, ray_org_n[3], ray_dir_n[3];\n"
+"	f_one_n = 1.0f;\n"
+"	ray_org_n[0] = ray_org[0];\n"
+"	ray_org_n[1] = ray_org[1];\n"
+"	ray_org_n[2] = ray_org[2];\n"
+"	ray_dir_n[0] = ray_dir[0];\n"
+"	ray_dir_n[1] = ray_dir[1];\n"
+"	ray_dir_n[2] = ray_dir[2];\n"
 
 "	for (int tri_i = 0; tri_i < cnt; tri_i = tri_i+1) {\n"
 "		pos_idx = tri_i * 18;\n"
-"		bool is_valid;\n"
-"		float edge1[3], edge2[3], tvec[3], pvec[3], qvec[3], nface[3];\n"
-"		float det,inv_det;\n"
+"		bool_n is_valid;\n"
+"		float_n edge1[3], edge2[3], tvec[3], pvec[3], qvec[3], nface[3];\n"
+"		float_n det,inv_det;\n"
 
-"		is_valid = (tri_id[tri_i] != excluding_tri_id);\n"
-"		float vert0[3];\n"
+"		is_valid = (tri_id[tri_i] != exc_tri_id_n);\n"
+"		float_n vert0[3];\n"
 "		vert0[0] = tri_pos[pos_idx+0] + tri_pos[pos_idx+9 ]*cur_t;\n"
 "		vert0[1] = tri_pos[pos_idx+1] + tri_pos[pos_idx+10]*cur_t;\n"
 "		vert0[2] = tri_pos[pos_idx+2] + tri_pos[pos_idx+11]*cur_t;\n"
@@ -360,15 +370,15 @@ bool KRT_Initialize()
 
 		// begin calculating determinant - also used to calculate U parameter
 "		//CROSS(pvec, dir, edge2);\n"
-"		pvec[0] = ray_dir[1]*edge2[2] - ray_dir[2]*edge2[1];\n"
-"		pvec[1] = ray_dir[2]*edge2[0] - ray_dir[0]*edge2[2];\n"
-"		pvec[2] = ray_dir[0]*edge2[1] - ray_dir[1]*edge2[0];\n"
+"		pvec[0] = ray_dir_n[1]*edge2[2] - ray_dir_n[2]*edge2[1];\n"
+"		pvec[1] = ray_dir_n[2]*edge2[0] - ray_dir_n[0]*edge2[2];\n"
+"		pvec[2] = ray_dir_n[0]*edge2[1] - ray_dir_n[1]*edge2[0];\n"
 		//CROSS(nface, edge1, edge2);
 "		nface[0] = edge1[1]*edge2[2] - edge1[2]*edge2[1];\n"
 "		nface[1] = edge1[2]*edge2[0] - edge1[0]*edge2[2];\n"
 "		nface[2] = edge1[0]*edge2[1] - edge1[1]*edge2[0];\n"
 
-"		float dot_nd = nface[0]*ray_dir[0] + nface[1]*ray_dir[1] + nface[2]*ray_dir[2];\n"
+"		float_n dot_nd = nface[0]*ray_dir_n[0] + nface[1]*ray_dir_n[1] + nface[2]*ray_dir_n[2];\n"
 "		is_valid = is_valid && (dot_nd <= 0);\n"// Backward face, ignore it
 
 		// if determinant is near zero, ray lies in plane of triangle
@@ -376,17 +386,17 @@ bool KRT_Initialize()
 "		det = edge1[0]*pvec[0] + edge1[1]*pvec[1] + edge1[2]*pvec[2];\n"
 
 "		is_valid = (det <= -0.000001 || det >= 0.000001) && is_valid;\n"
-"		inv_det = 1.0f / det;\n"
+"		inv_det = f_one_n / det;\n"
 
 		// calculate distance from vert0 to ray origin
 		//SUB(tvec, orig, vert0);
-"		tvec[0] = ray_org[0] - vert0[0];\n"
-"		tvec[1] = ray_org[1] - vert0[1];\n"
-"		tvec[2] = ray_org[2] - vert0[2];\n"
+"		tvec[0] = ray_org_n[0] - vert0[0];\n"
+"		tvec[1] = ray_org_n[1] - vert0[1];\n"
+"		tvec[2] = ray_org_n[2] - vert0[2];\n"
 
 		// calculate U parameter and test bounds
 		//*u = DOT(tvec, pvec) * inv_det;
-"		float tmpU = (tvec[0]*pvec[0] + tvec[1]*pvec[1] + tvec[2]*pvec[2]) * inv_det;\n"
+"		float_n tmpU = (tvec[0]*pvec[0] + tvec[1]*pvec[1] + tvec[2]*pvec[2]) * inv_det;\n"
 "		is_valid = (tmpU >= 0.0 && tmpU <= 1.0) && is_valid;\n"
 
 		// prepare to test V parameter
@@ -397,11 +407,11 @@ bool KRT_Initialize()
 
 		// calculate V parameter and test bounds
 		//*v = DOT(dir, qvec) * inv_det;
-"		float tmpV = (ray_dir[0]*qvec[0] + ray_dir[1]*qvec[1] + ray_dir[2]*qvec[2]) * inv_det;\n"
+"		float_n tmpV = (ray_dir_n[0]*qvec[0] + ray_dir_n[1]*qvec[1] + ray_dir_n[2]*qvec[2]) * inv_det;\n"
 "		is_valid = (tmpV >= 0.0 && tmpU + tmpV <= 1.0) && is_valid;\n"
 
 		// calculate t, ray intersects triangle
-"		float tmpT = (edge2[0]*qvec[0] + edge2[1]*qvec[1] + edge2[2]*qvec[2]) * inv_det;\n"
+"		float_n tmpT = (edge2[0]*qvec[0] + edge2[1]*qvec[1] + edge2[2]*qvec[2]) * inv_det;\n"
 "		is_valid = (tmpT > 0 && tmpT < tuv[0]) && is_valid;\n"
 
 "		tuv[0] = is_valid ? tmpT : tuv[0];\n"
