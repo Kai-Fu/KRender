@@ -593,12 +593,10 @@ bool KAccelStruct_KDTree::IntersectLeaf(UINT32 idx, const KRay& ray, TracingInst
 	// If no triangle get hit, then I should restore it back.
 	if (ret) {
 		ctx.ray_t = t0 + min_ray_t / tScale;
-		int simd_size = inst->mSIMD_Width * sizeof(float);
-		ctx.u = inst->mpTUV_SIMD[simd_size + min_idx];
-		ctx.v = inst->mpTUV_SIMD[simd_size*2 + min_idx];
+		ctx.u = inst->mpTUV_SIMD[inst->mSIMD_Width + min_idx];
+		ctx.v = inst->mpTUV_SIMD[inst->mSIMD_Width*2 + min_idx];
 		ctx.w = 1.0f - ctx.u - ctx.v;
 		ctx.tri_id = inst->mpHitIdx_SIMD[min_idx];
-		assert(ctx.tri_id < 16731);
 		ctx.kd_leaf_idx = idx;
 	}
 	else { 
