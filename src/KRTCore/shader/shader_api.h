@@ -136,11 +136,17 @@ public:
 
 	void ConvertToTransContext(const IntersectContext& hitCtx, const ShadingContext& shadingCtx, TransContext& transCtx);
 	TransContext& GetCurrentTransCtxStorage();
+
 public:
 	KCamera::EvalContext mCameraContext;
 
 	KMemCacher mCachedTriPosData;
+	std::vector<BYTE> mTmpTriDataArray;
 	UINT32 mCurBVHIndex;
+	int mSIMD_Width;
+	int* mpHitIdx_SIMD;
+	float* mpTUV_SIMD;
+
 
 private:
 	const KAccelStruct_BVH* mpScene;

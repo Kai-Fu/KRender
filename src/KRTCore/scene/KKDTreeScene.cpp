@@ -524,17 +524,30 @@ bool KAccelStruct_KDTree::IntersectLeaf(UINT32 idx, const KRay& ray, TracingInst
 		RayIntersect((const float*)&tempRayOrg, (const float*)&tempRayDir, triPos, inst->mCameraContext.inMotionTime, inst->mTmpRayTriIntsct[i]);
 	}
 #else
-	float tmp_tuv[3];
+
 	UINT32 triStep = leafData.hasAnim ? 18 : 9;
-	bool needUpdate = false;
+	int SIMD_tri_cnt = leafData.tri_cnt / inst->mSIMD_Width;
+	if (leafData.tri_cnt % inst->mSIMD_Width != 0)
+		++SIMD_tri_cnt;
+
+	bool needUpdate = true;
 	UINT64 leafId = ((UINT64)inst->mCurBVHIndex << 32) + idx;
-	UINT32 triPosDataSize = leafData.tri_cnt*sizeof(float)*triStep;
-	UINT32 triIdDataSize = leafData.tri_cnt*sizeof(int);
-	BYTE* pCachedTriData = (BYTE*)inst->mCachedTriPosData.LRU_OpenEntry(leafId, triPosDataSize + triIdDataSize, needUpdate);
-	float* pCachedTriPosData = (float*)pCachedTriData;
-	int* pCacheTriIdData = (int*)(pCachedTriData + triPosDataSize);
+	UINT32 triPosDataSize = leafData.tri_cnt *sizeof(float) * triStep;
+	UINT32 triIdDataSize = leafData.tri_cnt * sizeof(int);
+	UINT32 totalDataSize = triPosDataSize + triIdDataSize;
+	UINT32 paddingTriPosSize = SIMD_tri_cnt * inst->mSIMD_Width * sizeof(float) * triStep;;
+	UINT32 paddingTriIdSize = SIMD_tri_cnt * inst->mSIMD_Width * sizeof(int);
+	BYTE* pSwizzledTriData = (BYTE*)inst->mCachedTriPosData.LRU_OpenEntry(leafId, paddingTriPosSize + paddingTriIdSize, needUpdate);
+	int* pSwizzledTriIdData = (int*)(pSwizzledTriData + paddingTriPosSize);
+	
 
 	if (needUpdate) {
+		if (inst->mTmpTriDataArray.size() < totalDataSize)
+			inst->mTmpTriDataArray.resize(totalDataSize);
+		BYTE* pCachedTriData = &inst->mTmpTriDataArray[0];
+		float* pCachedTriPosData = (float*)pCachedTriData;
+		int* pCacheTriIdData = (int*)(pCachedTriData + triPosDataSize);
+
 		float* pCurTriData = pCachedTriPosData;
 		for (UINT32 i = 0; i < leafData.tri_cnt; ++i) {
 			UINT32 tri_idx = leafData.tri_list.leaf_triangles[i];
@@ -542,39 +555,50 @@ bool KAccelStruct_KDTree::IntersectLeaf(UINT32 idx, const KRay& ray, TracingInst
 			pCurTriData += triStep;
 			pCacheTriIdData[i] = (int)tri_idx;
 		}
+
+		SwizzleForSIMD(pCachedTriData, pSwizzledTriData, inst->mSIMD_Width, sizeof(float), triStep*sizeof(float), leafData.tri_cnt);
+		SwizzleForSIMD(pCacheTriIdData, pSwizzledTriIdData, inst->mSIMD_Width, sizeof(int), sizeof(int), leafData.tri_cnt);
 	}
 
-	int hit_idx = INVALID_INDEX;
 	if (leafData.hasAnim) {
-		s_pPFN_RayIntersectAnimTriArray(
+		/*s_pPFN_RayIntersectAnimTriArray(
 			(const float*)&tempRayOrg, (const float*)&tempRayDir, 
 			inst->mCameraContext.inMotionTime, 
 			pCachedTriPosData, pCacheTriIdData, 
 			tmp_tuv, &hit_idx, 
-			leafData.tri_cnt, (int)ray.mExcludeTriID);
+			leafData.tri_cnt, (int)ray.mExcludeTriID);*/
 	}
 	else {
+		for (int i = 0; i < inst->mSIMD_Width; ++i) 
+			inst->mpHitIdx_SIMD[i] = INVALID_INDEX;
+
 		s_pPFN_RayIntersectStaticTriArray(
 			(const float*)&tempRayOrg, (const float*)&tempRayDir, 
-			pCachedTriPosData, pCacheTriIdData, 
-			tmp_tuv, &hit_idx, 
-			leafData.tri_cnt, (int)ray.mExcludeTriID);
+			(float*)pSwizzledTriData, pSwizzledTriIdData, 
+			inst->mpTUV_SIMD, inst->mpHitIdx_SIMD, 
+			SIMD_tri_cnt, (int)ray.mExcludeTriID);
 	}
 
 #endif
 	double min_ray_t = (ctx.ray_t - t0) * tScale;
-	if (tmp_tuv[0] < min_ray_t) {
-		min_ray_t = tmp_tuv[0];
-		ret = true;
+	int min_idx = INVALID_INDEX;
+	for (int i = 0; i < inst->mSIMD_Width; ++i) {
+		if (inst->mpTUV_SIMD[i] < min_ray_t) {
+			min_ray_t = inst->mpTUV_SIMD[i];
+			min_idx = i;
+			ret = true;
+		}
 	}
 
 	// If no triangle get hit, then I should restore it back.
 	if (ret) {
 		ctx.ray_t = t0 + min_ray_t / tScale;
-		ctx.u = tmp_tuv[1];
-		ctx.v = tmp_tuv[2];
+		int simd_size = inst->mSIMD_Width * sizeof(float);
+		ctx.u = inst->mpTUV_SIMD[simd_size + min_idx];
+		ctx.v = inst->mpTUV_SIMD[simd_size*2 + min_idx];
 		ctx.w = 1.0f - ctx.u - ctx.v;
-		ctx.tri_id = hit_idx;
+		ctx.tri_id = inst->mpHitIdx_SIMD[min_idx];
+		assert(ctx.tri_id < 16731);
 		ctx.kd_leaf_idx = idx;
 	}
 	else { 

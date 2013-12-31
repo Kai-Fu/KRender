@@ -201,11 +201,17 @@ TracingInstance::TracingInstance(const KAccelStruct_BVH* scene, const RenderBuff
 		mSurfaceContexts[i].Allocate(surfaceCtxType);
 		mTransContexts[i].Allocate(transCtxType);
 	}
+
+	mSIMD_Width = KSC_GetSIMDWidth();
+	int simd_data_size = mSIMD_Width * sizeof(float);
+	mpHitIdx_SIMD = (int*)Aligned_Malloc(simd_data_size, simd_data_size);
+	mpTUV_SIMD = (float*)Aligned_Malloc(simd_data_size * 3, simd_data_size);
 }
 
 TracingInstance::~TracingInstance()
 {
-
+	Aligned_Free(mpHitIdx_SIMD);
+	Aligned_Free(mpTUV_SIMD);
 }
 
 SurfaceContext& TracingInstance::GetCurrentSurfaceCtxStorage()
