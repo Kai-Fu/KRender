@@ -145,7 +145,7 @@ extern "C" {
 	/**
 		This funtion is to JIT the function with the function handle specified.
 	*/
-	KSC_API void* KSC_GetFunctionPtr(FunctionHandle hFunc);
+	KSC_API void* KSC_GetFunctionPtr(FunctionHandle hFunc, bool bDump = false);
 
 	/**
 		This function returns the function handle with the specified name. If the function with the name is not

@@ -11,7 +11,7 @@ static std::string			s_lastErrMsg;
 SC::RootDomain*				s_predefineDomain = NULL;
 SC::CG_Context				s_predefineCtx;
 KSC_ModuleDesc*				s_predefineModule = NULL;
-std::list<KSC_ModuleDesc*>	s_modules;
+std::list<KSC_ModuleDesc*>	s_modules;						
 
 static int __int_pow(int base, int p)
 {
@@ -155,7 +155,7 @@ ModuleHandle KSC_Compile(const char* sourceCode)
 	return ret;
 }
 
-void* KSC_GetFunctionPtr(FunctionHandle hFunc)
+void* KSC_GetFunctionPtr(FunctionHandle hFunc, bool bDump)
 {
 	KSC_FunctionDesc* pFuncDesc = (KSC_FunctionDesc*)hFunc;
 	if (!pFuncDesc || !pFuncDesc->F)
@@ -166,34 +166,21 @@ void* KSC_GetFunctionPtr(FunctionHandle hFunc)
 
 	llvm::Function* wrapperF = SC::CG_Context::CreateFunctionWithPackedArguments(*pFuncDesc);
 
-	// The JIT-ed function should NOT have any optimized alignment, so here force it aligned to 1 byte.
-	/*std::vector<Attributes::AttrVal> attrEnumList;
-	attrEnumList.push_back(Attributes::Alignment);
-
-	std::vector<llvm::AttributeWithIndex> attrWithIdxList;
-	llvm::AttrBuilder attrBuilder;
-	attrBuilder = attrBuilder.addAlignmentAttr(1);
-	int argIdx = 0;
-	for (Function::arg_iterator AI = wrapperF->arg_begin(); AI != wrapperF->arg_end(); ++AI, ++argIdx) {
-		llvm::AttributeWithIndex attrWithIdx;
-		attrWithIdx.Attrs = llvm::Attributes::get(getGlobalContext(), attrBuilder);
-		attrWithIdx.Index = argIdx + 1;
-		attrWithIdxList.push_back(attrWithIdx);
+	if (bDump) {
+		printf("------------- Function before JIT wrapping ------------------------\n");
+		pFuncDesc->F->dump();
 	}
-
-	llvm::AttrListPtr attrList = llvm::AttrListPtr::get(getGlobalContext(), attrWithIdxList);
-	wrapperF->setAttributes(attrList);*/
-	printf("------------- Function before JIT wrapping ------------------------\n");
-	pFuncDesc->F->dump();
-	if (pFuncDesc->F != wrapperF) {
+	if (bDump && pFuncDesc->F != wrapperF) {
 		printf("------------- Function after JIT wrapping ------------------------\n");
 		wrapperF->dump();
 	}
 
 	if (!llvm::verifyFunction(*wrapperF, llvm::PrintMessageAction)) {
 		SC::CG_Context::TheFPM->run(*wrapperF);
-		printf("------------- Function after FPM optimization ------------------------\n");
-		wrapperF->dump();
+		if (bDump) {
+			printf("------------- Function after FPM optimization ------------------------\n");
+			wrapperF->dump();
+		}
 		void* ret = SC::CG_Context::TheExecutionEngine->getPointerToFunction(wrapperF);
 		pFuncDesc->pJIT_Func = ret;
 		return ret;

@@ -569,9 +569,6 @@ bool KAccelStruct_KDTree::IntersectLeaf(UINT32 idx, const KRay& ray, TracingInst
 			SIMD_tri_cnt, (int)ray.mExcludeTriID);
 	}
 	else {
-		for (int i = 0; i < inst->mSIMD_Width; ++i) 
-			inst->mpHitIdx_SIMD[i] = INVALID_INDEX;
-
 		s_pPFN_RayIntersectStaticTriArray(
 			(const float*)&tempRayOrg, (const float*)&tempRayDir, 
 			(float*)pSwizzledTriData, pSwizzledTriIdData, 
