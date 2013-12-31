@@ -204,6 +204,7 @@ TracingInstance::TracingInstance(const KAccelStruct_BVH* scene, const RenderBuff
 
 	mSIMD_Width = KSC_GetSIMDWidth();
 	int simd_data_size = mSIMD_Width * sizeof(float);
+	mCachedTriPosData.SetMemAllocAlignment(simd_data_size);
 	mpHitIdx_SIMD = (int*)Aligned_Malloc(simd_data_size, simd_data_size);
 	mpTUV_SIMD = (float*)Aligned_Malloc(simd_data_size * 3, simd_data_size);
 }
