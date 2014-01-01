@@ -319,7 +319,7 @@ void* KMemCacher::LRU_OpenEntry(UINT64 id,  UINT32 memSize, bool& needUpdate)
 	UINT64 oldestEntryTS = 0;
 	UINT32 oldestEntryIdx = INVALID_INDEX;
 	++mLRU_TimeStamp;
-	for (size_t i = 0; i < mEntries.size(); ++i) {
+	for (size_t i = 0; i < mEntries.size() / 4; ++i) {
 		UINT32 curIdx = (hashedIdx + i) % (UINT32)mEntries.size();
 		if (mEntries[curIdx].id == id || mEntries[curIdx].id == INVALID_ENTRY_IDX) {
 			targetIdx = curIdx;

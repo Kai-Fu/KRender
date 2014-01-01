@@ -237,7 +237,7 @@ FORCE_LEAF_NODE:
 	UINT32* right_triangles = NULL;
 	UINT32 addedThreadIdx[2] = {INVALID_INDEX, INVALID_INDEX};
 	// If there're available CPU in thread pool, bNeedSpawnThread will be true
-	bool bNeedSpawnThread = (cnt > (LEAF_TRIANGLE_CNT*5) && 
+	bool bNeedSpawnThread = (cnt > (mLeafTriCnt*15) && 
 		splitData.in_splitThreadIdx != 0 &&
 		mTempDataForKD->mActiveSplitThreadCnt < (long)mTempDataForKD->mCPUCnt);
 	bool bIsThreadSplitPoint = (mTempDataForKD->mThreadLimit == depth);
@@ -685,7 +685,7 @@ void KAccelStruct_KDTree::InitAccelData()
 void KAccelStruct_KDTree::ResetScene()
 {
 	mNodeSplitThreshhold = 0.6f;
-	mLeafTriCnt = LEAF_TRIANGLE_CNT;
+	mLeafTriCnt = UINT32((float)LEAF_TRIANGLE_CNT * sqrt((float)KSC_GetSIMDWidth()));
 	mMaxDepth = MAX_KD_DEPTH;
 	mRootNode = INVALID_INDEX;
 
