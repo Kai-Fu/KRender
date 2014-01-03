@@ -1,5 +1,15 @@
 cmake_minimum_required (VERSION 2.6)
-project (KRender)
+
+list( LENGTH CMAKE_CONFIGURATION_TYPES num_build_type )
+if ( num_build_type GREATER  1 )
+  message( FATAL_ERROR "CMAKE_CONFIGURATION_TYPES must be explicitly Debug or Release." )
+endif ( num_build_type GREATER  1 )
+
+if ( CMAKE_CONFIGURATION_TYPES MATCHES "Debug" )
+  project (KRender_Debug)
+else ( CMAKE_CONFIGURATION_TYPES MATCHES "Debug" )
+  project (KRender_Release)
+endif ( CMAKE_CONFIGURATION_TYPES MATCHES "Debug" )
 
 # The version number.
 set( KRender_VERSION_MAJOR 1 )
@@ -21,11 +31,9 @@ else( WIN32 )
   message( FATAL_ERROR "Currently only Windows platform is supported." )
 endif( WIN32 )
 
-# Supported configuration type
-set( KRT_BUILD_TYPE_LIST "Debug" "Release" )
-
 message( "CPU type is ${CPU_TYPE}" )
-
+message( "Current configuration type is ${CMAKE_CONFIGURATION_TYPES}" )
+  
 # Header file of KRT
 include_directories( "${CMAKE_CURRENT_SOURCE_DIR}" )
 
