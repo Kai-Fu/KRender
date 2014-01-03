@@ -107,6 +107,7 @@ KSC_SurfaceShader::KSC_SurfaceShader(const KSC_SurfaceShader& ref) :
 	mpEmissionFuncPtr = ref.mpEmissionFuncPtr;
 	mpTransmissionFuncPtr = ref.mpTransmissionFuncPtr;
 	mNormalMap = ref.mNormalMap;
+	mHasTransmission = ref.mHasTransmission;
 	mRecieveLight = ref.mRecieveLight;
 }
 
@@ -173,7 +174,11 @@ void KSC_SurfaceShader::Shade(const SurfaceContext& shadingCtx, KColor& out_clr)
 
 void KSC_SurfaceShader::ShaderTransmission(const TransContext& shadingCtx, KColor& out_clr) const
 {
-	typedef void (*PFN_invoke)(void*, void*, void*);
-	PFN_invoke funcPtr = (PFN_invoke)mpTransmissionFuncPtr;
-	funcPtr(mpUniformData, shadingCtx.mpData, &out_clr);
+	if (mHasTransmission) {
+		typedef void (*PFN_invoke)(void*, void*, void*);
+		PFN_invoke funcPtr = (PFN_invoke)mpTransmissionFuncPtr;
+		funcPtr(mpUniformData, shadingCtx.mpData, &out_clr);
+	}
+	else
+		out_clr.Clear();
 }
