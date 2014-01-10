@@ -30,6 +30,7 @@ public:
 		KVec3d up;
 		double xfov;
 		double focal;
+		KVec2 aperture;
 
 		MotionState() {xfov = 45.0; }
 	};
@@ -52,15 +53,13 @@ public:
 	void SetImageSize(UINT32 w, UINT32 h);
 
 	// Get the aperture size of the camera, default is pinhole camera(-1, -1)
-	const KVec2& GetApertureSize() const;
-	void SetApertureSize(float x, float y);
+	KVec2 GetApertureSize(double cur_t) const;
 	
 	// Configure this camera as a still camera
 	void SetupStillCamera(const MotionState& param);
 
 	// Configure this camera as a moving camera so that motion blur is considered
-	void SetupMovingCamera();
-	void AddCameraMotionState(const MotionState& param);
+	void SetupMovingCamera(const MotionState& starting, const MotionState& ending);
 
 	// Evaluate the shading for the given screen coordinates and time,
 	// it will also respect the settings in input EvalContext instance.
@@ -76,8 +75,9 @@ protected:
 	void InterpolateCameraMotion(MotionState& outMotion, double cur_t) const;
 	void ConfigEyeRayGen(EyeRayGen& outEyeRayGen, MotionState& outMotion, double cur_t) const;
 private:
-	std::vector<MotionState> mMotionStates;
-	KVec2 mApertureSize; // aperture size may be different in x and y directions
+	MotionState mStatringState;
+	MotionState mEndingState;
+	bool mIsMoving;
 
 	UINT32 mImageWidth;
 	UINT32 mImageHeight;

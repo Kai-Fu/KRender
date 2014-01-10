@@ -10,6 +10,7 @@
 
 #include "../scene/KKDBBoxScene.h"
 #include "../material/material_library.h"
+#include "../camera/camera_manager.h"
 
 #include <assert.h>
 
@@ -126,6 +127,7 @@ void AbcLoader::ProcessNode(const Abc::IObject& obj, int treeDepth)
 			AbcG::ICamera camera(obj, ohead.getName());
 			if (camera) {
                 std::cout << "camera: " << camera.getName() << std::endl; 
+				ProcessCamera(camera);
             }
 		}
 		else if (AbcG::ILight::matches(ohead)) {
@@ -133,6 +135,9 @@ void AbcLoader::ProcessNode(const Abc::IObject& obj, int treeDepth)
 			if (light) {
                 std::cout << "light: " << light.getName() << std::endl; 
             }
+		}
+		else {
+			std::cout << "Unknown object: " << ohead.getName() << std::endl;
 		}
        
         {
@@ -275,6 +280,29 @@ void AbcLoader::ProcessMesh(const AbcG::IPolyMesh& mesh)
 	}
 
 	
+}
+
+void AbcLoader::ProcessCamera(const AbcG::ICamera& camera)
+{
+	KCamera* pCamera = CameraManager::GetInstance()->OpenCamera(camera.getName().c_str(), true);
+	assert(pCamera);
+	KMatrix4 trans[2];
+	bool isAnim = false;
+	GetObjectWorldTransform(camera, trans, isAnim);
+	const AbcG::ICameraSchema& cameraSchema = camera.getSchema();
+	
+	if (camera.getSchema().isConstant() || isAnim) {
+		// TODO: support animated camera
+	}
+	else {
+		AbcG::CameraSample samp;
+		cameraSchema.get(samp);
+		KCamera::MotionState ms;
+		ms.xfov = samp.getFieldOfView();
+		ms.focal = samp.getFocalLength();
+		ms.aperture[0] = (float)samp.getHorizontalAperture();
+		ms.aperture[1] = (float)samp.getVerticalAperture();
+	}
 }
 
 void AbcLoader::ConvertMatrix(const Imath::M44d& ilmMat, KMatrix4& mat)
