@@ -186,7 +186,7 @@ public:
 	float GetPixelRandom(UINT32 x, UINT32 y, UINT32 offset, float min, float max) const;
 
 	KVec2 RS_Image(UINT32 x, UINT32 y) const;
-	KVec2 RS_DOF(UINT32 x, UINT32 y, const KVec2& apertureSize) const;
+	KVec2 RS_DOF(UINT32 x, UINT32 y) const;
 	KVec2 RS_AreaLight(UINT32 x, UINT32 y, UINT32 lightIdx, UINT32 sampleIdx) const;
 	float RS_MotionBlur(UINT32 x, UINT32 y) const;
 	const BitmapObject* GetOutputImagePtr() const;

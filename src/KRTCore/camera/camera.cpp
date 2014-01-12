@@ -21,50 +21,36 @@ void KCamera::SetImageSize(UINT32 w, UINT32 h)
 	mImageHeight = h;
 }
 
-KVec2 KCamera::GetApertureSize(double cur_t) const
-{
-	KVec2 ret;
-	if (mIsMoving) {
-		ret = nvmath::lerp((float)cur_t, mStatringState.aperture, mEndingState.aperture);
-	}
-	else {
-		ret = mStatringState.aperture;
-	}
-	return ret;
-}
-
 
 void KCamera::SetupStillCamera(const MotionState& param)
 {
 	mIsMoving = false;
-	mStatringState = param;
+	mStartingState = param;
 }
 
 void KCamera::SetupMovingCamera(const MotionState& starting, const MotionState& ending)
 {
 	mIsMoving = true;
-	mStatringState = starting;
+	mStartingState = starting;
 	mEndingState = ending;
 }
 
 
-void KCamera::InterpolateCameraMotion(MotionState& outMotion, double cur_t) const
+void KCamera::InterpolateCameraMotion(MotionState& outMotion, const MotionState& ms0, const MotionState& ms1, double cur_t)
 {
-	if (mIsMoving) {
-		outMotion.pos = nvmath::lerp(cur_t, mStatringState.pos, mEndingState.pos);
-		outMotion.lookat = nvmath::lerp(cur_t, mStatringState.lookat, mEndingState.lookat);
-		outMotion.xfov = nvmath::lerp(cur_t, mStatringState.xfov, mEndingState.xfov);
-		outMotion.focal = nvmath::lerp(cur_t, mStatringState.focal, mEndingState.focal);
-	}
-	else {
-		outMotion = mStatringState;
-	}
-	
+	outMotion.pos = nvmath::lerp(cur_t, ms0.pos, ms1.pos);
+	outMotion.lookat = nvmath::lerp(cur_t, ms0.lookat, ms1.lookat);
+	outMotion.xfov = nvmath::lerp(cur_t, ms0.xfov, ms1.xfov);
+	outMotion.focal = nvmath::lerp(cur_t, ms0.focal, ms1.focal);
+	outMotion.aperture = nvmath::lerp(cur_t, ms0.aperture, ms1.aperture);
 }
 
 void KCamera::ConfigEyeRayGen(EyeRayGen& outEyeRayGen, MotionState& outMotion, double cur_t) const
 {
-	InterpolateCameraMotion(outMotion, cur_t);
+	if (mIsMoving)
+		InterpolateCameraMotion(outMotion, mStartingState, mEndingState, cur_t);
+	else
+		outMotion = mStartingState;
 
 	KVec3d viewVec = outMotion.lookat - outMotion.pos;
 	viewVec.normalize();

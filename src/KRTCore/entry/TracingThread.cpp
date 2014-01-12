@@ -36,7 +36,7 @@ void ImageSampler::DoPixelSampling(UINT32 x, UINT32 y, UINT32 sample_count, Pixe
 		tracingInst.mCameraContext.inScreenPos = pRBufs->RS_Image(x, y);
 		float motionTime = ENABLE_MB ? pRBufs->RS_MotionBlur(x, y) : 0;
 		tracingInst.mCameraContext.inMotionTime = motionTime;
-		tracingInst.mCameraContext.inAperturePos = ENABLE_DOF ? pRBufs->RS_DOF(x, y, mpInputData->pCurrentCamera->GetApertureSize((double)motionTime)) : KVec2(0,0);
+		tracingInst.mCameraContext.inAperturePos = ENABLE_DOF ? pRBufs->RS_DOF(x, y) : KVec2(0,0);
 
 		KColor out_clr;
 		bool isHit = mpInputData->pCurrentCamera->EvaluateShading(tracingInst, mTempSamplingRes[si]);

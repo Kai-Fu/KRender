@@ -121,7 +121,7 @@ KVec2 RenderBuffers::RS_Image(UINT32 x, UINT32 y) const
 	return hPt;
 }
 
-KVec2 RenderBuffers::RS_DOF(UINT32 x, UINT32 y, const KVec2& apertureSize) const
+KVec2 RenderBuffers::RS_DOF(UINT32 x, UINT32 y) const
 {
 	KVec2 warp;
 	float fx = (float)x;
@@ -132,8 +132,7 @@ KVec2 RenderBuffers::RS_DOF(UINT32 x, UINT32 y, const KVec2& apertureSize) const
 	warp[0] = GetPixelRandom(x, y, RS_DOF_X_OFFSET);
 	warp[1] = GetPixelRandom(x, y, RS_DOF_Y_OFFSET);
 
-	KVec2 halfApertureSize = apertureSize;
-	halfApertureSize *= 0.5f;
+	KVec2 halfApertureSize(0.5f, 0.5f);
 	KVec2 min(-halfApertureSize[0], halfApertureSize[0]);
 	KVec2 max(-halfApertureSize[1], halfApertureSize[1]);
 

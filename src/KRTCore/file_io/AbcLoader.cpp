@@ -279,7 +279,24 @@ void AbcLoader::ProcessMesh(const AbcG::IPolyMesh& mesh)
 			mAnimEndTime = animEndTime;
 	}
 
-	
+}
+
+
+static void _ConvertAbcCamera(const KMatrix4& mat, const AbcG::CameraSample& samp, KCamera::MotionState& outMS)
+{
+	KVec3d v_zero(0,0,0);
+	Vec3TransformCoord(outMS.pos, v_zero, mat);
+
+	KVec3d v_zaxis(0,0,1);
+	Vec3TransformCoord(outMS.lookat, v_zaxis, mat);
+
+	KVec3d v_yaxis(0,0,0);
+	Vec3TransformCoord(outMS.up, v_yaxis, mat);
+
+	outMS.xfov = samp.getFieldOfView();
+	outMS.focal = samp.getFocalLength();
+	outMS.aperture[0] = samp.getHorizontalAperture();
+	outMS.aperture[1] = samp.getVerticalAperture();
 }
 
 void AbcLoader::ProcessCamera(const AbcG::ICamera& camera)
@@ -291,17 +308,53 @@ void AbcLoader::ProcessCamera(const AbcG::ICamera& camera)
 	GetObjectWorldTransform(camera, trans, isAnim);
 	const AbcG::ICameraSchema& cameraSchema = camera.getSchema();
 	
-	if (camera.getSchema().isConstant() || isAnim) {
-		// TODO: support animated camera
+	if (!cameraSchema.isConstant() || isAnim) {
+		KCamera::MotionState msStarting;
+		{
+			double t = mCurTime;
+			std::pair<Abc::index_t, Abc::chrono_t> idx_0 = cameraSchema.getTimeSampling()->getFloorIndex(t, cameraSchema.getNumSamples());
+			std::pair<Abc::index_t, Abc::chrono_t> idx_1 = cameraSchema.getTimeSampling()->getCeilIndex(t, cameraSchema.getNumSamples());
+			float alpha = (idx_0.first != idx_1.first) ? (float(t - idx_0.second) / float(idx_1.second - idx_0.second)) : 0;
+			AbcG::CameraSample samp0;
+			cameraSchema.get(samp0, idx_0.first);
+			KCamera::MotionState ms0;
+			_ConvertAbcCamera(trans[0], samp0, ms0);
+
+			AbcG::CameraSample samp1;
+			cameraSchema.get(samp1, idx_1.first);
+			KCamera::MotionState ms1;
+			_ConvertAbcCamera(trans[1], samp1, ms1);
+
+			KCamera::InterpolateCameraMotion(msStarting, ms0, ms1, (double)alpha);
+		}
+		KCamera::MotionState msEnding;
+		{
+			double t = mCurTime + mSampleDuration;
+			std::pair<Abc::index_t, Abc::chrono_t> idx_0 = cameraSchema.getTimeSampling()->getFloorIndex(t, cameraSchema.getNumSamples());
+			std::pair<Abc::index_t, Abc::chrono_t> idx_1 = cameraSchema.getTimeSampling()->getCeilIndex(t, cameraSchema.getNumSamples());
+			float alpha = (idx_0.first != idx_1.first) ? (float(t - idx_0.second) / float(idx_1.second - idx_0.second)) : 0;
+			AbcG::CameraSample samp0;
+			cameraSchema.get(samp0, idx_0.first);
+			KCamera::MotionState ms0;
+			_ConvertAbcCamera(trans[0], samp0, ms0);
+
+			AbcG::CameraSample samp1;
+			cameraSchema.get(samp1, idx_1.first);
+			KCamera::MotionState ms1;
+			_ConvertAbcCamera(trans[1], samp1, ms1);
+
+			KCamera::InterpolateCameraMotion(msEnding, ms0, ms1, (double)alpha);
+		}
+
+		pCamera->SetupMovingCamera(msStarting, msEnding);
+
 	}
 	else {
 		AbcG::CameraSample samp;
 		cameraSchema.get(samp);
 		KCamera::MotionState ms;
-		ms.xfov = samp.getFieldOfView();
-		ms.focal = samp.getFocalLength();
-		ms.aperture[0] = (float)samp.getHorizontalAperture();
-		ms.aperture[1] = (float)samp.getVerticalAperture();
+		_ConvertAbcCamera(trans[0], samp, ms);
+		pCamera->SetupStillCamera(ms);
 	}
 }
 

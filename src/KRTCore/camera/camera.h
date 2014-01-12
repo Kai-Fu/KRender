@@ -30,7 +30,7 @@ public:
 		KVec3d up;
 		double xfov;
 		double focal;
-		KVec2 aperture;
+		KVec2d aperture;
 
 		MotionState() {xfov = 45.0; }
 	};
@@ -42,7 +42,7 @@ public:
 	public:
 		
 		KVec2d inScreenPos;  // position in screen coordinates(pixel uint)
-		KVec2d inAperturePos;		// offset in camera plane(world unit)
+		KVec2d inAperturePos;		// offset in camera plane(in unified space(-0.5, 0.5) )
 		float inMotionTime;	// time defined between 0 - 1
 		
 		// the value of this structure is computed from the input data
@@ -51,9 +51,6 @@ public:
 public:
 	// Set the image size so that it can generate the eye rays for the specified screen coordinates.
 	void SetImageSize(UINT32 w, UINT32 h);
-
-	// Get the aperture size of the camera, default is pinhole camera(-1, -1)
-	KVec2 GetApertureSize(double cur_t) const;
 	
 	// Configure this camera as a still camera
 	void SetupStillCamera(const MotionState& param);
@@ -65,17 +62,16 @@ public:
 	// it will also respect the settings in input EvalContext instance.
 	bool EvaluateShading(TracingInstance& tracingInstance, KColor& out_clr);
 
-	// Shot one ray with the given aperture position
-	void CastRay(TracingInstance& tracingInstance, float x, float y, const KVec2& aperturePos, KRay& outRay) const;
-
 	// Get pixel position(suppose the ray is shot from the center of aperture)
 	bool GetScreenPosition(const KVec3& pos, KVec2& outScrPos) const;
 
+	static void InterpolateCameraMotion(MotionState& outMotion, const MotionState& ms0, const MotionState& ms1, double cur_t);
+
 protected:
-	void InterpolateCameraMotion(MotionState& outMotion, double cur_t) const;
 	void ConfigEyeRayGen(EyeRayGen& outEyeRayGen, MotionState& outMotion, double cur_t) const;
+
 private:
-	MotionState mStatringState;
+	MotionState mStartingState;
 	MotionState mEndingState;
 	bool mIsMoving;
 

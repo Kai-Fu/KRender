@@ -128,7 +128,6 @@ void KRayTracer_Root::SetCamera(const char* name, float pos[3], float lookat[3],
 	ms.xfov = xfov;
 	ms.focal = 40; // TODO: avoid hard-coded value
 	pCamera->SetupStillCamera(ms);
-	pCamera->SetApertureSize(0.3f, 0.3f); // TODO: avoid hard-coded value
 }
 
 void KRayTracer_Root::EventNotifier::OnTileFinished(UINT32 sx, UINT32 sy, UINT32 w, UINT32 h)
