@@ -287,12 +287,13 @@ static void _ConvertAbcCamera(const KMatrix4& mat, const AbcG::CameraSample& sam
 	KVec3d v_zero(0,0,0);
 	Vec3TransformCoord(outMS.pos, v_zero, mat);
 
-	KVec3d v_zaxis(0,0,1);
+	KVec3d v_zaxis(0,0,-1);
 	Vec3TransformCoord(outMS.lookat, v_zaxis, mat);
 
-	KVec3d v_yaxis(0,0,0);
-	Vec3TransformCoord(outMS.up, v_yaxis, mat);
-
+	KVec3d v_yaxis(0,1,0);
+	outMS.up = v_yaxis;
+	//Vec3TransformCoord(outMS.up, v_yaxis, mat);
+	
 	outMS.xfov = samp.getFieldOfView();
 	outMS.focal = samp.getFocalLength();
 	outMS.aperture[0] = samp.getHorizontalAperture();
@@ -499,7 +500,12 @@ bool AbcLoader::ConvertMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::chrono
 						int v1  = (*faceIdx_0)[fiIter + vi];
 						int v2  = (*faceIdx_0)[fiIter + vi + 1];
 
+						int n0 = (int)fiIter;
+						int n1  = (int)fiIter + vi;
+						int n2  = (int)fiIter + vi + 1;
+
 						int v[] = {v0, v1, v2};
+						int n[] = {n0, n1, n2};
 						if (frame_i == 0) {
 							outMesh.mFaces[triIter].pn_idx[0] = (UINT32)viIter;
 							outMesh.mFaces[triIter].pn_idx[2] = (UINT32)viIter + 1;
@@ -511,9 +517,9 @@ bool AbcLoader::ConvertMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::chrono
 							outMesh.GetVertPN(viIter)[frame_i].pos[1] = nvmath::lerp(alpha, (*vertPos_0)[v[ii]].y, (*vertPos_1)[v[ii]].y);
 							outMesh.GetVertPN(viIter)[frame_i].pos[2] = nvmath::lerp(alpha, (*vertPos_0)[v[ii]].z, (*vertPos_1)[v[ii]].z);
 
-							outMesh.GetVertPN(viIter)[frame_i].nor[0] = nvmath::lerp(alpha, (*normVal_0)[viIter].x, (*normVal_1)[viIter].x);
-							outMesh.GetVertPN(viIter)[frame_i].nor[1] = nvmath::lerp(alpha, (*normVal_0)[viIter].y, (*normVal_1)[viIter].y);
-							outMesh.GetVertPN(viIter)[frame_i].nor[2] = nvmath::lerp(alpha, (*normVal_0)[viIter].z, (*normVal_1)[viIter].z);
+							outMesh.GetVertPN(viIter)[frame_i].nor[0] = nvmath::lerp(alpha, (*normVal_0)[n[ii]].x, (*normVal_1)[n[ii]].x);
+							outMesh.GetVertPN(viIter)[frame_i].nor[1] = nvmath::lerp(alpha, (*normVal_0)[n[ii]].y, (*normVal_1)[n[ii]].y);
+							outMesh.GetVertPN(viIter)[frame_i].nor[2] = nvmath::lerp(alpha, (*normVal_0)[n[ii]].z, (*normVal_1)[n[ii]].z);
 
 							viIter++;
 						}
