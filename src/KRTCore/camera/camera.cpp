@@ -40,6 +40,7 @@ void KCamera::InterpolateCameraMotion(MotionState& outMotion, const MotionState&
 {
 	outMotion.pos = nvmath::lerp(cur_t, ms0.pos, ms1.pos);
 	outMotion.lookat = nvmath::lerp(cur_t, ms0.lookat, ms1.lookat);
+	outMotion.up = nvmath::lerp(cur_t, ms0.up, ms1.up);
 	outMotion.xfov = nvmath::lerp(cur_t, ms0.xfov, ms1.xfov);
 	outMotion.focal = nvmath::lerp(cur_t, ms0.focal, ms1.focal);
 	outMotion.aperture = nvmath::lerp(cur_t, ms0.aperture, ms1.aperture);

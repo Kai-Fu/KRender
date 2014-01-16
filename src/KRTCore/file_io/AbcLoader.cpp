@@ -291,8 +291,8 @@ static void _ConvertAbcCamera(const KMatrix4& mat, const AbcG::CameraSample& sam
 	Vec3TransformCoord(outMS.lookat, v_zaxis, mat);
 
 	KVec3d v_yaxis(0,1,0);
-	outMS.up = v_yaxis;
-	//Vec3TransformCoord(outMS.up, v_yaxis, mat);
+	Vec3TransformCoord(outMS.up, v_yaxis, mat);
+	outMS.up -= outMS.pos;
 	
 	outMS.xfov = samp.getFieldOfView();
 	outMS.focal = samp.getFocalLength();
