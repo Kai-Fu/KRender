@@ -17,7 +17,7 @@
 
 AbcLoader::AbcLoader()
 {
-	mCurTime = 0.0;
+	mCurTime = 4.0;
 	mpScene = NULL;
 	mSampleDuration = 1.0 / 50.0;
 }
@@ -633,7 +633,8 @@ bool AbcLoader::ConvertMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::chrono
 void AbcLoader::GetObjectWorldTransform(const AbcG::IObject& obj, KMatrix4 trans[2], bool& isAnim)
 {
 	bool isAniminated = false;
-	for (Abc::IObject node = obj; node.valid(); node = node.getParent()) {
+	Abc::IObject node;
+	for (node = obj; node.valid(); node = node.getParent()) {
 		if (AbcG::IXform::matches(node.getHeader())) {
 			AbcG::IXform xform(node, Abc::kWrapExisting);
 			if (!xform.getSchema().isConstant()) {
@@ -649,7 +650,7 @@ void AbcLoader::GetObjectWorldTransform(const AbcG::IObject& obj, KMatrix4 trans
 		trans[0] = nvmath::cIdentity44f;
 		trans[1] = nvmath::cIdentity44f;
 
-		for (Abc::IObject node = obj; node.valid(); node = node.getParent()) {
+		for (; node.valid(); node = node.getParent()) {
 			if (AbcG::IXform::matches(node.getHeader())) {
 				AbcG::IXform xform(node, Abc::kWrapExisting);
 
@@ -684,7 +685,7 @@ void AbcLoader::GetObjectWorldTransform(const AbcG::IObject& obj, KMatrix4 trans
 						nvmath::lerp( float((sampleTime-t0)/(t1-t0)), kt0, kt1, localTransform);
 					}
 
-					trans[i] = localTransform * trans[i];
+					trans[i] = trans[i] * localTransform;
 				}
 			}
 		}
@@ -692,13 +693,13 @@ void AbcLoader::GetObjectWorldTransform(const AbcG::IObject& obj, KMatrix4 trans
 	else {
 		// For static xform...
 		trans[0] = nvmath::cIdentity44f;
-		for (Abc::IObject node = obj; node.valid(); node = node.getParent()) {
+		for (node = obj; node.valid(); node = node.getParent()) {
 			if (AbcG::IXform::matches(node.getHeader())) {
 				AbcG::IXform xform(node, Abc::kWrapExisting);
 				Imath::M44d mat = xform.getSchema().getValue().getMatrix();
 				KMatrix4 localTransform;
 				ConvertMatrix(mat, localTransform);
-				trans[0] = localTransform * trans[0];
+				trans[0] = trans[0] * localTransform;
 			}
 
 		}

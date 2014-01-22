@@ -58,20 +58,6 @@ bool LightScheme::GetLightIter(TracingInstance* pLocalData, const KVec2& sampleP
 				KVec3d temp_light_pos(lightPos);
 				lightDir = adjustedPos - temp_light_pos;
 					
-				// Clamp the shadow ray if the light source is out of the scene's bounding box.
-				// Doing so can improve the floating point precision.
-				const KBBox& sceneBBox = pLocalData->GetScenePtr()->GetSceneBBox();
-				bool needClampRay = !sceneBBox.IsInside(ToVec3f(temp_light_pos));
-				if (needClampRay) {
-					KRay ray;
-					ray.Init(temp_light_pos, lightDir, NULL);
-					double t0, t1;
-					if (IntersectBBox(ray, sceneBBox, t0, t1)) {
-						temp_light_pos = ray.GetOrg() + ray.GetDir() * t0;
-					}
-
-				}
-					
 				KRay ray;
 				lightDir = adjustedPos - temp_light_pos;
 				ray.Init(temp_light_pos, lightDir, NULL);
@@ -99,8 +85,8 @@ bool LightScheme::GetLightIter(TracingInstance* pLocalData, const KVec2& sampleP
 						lum = transmission.Luminance();
 						if (lum > 0.001f) {
 							KVec3d go_dis = lightDir*test_ctx.ray_t;
-							temp_light_pos += (go_dis * 1.00001);
-							lightDir -= (go_dis * 0.9999);
+							temp_light_pos += go_dis;
+							lightDir -= go_dis;
 							ray.Init(temp_light_pos, lightDir, NULL);
 							ray.mExcludeBBoxNode = test_ctx.bbox_node_idx;
 							ray.mExcludeTriID = test_ctx.tri_id; 

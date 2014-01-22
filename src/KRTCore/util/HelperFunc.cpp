@@ -118,7 +118,7 @@ void SwizzleForSIMD(void* srcData, void* destData, int SIMD_cc, int SIMD_cw, int
 		BYTE* curSrcElem = (BYTE*)srcData + lastElemIdx * elemSize;
 		BYTE* curDestElem = (BYTE*)destData + (elem_i / SIMD_cc) * elemSize * SIMD_cc + (elem_i % SIMD_cc) * SIMD_cw;
 		for (int elem_di = 0; elem_di < elemSize; elem_di += SIMD_cw) {
-			BYTE* curSrcSIMD_c = curSrcElem + lastElemIdx;
+			BYTE* curSrcSIMD_c = curSrcElem + elem_di;
 			BYTE* curDestSIMD_c = curDestElem + elem_di * SIMD_cc;
 
 			memcpy(curDestSIMD_c, curSrcSIMD_c, SIMD_cw);
