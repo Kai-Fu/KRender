@@ -17,7 +17,7 @@
 
 AbcLoader::AbcLoader()
 {
-	mCurTime = 4.0;
+	mCurTime = 0.0;
 	mpScene = NULL;
 	mSampleDuration = 1.0 / 50.0;
 }
@@ -74,13 +74,14 @@ void AbcLoader::ProcessNode(const Abc::IObject& obj, int treeDepth)
 {
 	if ( !obj ) { return; }
 
-	mCurTreeDepth = treeDepth;
 	if ( mCurNodeID.size() < size_t(treeDepth+1) )
 		mCurNodeID.resize(treeDepth+1);
 
     // IObject has no explicit time sampling, but its children may.
     size_t numChildren = obj.getNumChildren();
     for (size_t i = 0; i < numChildren; ++i) {
+
+		mCurTreeDepth = treeDepth;
         const Abc::ObjectHeader &ohead = obj.getChildHeader(i);
 		mCurNodeID[treeDepth] = i;
 
@@ -741,6 +742,7 @@ bool AbcLoader::Update(float time, float duration, std::list<UINT32>& changedSce
 
 void AbcLoader::UpdateXformNode(std::vector<size_t>::const_iterator nodeIdIt, std::vector<size_t>::const_iterator nodeItEnd, UINT32 nodeIdx, const Abc::IObject& parentObj)
 {
+	assert(*nodeIdIt < parentObj.getNumChildren());
 	const Abc::ObjectHeader &ohead = parentObj.getChildHeader(*nodeIdIt);
 	Abc::IObject childObj(parentObj, ohead.getName());
 	if (nodeIdIt+1 == nodeItEnd) {
