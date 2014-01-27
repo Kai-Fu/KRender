@@ -37,7 +37,7 @@ private:
 	void ProcessCamera(const AbcG::ICamera& camera);
 
 	void GetObjectWorldTransform(const AbcG::IObject& obj, KMatrix4 trans[2], bool& isAnim);
-	KScene* GetXformStaticScene(const Abc::IObject& obj, KMatrix4& mat);
+	KScene* GetXformStaticScene(const Abc::IObject& obj, KMatrix4& out_mat);
 
 	bool ConvertMesh(const AbcG::IPolyMeshSchema& meshSchema, Abc::chrono_t t, KTriMesh& outMesh);
 
@@ -63,7 +63,7 @@ private:
 
 	KSceneSet* mpScene;
 	std::string mFileName;
-	std::hash_map<AbcA::ObjectReader*, KScene*> mXformNodes;
+	std::hash_map<std::string, KScene*> mXformNodes;
 
 	std::vector<size_t> mCurNodeID;
 	int mCurTreeDepth;

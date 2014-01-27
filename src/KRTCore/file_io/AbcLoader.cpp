@@ -85,56 +85,54 @@ void AbcLoader::ProcessNode(const Abc::IObject& obj, int treeDepth)
         const Abc::ObjectHeader &ohead = obj.getChildHeader(i);
 		mCurNodeID[treeDepth] = i;
 
-		for (int s = 0; s < treeDepth; ++s) std::cout << " ";
-
         if ( AbcG::IPolyMesh::matches(ohead) ) {
             AbcG::IPolyMesh pmesh(obj, ohead.getName());
             if (pmesh) {
-				std::cout << "mesh: " << pmesh.getName() << std::endl; 
+				//std::cout << "mesh: " << pmesh.getName() << std::endl; 
 				ProcessMesh(pmesh);
             }
         }
         else if (AbcG::IPoints::matches(ohead)) {
             AbcG::IPoints points(obj, ohead.getName());
             if (points) {
-                std::cout << "points: " << points.getName() << std::endl; 
+                //std::cout << "points: " << points.getName() << std::endl; 
             }
         }
         else if (AbcG::ICurves::matches(ohead) ) {
             AbcG::ICurves curves(obj, ohead.getName());
             if (curves) {
-                std::cout << "curves: " << curves.getName() << std::endl; 
+                //std::cout << "curves: " << curves.getName() << std::endl; 
             }
         }
         else if (AbcG::INuPatch::matches(ohead)) {
             AbcG::INuPatch nuPatch(obj, ohead.getName());
             if (nuPatch) {
-				std::cout << "nuPatch: " << nuPatch.getName() << std::endl; 
+				//std::cout << "nuPatch: " << nuPatch.getName() << std::endl; 
             }
         }
         else if (AbcG::IXform::matches(ohead)) {
             AbcG::IXform xform(obj, ohead.getName());
             if (xform) {
-				std::cout << "xform: " << xform.getName() << std::endl;
+				//std::cout << "xform: " << xform.getName() << std::endl;
             }
         }
         else if (AbcG::ISubD::matches(ohead)) {
             AbcG::ISubD subd(obj, ohead.getName());
             if (subd) {
-                std::cout << "subd: " << subd.getName() << std::endl; 
+                //std::cout << "subd: " << subd.getName() << std::endl; 
             }
         }
 		else if (AbcG::ICamera::matches(ohead)) {
 			AbcG::ICamera camera(obj, ohead.getName());
 			if (camera) {
-                std::cout << "camera: " << camera.getName() << std::endl; 
+                //std::cout << "camera: " << camera.getName() << std::endl; 
 				ProcessCamera(camera);
             }
 		}
 		else if (AbcG::ILight::matches(ohead)) {
 			AbcG::ILight light(obj, ohead.getName());
 			if (light) {
-                std::cout << "light: " << light.getName() << std::endl; 
+                //std::cout << "light: " << light.getName() << std::endl; 
             }
 		}
 		else {
@@ -150,16 +148,17 @@ void AbcLoader::ProcessNode(const Abc::IObject& obj, int treeDepth)
 }
 
 
-KScene* AbcLoader::GetXformStaticScene(const Abc::IObject& obj, KMatrix4& mat)
+KScene* AbcLoader::GetXformStaticScene(const Abc::IObject& obj, KMatrix4& out_mat)
 {
 	Imath::M44d localMat;
 	localMat.makeIdentity();
 	AbcA::ObjectReaderPtr animNode;
+
 	for (Abc::IObject node = obj; node.valid(); node = node.getParent()) {
 
 		if (AbcG::IXform::matches(node.getHeader())) {
 			AbcG::IXform xform(node, Abc::kWrapExisting);
-			
+
 			if (!xform.getSchema().isConstant()) {
 				animNode = xform.getPtr();
 
@@ -179,14 +178,17 @@ KScene* AbcLoader::GetXformStaticScene(const Abc::IObject& obj, KMatrix4& mat)
 		}
 	}
 
+	std::string animRootNodeName = animNode.get() ? animNode.get()->getFullName() : "";
 
-	if (mXformNodes.find(animNode.get()) == mXformNodes.end()) {
+	if (mXformNodes.find(animRootNodeName) == mXformNodes.end()) {
 		UINT32 sceneIdx;
 		KScene* xformScene = mpScene->AddKDScene(sceneIdx);
-		mXformNodes[animNode.get()] = xformScene;
+		mXformNodes[animRootNodeName] = xformScene;
 		UINT32 sceneNodeIdx = mpScene->SceneNode_Create(sceneIdx);
 
 		if (animNode.get()) {
+			
+			//std::cout << "Animation root node:" << animNode.get()->getFullName() << "->" << sceneIdx << std::endl;
 			// Remember the animated xform node so that it can be reused in the update phase.
 			std::vector<size_t> nodeId;
 			GetCurNodeID(nodeId);
@@ -209,8 +211,8 @@ KScene* AbcLoader::GetXformStaticScene(const Abc::IObject& obj, KMatrix4& mat)
 
 	}
 
-	ConvertMatrix(localMat, mat);
-	KScene* xformScene = mXformNodes[animNode.get()];
+	ConvertMatrix(localMat, out_mat);
+	KScene* xformScene = mXformNodes[animRootNodeName];
 	return xformScene;
 }
 
