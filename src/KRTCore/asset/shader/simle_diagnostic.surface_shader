@@ -5,9 +5,9 @@ struct DiagnosticParam
 
 void Shade(DiagnosticParam% uniforms, SurfaceContext% ctx, float3& outClr)
 {
-	if (showElement == 0)
+	if (uniforms.showElement == 0)
 		outClr = ctx.normal * 0.5 + 0.5;
-	else if (showElement == 1)
+	else if (uniforms.showElement == 1)
 		outClr = float3(1,1,1);
 	else
 		outClr = float3(0,0,0);

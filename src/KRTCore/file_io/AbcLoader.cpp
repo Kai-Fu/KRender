@@ -126,7 +126,12 @@ void AbcLoader::ProcessNode(const Abc::IObject& obj, int treeDepth)
 			AbcG::ICamera camera(obj, ohead.getName());
 			if (camera) {
                 //std::cout << "camera: " << camera.getName() << std::endl; 
-				ProcessCamera(camera);
+				std::vector<size_t> nodeId;
+				bool isCamAnim = false;
+				GetCurNodeID(nodeId);
+				ProcessCamera(camera, isCamAnim);
+				if (isCamAnim)
+					mAnimCamNames[nodeId] = camera.getName();
             }
 		}
 		else if (AbcG::ILight::matches(ohead)) {
@@ -303,7 +308,7 @@ static void _ConvertAbcCamera(const KMatrix4& mat, const AbcG::CameraSample& sam
 	outMS.aperture[1] = samp.getVerticalAperture();
 }
 
-void AbcLoader::ProcessCamera(const AbcG::ICamera& camera)
+void AbcLoader::ProcessCamera(const AbcG::ICamera& camera, bool& out_isAnim)
 {
 	KCamera* pCamera = CameraManager::GetInstance()->OpenCamera(camera.getName().c_str(), true);
 	assert(pCamera);
@@ -352,6 +357,7 @@ void AbcLoader::ProcessCamera(const AbcG::ICamera& camera)
 
 		pCamera->SetupMovingCamera(msStarting, msEnding);
 
+		out_isAnim = true;
 	}
 	else {
 		AbcG::CameraSample samp;
@@ -359,6 +365,8 @@ void AbcLoader::ProcessCamera(const AbcG::ICamera& camera)
 		KCamera::MotionState ms;
 		_ConvertAbcCamera(trans[0], samp, ms);
 		pCamera->SetupStillCamera(ms);
+
+		out_isAnim = false;
 	}
 }
 
@@ -739,6 +747,11 @@ bool AbcLoader::Update(float time, float duration, std::list<UINT32>& changedSce
 		changedScenes.push_back(it_scene->second);
 	}
 
+	std::map<std::vector<size_t>, std::string>::iterator it_cam = mAnimCamNames.begin();
+	for (; it_cam != mAnimCamNames.end(); ++it_cam) {
+		UpdateXformNode(it_cam->first.cbegin(), it_cam->first.cend(), INVALID_INDEX, topObj);
+	}
+
 	return true;
 }
 
@@ -762,6 +775,12 @@ void AbcLoader::UpdateXformNode(std::vector<size_t>::const_iterator nodeIdIt, st
             }
 			else
 				assert(0); // the nodeId must be valid for a xform node
+		}
+		else if (AbcG::ICamera::matches(ohead)) {
+			AbcG::ICamera camera(parentObj, ohead.getName());
+			bool isCamAnim = false;
+			ProcessCamera(camera, isCamAnim);
+			assert(isCamAnim);
 		}
 		else
 			assert(0); // the nodeId must be valid for a xform node

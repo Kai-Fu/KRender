@@ -34,7 +34,7 @@ private:
 	// Functions to convert different types of Abc objects.
 	// Each of these functions will return true if it needs to process its children, otherwise false is returned.
 	void ProcessMesh(const AbcG::IPolyMesh& mesh);
-	void ProcessCamera(const AbcG::ICamera& camera);
+	void ProcessCamera(const AbcG::ICamera& camera, bool& out_isAnim);
 
 	void GetObjectWorldTransform(const AbcG::IObject& obj, KMatrix4 trans[2], bool& isAnim);
 	KScene* GetXformStaticScene(const Abc::IObject& obj, KMatrix4& out_mat);
@@ -70,5 +70,6 @@ private:
 
 	std::map<std::vector<size_t>, UINT32> mAnimNodeIndices;
 	std::map<std::vector<size_t>, UINT32> mAnimSubScenes;
+	std::map<std::vector<size_t>, std::string> mAnimCamNames;
 
 };
