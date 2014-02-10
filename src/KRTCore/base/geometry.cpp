@@ -1,7 +1,6 @@
 #include "geometry.h"
 #include <string>
 #include "../intersection/intersect_ray_tri.h"
-#include "../file_io/file_io_template.h"
 #include "../material/material_library.h"
 #include "../intersection/intersect_ray_bbox.h"
 #include "../util/helper_func.h"

@@ -1,9 +1,9 @@
 #pragma once
-#include "../base/BaseHeader.h"
-#include "../util/HelperFunc.h"
+#include "../base/base_header.h"
+#include "../util/helper_func.h"
 
-#include "TracingThreadCntr.h"
-#include "SceneLoader.h"
+#include "tracing_thread_container.h"
+#include "scene_loader.h"
 
 
 namespace KRayTracer {

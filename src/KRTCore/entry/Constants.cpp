@@ -1,5 +1,5 @@
-#include "Constants.h"
-#include "../base/BaseHeader.h"
+#include "constants.h"
+#include "../base/base_header.h"
 #include "../os/api_wrapper.h"
 #include <string>
 

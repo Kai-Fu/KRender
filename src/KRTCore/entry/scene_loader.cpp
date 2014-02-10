@@ -1,7 +1,6 @@
-#include "SceneLoader.h"
+#include "scene_loader.h"
 
 #include "../file_io/obj_loader.h"
-#include "../file_io/file_io_template.h"
 #include "../material/material_library.h"
 #include "../camera/camera_manager.h"
 #include "../shader/light_scheme.h"

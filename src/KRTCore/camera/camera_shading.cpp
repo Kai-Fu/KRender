@@ -1,5 +1,5 @@
 #include "camera.h"
-#include "../entry/TracingThread.h"
+#include "../entry/tracing_thread.h"
 #include "../shader/shader_api.h"
 #include "../shader/surface_shader.h"
 

@@ -1,5 +1,5 @@
 #include "unique_string.h"
-#include "HelperFunc.h"
+#include "helper_func.h"
 
 UniqueStringMaker::UniqueStringMaker()
 {

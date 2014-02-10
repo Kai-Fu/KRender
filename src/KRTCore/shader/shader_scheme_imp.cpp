@@ -1,8 +1,7 @@
 #include "light_scheme.h"
 #include "surface_shader.h"
 
-#include "../entry/TracingThread.h"
-#include "../file_io/file_io_template.h"
+#include "../entry/tracing_thread.h"
 #include "../intersection/intersect_ray_bbox.h"
 
 extern UINT32 AREA_LIGHT_SAMP_CNT;

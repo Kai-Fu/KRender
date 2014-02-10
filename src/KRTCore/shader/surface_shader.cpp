@@ -1,5 +1,5 @@
 #include "surface_shader.h"
-#include "../entry/TracingThread.h"
+#include "../entry/tracing_thread.h"
 #include "../util/helper_func.h"
 #include "light_scheme.h"
 #include "../intersection/intersect_ray_bbox.h"

@@ -10,7 +10,7 @@
 #include "../camera/camera_manager.h"
 #include "../util/thread_model.h"
 
-#include "SceneLoader.h"
+#include "scene_loader.h"
 
 #include "../image/bitmap_object.h"
 #include "../image/color.h"

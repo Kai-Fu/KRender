@@ -1,7 +1,7 @@
-#include "TracingThreadCntr.h"
+#include "tracing_thread_container.h"
 #include "../util/helper_func.h"
 #include "../camera/camera_manager.h"
-#include "../entry/Constants.h"
+#include "../entry/constants.h"
 
 namespace KRayTracer {
 

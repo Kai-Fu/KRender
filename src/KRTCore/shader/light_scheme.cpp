@@ -1,6 +1,5 @@
 #include "light_scheme.h"
 #include "surface_shader.h"
-#include "../file_io/file_io_template.h"
 
 
 extern UINT32 AREA_LIGHT_SAMP_CNT;

@@ -6,7 +6,7 @@
 #include <algorithm>
 #include "../util/helper_func.h"
 #include "../util/triangle_filter.h"
-#include "../entry/Constants.h"
+#include "../entry/constants.h"
 
 
 KAccelStruct_KDTree::PFN_RayIntersectStaticTriArray KAccelStruct_KDTree::s_pPFN_RayIntersectStaticTriArray = NULL;

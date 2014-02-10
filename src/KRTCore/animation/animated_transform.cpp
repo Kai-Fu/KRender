@@ -1,5 +1,4 @@
 #include "animated_transform.h"
-#include "../file_io/file_io_template.h"
 #include <common/math/Trafo.h>
 
 namespace KAnimation {

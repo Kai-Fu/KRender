@@ -1,4 +1,4 @@
-#include "TracingThread.h"
+#include "tracing_thread.h"
 #include "../util/helper_func.h"
 #include "../intersection/intersect_ray_tri.h"
 #include "../intersection/intersect_ray_bbox.h"

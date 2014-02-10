@@ -1,6 +1,5 @@
 #include "bvh_scene.h"
 #include "../intersection/intersect_ray_bbox.h"
-#include "../file_io/file_io_template.h"
 #include <common/math/Trafo.h>
 #include "../util/helper_func.h"
 

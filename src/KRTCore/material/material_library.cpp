@@ -1,5 +1,4 @@
 #include "material_library.h"
-#include "../file_io/file_io_template.h"
 #include "../shader/light_scheme.h"
 
 KMaterialLibrary* KMaterialLibrary::s_pInstance = NULL;

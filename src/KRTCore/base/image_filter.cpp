@@ -1,6 +1,6 @@
 #include "image_filter.h"
 #include "../os/api_wrapper.h"
-#include "../entry/Constants.h"
+#include "../entry/constants.h"
 #include <assert.h>
 
 KImageFilterBase::KImageFilterBase(const BitmapObject* bitmap, UINT32 threadCnt)
