@@ -1,6 +1,6 @@
 #include "camera_manager.h"
 #include "../file_io/file_io_template.h"
-#include "../util/HelperFunc.h"
+#include "../util/helper_func.h"
 
 
 CameraManager* CameraManager::s_pInstance;

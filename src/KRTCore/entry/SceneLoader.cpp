@@ -1,11 +1,11 @@
 #include "SceneLoader.h"
 
-#include "../file_io/KObjFileLoader.h"
+#include "../file_io/obj_loader.h"
 #include "../file_io/file_io_template.h"
 #include "../material/material_library.h"
 #include "../camera/camera_manager.h"
 #include "../shader/light_scheme.h"
-#include "../util/HelperFunc.h"
+#include "../util/helper_func.h"
 
 #include <assert.h>
 

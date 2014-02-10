@@ -4,7 +4,7 @@
 
 #include <common/defines/typedefs.h>
 #include "../image/Color.h"
-#include "../image/BitmapObject.h"
+#include "../image/bitmap_object.h"
 #include "../api/KRT_API.h"
 #include "../image/basic_map.h"
 #include <KShaderCompiler/inc/SC_API.h>

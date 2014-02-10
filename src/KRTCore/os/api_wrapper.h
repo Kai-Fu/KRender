@@ -4,7 +4,7 @@
 	#define _WIN32_WINNT 0x0500
 #endif
 
-#include "../base/BaseHeader.h"
+#include "../base/base_header.h"
 #include <vector>
 
 typedef volatile long SPIN_LOCK_FLAG;

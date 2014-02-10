@@ -1,5 +1,5 @@
 #pragma once
-#include "../image/BitmapObject.h"
+#include "../image/bitmap_object.h"
 #include "../util/thread_model.h"
 #include "../util/tile2d.h"
 #include "../base/bit_array.h"

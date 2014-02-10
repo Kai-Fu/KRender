@@ -1,4 +1,4 @@
-#include "AbcLoader.h"
+#include "abc_loader.h"
 
 
 #include <Alembic/AbcCoreHDF5/All.h>
@@ -8,7 +8,7 @@
 #include <Alembic/AbcGeom/ILight.h>
 #include <Alembic/AbcCoreAbstract/TimeSampling.h>
 
-#include "../scene/KKDBBoxScene.h"
+#include "../scene/bvh_scene.h"
 #include "../material/material_library.h"
 #include "../camera/camera_manager.h"
 

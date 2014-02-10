@@ -1,5 +1,5 @@
 #include "TracingThreadCntr.h"
-#include "../util/HelperFunc.h"
+#include "../util/helper_func.h"
 #include "../camera/camera_manager.h"
 #include "../entry/Constants.h"
 

@@ -1,10 +1,10 @@
-#include "KKdTreeScene.h"
+#include "kd_tree_scene.h"
 #include "../intersection/intersect_tri_bbox.h"
 #include "../intersection/intersect_ray_tri.h"
 #include "../intersection/intersect_ray_bbox.h"
 #include <assert.h>
 #include <algorithm>
-#include "../util/HelperFunc.h"
+#include "../util/helper_func.h"
 #include "../util/triangle_filter.h"
 #include "../entry/Constants.h"
 

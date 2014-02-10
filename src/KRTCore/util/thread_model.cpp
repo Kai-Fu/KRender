@@ -1,5 +1,5 @@
 #include "thread_model.h"
-#include "HelperFunc.h"
+#include "helper_func.h"
 #include <assert.h>
 
 KEvent::KEvent()

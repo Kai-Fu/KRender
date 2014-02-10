@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../base/BaseHeader.h"
-#include "../scene/KKDBBoxScene.h"
-#include "../file_io/AbcLoader.h"
+#include "../base/base_header.h"
+#include "../scene/bvh_scene.h"
+#include "../file_io/abc_loader.h"
 
 #include <map>
 

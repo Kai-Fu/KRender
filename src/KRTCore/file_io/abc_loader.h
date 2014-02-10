@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../base/geometry.h"
-#include "../scene/KKDTreeScene.h"
+#include "../scene/kd_tree_scene.h"
 #include <string>
 #include <list>
 #include <map>

@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../base/BaseHeader.h"
+#include "../base/base_header.h"
 #include "../base/geometry.h"
 #include "../base/image_filter.h"
-#include "../intersection/EyeRayGen.h"
-#include "../scene/KKDBBoxScene.h"
+#include "../intersection/eye_ray_gen.h"
+#include "../scene/bvh_scene.h"
 #include "../shader/light_scheme.h"
 #include "../util/tile2d.h"
 #include "../camera/camera_manager.h"
@@ -12,7 +12,7 @@
 
 #include "SceneLoader.h"
 
-#include "../image/BitmapObject.h"
+#include "../image/bitmap_object.h"
 #include "../image/color.h"
 
 #include <vector>

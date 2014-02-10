@@ -2,7 +2,7 @@
 
 #include "../base/geometry.h"
 #include "thread_model.h"
-#include "../scene/KKDTreeScene.h"
+#include "../scene/kd_tree_scene.h"
 
 void FilterByBBox(UINT32* ptri_idx, UINT32& cnt, KBBox& out_bbox, 
 				  ThreadModel::ThreadBucket& thread_bucket, 	

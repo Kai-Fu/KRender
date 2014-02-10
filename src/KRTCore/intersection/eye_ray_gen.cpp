@@ -1,4 +1,4 @@
-#include "EyeRayGen.h"
+#include "eye_ray_gen.h"
 #include "../file_io/file_io_template.h"
 
 EyeRayGen::EyeRayGen(void)

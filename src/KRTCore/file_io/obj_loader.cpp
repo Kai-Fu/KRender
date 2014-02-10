@@ -1,8 +1,8 @@
 #include <fstream>
 #include <iostream>
 using namespace std;
-#include "KObjFileLoader.h"
-#include "../util/HelperFunc.h"
+#include "obj_loader.h"
+#include "../util/helper_func.h"
 #include "../base/raw_geometry.h"
 
 #pragma warning( disable : 4996)

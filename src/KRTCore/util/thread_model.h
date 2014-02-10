@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../base/BaseHeader.h"
+#include "../base/base_header.h"
 #include "../os/api_wrapper.h"
-#include "HelperFunc.h"
+#include "helper_func.h"
 #include <pthread.h>
 #include <vector>
 #include <set>

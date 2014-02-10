@@ -1,8 +1,8 @@
 #include "shader_api.h"
-#include "../util/HelperFunc.h"
+#include "../util/helper_func.h"
 #include "../sampling/halton2d.h"
 #include "../animation/animated_transform.h"
-#include "../scene/KKDBBoxScene.h"
+#include "../scene/bvh_scene.h"
 #include "../image/basic_map.h"
 
 #include <assert.h>

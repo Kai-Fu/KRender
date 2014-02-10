@@ -1,6 +1,6 @@
 #pragma once
 #include "../base/geometry.h"
-#include "../scene/KKDTreeScene.h"
+#include "../scene/kd_tree_scene.h"
 #include "../animation/animated_transform.h"
 #include "../api/KRT_API.h"
 #include "../shader/shader_api.h"

@@ -10,7 +10,7 @@
  * Code optimization possibilities abound.
  */
 
-#include "txfilt.h"
+#include "texture_filter.h"
 #include <string.h>
 #include <math.h>
 

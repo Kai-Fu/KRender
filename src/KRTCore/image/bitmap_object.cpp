@@ -1,4 +1,4 @@
-#include "BitmapObject.h"
+#include "bitmap_object.h"
 #include "color.h"
 #include <stdio.h>
 #include <memory.h>

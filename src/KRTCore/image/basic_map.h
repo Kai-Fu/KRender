@@ -1,7 +1,7 @@
 #pragma once
 
 #include "color.h"
-#include "BitmapObject.h"
+#include "bitmap_object.h"
 #include <vector>
 #include <common/defines/stl_inc.h>
 

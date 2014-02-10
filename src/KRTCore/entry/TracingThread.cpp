@@ -1,5 +1,5 @@
 #include "TracingThread.h"
-#include "../util/HelperFunc.h"
+#include "../util/helper_func.h"
 #include "../intersection/intersect_ray_tri.h"
 #include "../intersection/intersect_ray_bbox.h"
 #include "../shader/surface_shader.h"

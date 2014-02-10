@@ -3,9 +3,9 @@
 // I hate the old implementation for camera handling, so I'm going to re-factory it.
 /************************************************************************/
 #pragma once
-#include "../base/BaseHeader.h"
+#include "../base/base_header.h"
 #include "../base/geometry.h"
-#include "../intersection/EyeRayGen.h"
+#include "../intersection/eye_ray_gen.h"
 
 #include "../image/color.h"
 

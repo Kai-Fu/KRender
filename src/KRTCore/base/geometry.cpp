@@ -4,7 +4,7 @@
 #include "../file_io/file_io_template.h"
 #include "../material/material_library.h"
 #include "../intersection/intersect_ray_bbox.h"
-#include "../util/HelperFunc.h"
+#include "../util/helper_func.h"
 #include <memory.h>
 #include <list>
 #include <assert.h>

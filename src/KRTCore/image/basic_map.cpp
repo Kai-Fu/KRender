@@ -1,7 +1,7 @@
 #include "basic_map.h"
 #include <string>
 #include <common/math/nvmath.h>
-#include "txfilt.h"
+#include "texture_filter.h"
 #include <FreeImage.h>
 
 namespace Texture {
