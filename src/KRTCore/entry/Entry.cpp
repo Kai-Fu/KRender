@@ -15,6 +15,7 @@ extern UINT32 AREA_LIGHT_SAMP_CNT;
 namespace KRayTracer {
 
 static KRayTracer_Root* g_pRoot = NULL;
+static std::string g_curScenePath;
 
 bool InitializeKRayTracer()
 {
@@ -455,17 +456,45 @@ bool KRT_Initialize()
 	return ret;
 }
 
+FILE* KRayTracer::OpenFile(const char* filename, bool textMode)
+{
+	FILE* ret = NULL;
+	fopen_s(&ret, filename, textMode ? "r" : "rb");
+	if (ret == NULL && !IsAbsolutePath(filename)) {
+		std::string path, file;
+		GetPathDir(filename, path, &file);
+
+		std::string newPath = KRT_GetCurrentScenePath();
+		newPath += "/";
+		newPath += file;
+		fopen_s(&ret, newPath.c_str(), textMode ? "r" : "rb");
+	}
+
+	return ret;
+}
+
 void KRT_Destory()
 {
 	KRayTracer::DestroyKRayTracer();
 	KSC_Destory();
 }
 
+const char* KRT_GetCurrentScenePath()
+{
+	if (KRayTracer::g_curScenePath.empty())
+		return NULL;
+	else
+		return KRayTracer::g_curScenePath.c_str();
+}
+
 bool KRT_LoadScene(const char* fileName, KRT_SceneStatistic& statistic)
 {
+	GetPathDir(fileName, KRayTracer::g_curScenePath);
 	bool ret = KRayTracer::g_pRoot->LoadScene(fileName);
 	if (ret)
 		KRayTracer::g_pRoot->mpSceneLoader->mpAccelData->GetKDBuildTimeStatistics(statistic);
+	else
+		KRayTracer::g_curScenePath.clear();
 
 	return ret;
 }

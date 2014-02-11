@@ -72,6 +72,7 @@ extern "C" {
 	KRT_API void KRT_Destory();
 
 	KRT_API bool KRT_LoadScene(const char* fileName, KRT_SceneStatistic& statistic);
+	KRT_API const char* KRT_GetCurrentScenePath();
 	KRT_API bool KRT_UpdateTime(double timeInSec, double duration);
 
 	KRT_API void KRT_CloseScene();

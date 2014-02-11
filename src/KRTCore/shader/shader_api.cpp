@@ -4,6 +4,7 @@
 #include "../animation/animated_transform.h"
 #include "../scene/bvh_scene.h"
 #include "../image/basic_map.h"
+#include "../entry/entry.h"
 
 #include <assert.h>
 
@@ -546,7 +547,7 @@ bool KSC_Shader::LoadTemplate(const char* templateFile)
 	FILE* f = NULL;
 	std::string templatePath = "./asset/";
 	templatePath += templateFile;
-	fopen_s(&f, templatePath.c_str(), "r");
+	f = KRayTracer::OpenFile(templatePath.c_str(), true);
 	if (f == NULL)
 		return false;
 	char line[256];
@@ -572,7 +573,7 @@ bool KSC_Shader::LoadTemplate(const char* templateFile)
 		{
 			FILE* fShadeFile = NULL;
 			// Load the content of the shader file
-			fopen_s(&fShadeFile, shaderPath.c_str(), "r");
+			fShadeFile = KRayTracer::OpenFile(shaderPath.c_str(), true);
 			if (fShadeFile == NULL)
 				return false;
 			fseek(fShadeFile, 0, SEEK_END);

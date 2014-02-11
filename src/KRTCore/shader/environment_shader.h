@@ -37,6 +37,18 @@ private:
 	float mTransitionHeight;
 };
 
+class KShpereMapEnvShader : public KEnvShader
+{
+public:
+	KShpereMapEnvShader(const char* filename);
+	virtual ~KShpereMapEnvShader();
+
+	virtual void Sample(const KVec3& pos, const KVec3& dir, KColor& outClr) const;
+
+private:
+	Texture::Image2D mShpereMap;
+};
+
 class KCubeEvnShader : public KEnvShader
 {
 public:

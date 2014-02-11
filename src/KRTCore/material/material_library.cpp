@@ -80,7 +80,7 @@ KMaterialLibrary* KMaterialLibrary::GetInstance()
 bool KMaterialLibrary::Initialize()
 {
 	s_pInstance = new KMaterialLibrary();
-	s_pInstance->mpDefaultShader = s_pInstance->CreateMaterial("simple_diag_default.template", "");
+	s_pInstance->mpDefaultShader = s_pInstance->CreateMaterial("surface_shader/simple_diag_default.template", "");
 	if (s_pInstance->mpDefaultShader)
 		return true;
 	else 

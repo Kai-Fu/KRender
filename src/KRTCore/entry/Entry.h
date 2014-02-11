@@ -43,4 +43,6 @@ namespace KRayTracer {
 	bool InitializeKRayTracer();
 	void DestroyKRayTracer();
 
+	FILE* OpenFile(const char* filename, bool textMode);
+
 } // namespace KRayTracer

@@ -75,6 +75,21 @@ void KHemishpereEnvShader::Sample(const KVec3& pos, const KVec3& dir, KColor& ou
 	}
 }
 
+KShpereMapEnvShader::KShpereMapEnvShader(const char* filename)
+{
+	mShpereMap.SetSourceFile(filename);
+}
+
+KShpereMapEnvShader::~KShpereMapEnvShader()
+{
+
+}
+
+void KShpereMapEnvShader::Sample(const KVec3& pos, const KVec3& dir, KColor& outClr) const
+{
+
+}
+
 KCubeEvnShader::KCubeEvnShader(const char* filename)
 {
 	mCubeMap.SetSourceFile(filename);

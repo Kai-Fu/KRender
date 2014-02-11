@@ -267,6 +267,7 @@ void AbcLoader::ProcessMesh(const AbcG::IPolyMesh& mesh)
 
 	UINT32 nodeIdx = targetSubScene->AddNode();
 	KNode* pNode = targetSubScene->GetNode(nodeIdx);
+	pNode->mName = mesh.getName();
 	pNode->mMesh.push_back(meshIdx);
 	targetSubScene->SetNodeTM(nodeIdx, localMat);
 	pNode->mpSurfShader = KMaterialLibrary::GetInstance()->GetDefaultMaterial();

@@ -22,8 +22,8 @@ private:
 	double mStartTime;
 };
 
-
-void GetPathDir(const char* path, std::string& out_dir);
+bool IsAbsolutePath(const char* path);
+void GetPathDir(const char* path, std::string& out_dir, std::string* filename = NULL);
 void IntToStr(int val, char* buf, int base);
 
 

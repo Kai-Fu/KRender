@@ -31,7 +31,16 @@ double KTimer::Stop()
 	return GetSystemElapsedTime() - mStartTime;
 }
 
-void GetPathDir(const char* path, std::string& out_dir)
+bool IsAbsolutePath(const char* path)
+{
+	if (strlen(path) > 2) {
+		return path[0] == '/' || path[1] == ':';
+	}
+	else
+		return false;
+}
+
+void GetPathDir(const char* path, std::string& out_dir, std::string* filename)
 {
 	std::string dir;
 
@@ -51,7 +60,9 @@ void GetPathDir(const char* path, std::string& out_dir)
 		dir[tIdx] = '\0';
 	
 	out_dir = dir;
-
+	if (filename) {
+		*filename = &dir[tIdx + 1];
+	}
 }
 
 void IntToStr(int val, char* buf, int base)
