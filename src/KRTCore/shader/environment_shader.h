@@ -16,8 +16,9 @@ public:
 	static void Shutdown();
 
 
-	static void UseSpheeEnvironment(const KColor& upClr, const KColor& downClr, float transHeight);
-	static void UseCubemapEnvironment(const char* filename);
+	static void UseSphereEnvironment(const KColor& upClr, const KColor& downClr, float transHeight);
+
+	static bool SetEnvironmentShader(const char* templateFile);
 
 private:
 	static KEnvShader* s_currentEvnShader;
@@ -37,26 +38,20 @@ private:
 	float mTransitionHeight;
 };
 
-class KShpereMapEnvShader : public KEnvShader
+class KSC_EnvShader : public KEnvShader, public KSC_ShaderWithTexture
 {
 public:
-	KShpereMapEnvShader(const char* filename);
-	virtual ~KShpereMapEnvShader();
-
+	KSC_EnvShader(const char* shaderTemplate);
+	virtual ~KSC_EnvShader();
 	virtual void Sample(const KVec3& pos, const KVec3& dir, KColor& outClr) const;
 
-private:
-	Texture::Image2D mShpereMap;
-};
+	bool IsValid() const;
 
-class KCubeEvnShader : public KEnvShader
-{
-public:
-	KCubeEvnShader(const char* filename);
-	virtual ~KCubeEvnShader();
-
-	virtual void Sample(const KVec3& pos, const KVec3& dir, KColor& outClr) const;
+	// From KSC_ShaderWithTexture
+	virtual bool Validate(FunctionHandle shadeFunc);
+	virtual bool HandleModule(ModuleHandle kscModule);
 
 private:
-	Texture::TexCube mCubeMap;
+	bool mIsValid;
+	EnvContext mEnvContext;
 };

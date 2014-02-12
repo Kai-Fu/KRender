@@ -488,6 +488,22 @@ void SurfaceContext::Allocate(const KSC_TypeInfo& kscType)
 	*tracerData = &tracerDataLocal;
 }
 
+TransContext::TransContext()
+{
+	mpData = NULL;
+	lightVec = NULL;
+	normal = NULL;
+	tangent = NULL;
+	binormal = NULL;
+	uv = NULL;
+}
+
+TransContext::~TransContext()
+{
+	if (mpData)
+		KSC_FreeMem(mpData);
+}
+
 void TransContext::Allocate(const KSC_TypeInfo& kscType)
 {
 	assert(kscType.hStruct);
@@ -499,6 +515,27 @@ void TransContext::Allocate(const KSC_TypeInfo& kscType)
 	binormal = (KVec3*)KSC_GetStructMemberPtr(kscType.hStruct, mpData, "binormal");
 	
 	uv = (KVec2*)KSC_GetStructMemberPtr(kscType.hStruct, mpData, "uv");
+}
+
+EnvContext::EnvContext()
+{
+	mpData = NULL;
+	pos = NULL;
+	dir = NULL;
+}
+
+EnvContext::~EnvContext()
+{
+	if (mpData)
+		KSC_FreeMem(mpData);
+}
+
+void EnvContext::Allocate(const KSC_TypeInfo& kscType)
+{
+	assert(kscType.hStruct);
+	mpData = KSC_AllocMemForType(kscType, 1);
+	pos = (KVec3*)KSC_GetStructMemberPtr(kscType.hStruct, mpData, "pos");
+	dir = (KVec3*)KSC_GetStructMemberPtr(kscType.hStruct, mpData, "dir");
 }
 
 void TracingInstance::ConvertToSurfaceContext(const IntersectContext& hitCtx, const ShadingContext& shadingCtx, SurfaceContext& surfaceCtx)
@@ -545,9 +582,9 @@ bool KSC_Shader::LoadTemplate(const char* templateFile)
 
 	mpUniformData = NULL;
 	FILE* f = NULL;
-	std::string templatePath = "./asset/";
-	templatePath += templateFile;
-	f = KRayTracer::OpenFile(templatePath.c_str(), true);
+	std::string templatePath = templateFile;
+	std::string templateDir;
+	f = KRayTracer::OpenFile(templatePath.c_str(), true, &templateDir);
 	if (f == NULL)
 		return false;
 	char line[256];
@@ -567,13 +604,14 @@ bool KSC_Shader::LoadTemplate(const char* templateFile)
 	ModuleHandle shaderModule = NULL;
 	if (sLoadedShadeFunctions.find(kscFile) == sLoadedShadeFunctions.end()) {
 
-		std::string shaderPath = "./asset/shader/";
 		std::string shaderContent;
-		shaderPath += kscFile;
 		{
 			FILE* fShadeFile = NULL;
 			// Load the content of the shader file
-			fShadeFile = KRayTracer::OpenFile(shaderPath.c_str(), true);
+			std::string shaderFileName = templateDir;
+			shaderFileName += "/";
+			shaderFileName += kscFile;
+			fShadeFile = KRayTracer::OpenFile(shaderFileName.c_str(), true);
 			if (fShadeFile == NULL)
 				return false;
 			fseek(fShadeFile, 0, SEEK_END);

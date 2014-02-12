@@ -72,6 +72,9 @@ struct SurfaceContext
 
 struct TransContext
 {
+	TransContext();
+	~TransContext();
+
 	void* mpData;
 
 	KVec3* lightVec;
@@ -81,6 +84,18 @@ struct TransContext
 	KVec3* binormal;
 
 	KVec2* uv;
+
+	void Allocate(const KSC_TypeInfo& kscType);
+};
+
+struct EnvContext
+{
+	EnvContext();
+	~EnvContext();
+
+	void* mpData;
+	KVec3* pos;
+	KVec3* dir;
 
 	void Allocate(const KSC_TypeInfo& kscType);
 };
@@ -153,6 +168,7 @@ private:
 	const RenderBuffers* mpRenderBuffers;
 	std::vector<SurfaceContext> mSurfaceContexts;
 	std::vector<TransContext> mTransContexts;
+
 	UINT32 mBounceDepth;
 	UINT32 mCurPixel_X;
 	UINT32 mCurPixel_Y;

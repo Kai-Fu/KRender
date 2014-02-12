@@ -19,8 +19,8 @@ const KEnvShader* KEnvShader::GetEnvShader()
 
  bool KEnvShader::Initialize()
  {
-	 UseSpheeEnvironment(KColor(0,0,0.9f), KColor(0.2f, 0.2f, 0.2f), 0.8f);
-	 return true;
+	 //UseSphereEnvironment(KColor(0,0,0.9f), KColor(0.2f, 0.2f, 0.2f), 0.8f);
+	 return SetEnvironmentShader("./asset/environment/default.template");
  }
 
  void KEnvShader::Shutdown()
@@ -30,7 +30,7 @@ const KEnvShader* KEnvShader::GetEnvShader()
 	 s_currentEvnShader = NULL;
  }
 
-void KEnvShader::UseSpheeEnvironment(const KColor& upClr, const KColor& downClr, float transHeight)
+void KEnvShader::UseSphereEnvironment(const KColor& upClr, const KColor& downClr, float transHeight)
 {
 	if (s_currentEvnShader)
 		delete s_currentEvnShader;
@@ -38,13 +38,22 @@ void KEnvShader::UseSpheeEnvironment(const KColor& upClr, const KColor& downClr,
 	s_currentEvnShader = new KHemishpereEnvShader(upClr, downClr, transHeight);
 }
 
-void KEnvShader::UseCubemapEnvironment(const char* filename)
+bool KEnvShader::SetEnvironmentShader(const char* templateFile)
 {
 	if (s_currentEvnShader)
 		delete s_currentEvnShader;
-	
-	s_currentEvnShader = new KCubeEvnShader(filename);
+
+	KSC_EnvShader* newEvnShader = new KSC_EnvShader(templateFile);
+	if (newEvnShader->IsValid()) {
+		s_currentEvnShader = newEvnShader;
+		return true;
+	}
+	else {
+		delete newEvnShader;
+		return false;
+	}
 }
+
 
 KHemishpereEnvShader::KHemishpereEnvShader(const KColor& upClr, const KColor& downClr, float transHeight)
 {
@@ -75,35 +84,52 @@ void KHemishpereEnvShader::Sample(const KVec3& pos, const KVec3& dir, KColor& ou
 	}
 }
 
-KShpereMapEnvShader::KShpereMapEnvShader(const char* filename)
+KSC_EnvShader::KSC_EnvShader(const char* shaderTemplate)
 {
-	mShpereMap.SetSourceFile(filename);
+	mIsValid = LoadTemplate(shaderTemplate);
 }
 
-KShpereMapEnvShader::~KShpereMapEnvShader()
-{
-
-}
-
-void KShpereMapEnvShader::Sample(const KVec3& pos, const KVec3& dir, KColor& outClr) const
+KSC_EnvShader::~KSC_EnvShader()
 {
 
 }
 
-KCubeEvnShader::KCubeEvnShader(const char* filename)
+void KSC_EnvShader::Sample(const KVec3& pos, const KVec3& dir, KColor& outClr) const
 {
-	mCubeMap.SetSourceFile(filename);
+	Execute(mEnvContext.mpData, &outClr);
 }
 
-KCubeEvnShader::~KCubeEvnShader()
+bool KSC_EnvShader::IsValid() const
 {
-
+	return mIsValid;
 }
 
-void KCubeEvnShader::Sample(const KVec3& pos, const KVec3& dir, KColor& outClr) const
+bool KSC_EnvShader::Validate(FunctionHandle shadeFunc)
 {
-	KVec4 res = mCubeMap.SampleBilinear(dir);
-	outClr.r = res[0];
-	outClr.g = res[1];
-	outClr.b = res[2];
+	// Perform the extra check for the second and third arguments
+	if (3 != KSC_GetFunctionArgumentCount(shadeFunc))
+		return false;
+
+	KSC_TypeInfo argType0 = KSC_GetFunctionArgumentType(shadeFunc, 1);
+	if (!argType0.isRef || !argType0.isKSCLayout || argType0.hStruct == NULL || 
+		0 != strcmp(argType0.typeString, "EnvContext") ) {
+		printf("Incorrect type for second argument, it must be EnvContext&.\n");
+		return false;
+	}
+
+	KSC_TypeInfo argType1 = KSC_GetFunctionArgumentType(shadeFunc, 2);
+	if (!argType1.isRef || argType1.isKSCLayout || argType1.type != SC::kFloat3) {
+		printf("Incorrect type for second argument, it must be float3&.\n");
+		return false;
+	}
+
+	return true;
+}
+
+bool KSC_EnvShader::HandleModule(ModuleHandle kscModule)
+{
+	FunctionHandle shadeFunc = KSC_GetFunctionHandleByName("Shade", kscModule);
+	KSC_TypeInfo argType1 = KSC_GetFunctionArgumentType(shadeFunc, 1);
+	mEnvContext.Allocate(argType1);
+	return true;
 }

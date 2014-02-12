@@ -217,6 +217,12 @@ bool KRT_Initialize()
 "	float2 uv;\n"
 "};\n"
 
+"struct EnvContext\n"
+"{\n"
+"	float3 pos;\n"
+"	float3 dir;\n"
+"};\n"
+
 "extern Texture2D;\n"
 "void _Sample2D(Texture2D tex, float2& uv, float4& outSample);\n"
 "float4 Sample2D(Texture2D tex, float2 uv)\n"
@@ -456,10 +462,14 @@ bool KRT_Initialize()
 	return ret;
 }
 
-FILE* KRayTracer::OpenFile(const char* filename, bool textMode)
+FILE* KRayTracer::OpenFile(const char* filename, bool textMode, std::string* out_path)
 {
 	FILE* ret = NULL;
 	fopen_s(&ret, filename, textMode ? "r" : "rb");
+	if (ret && out_path) {
+		GetPathDir(filename, *out_path);
+	}
+
 	if (ret == NULL && !IsAbsolutePath(filename)) {
 		std::string path, file;
 		GetPathDir(filename, path, &file);
@@ -468,8 +478,11 @@ FILE* KRayTracer::OpenFile(const char* filename, bool textMode)
 		newPath += "/";
 		newPath += file;
 		fopen_s(&ret, newPath.c_str(), textMode ? "r" : "rb");
+		if (ret && out_path) {
+			GetPathDir(newPath.c_str(), *out_path);
+		}
 	}
-
+	
 	return ret;
 }
 

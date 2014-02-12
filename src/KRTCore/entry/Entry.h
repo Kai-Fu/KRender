@@ -43,6 +43,6 @@ namespace KRayTracer {
 	bool InitializeKRayTracer();
 	void DestroyKRayTracer();
 
-	FILE* OpenFile(const char* filename, bool textMode);
+	FILE* OpenFile(const char* filename, bool textMode, std::string* out_path = NULL);
 
 } // namespace KRayTracer

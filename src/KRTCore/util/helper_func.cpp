@@ -59,7 +59,7 @@ void GetPathDir(const char* path, std::string& out_dir, std::string* filename)
 	if (dir.length() > 0)
 		dir[tIdx] = '\0';
 	
-	out_dir = dir;
+	out_dir = dir.c_str();
 	if (filename) {
 		*filename = &dir[tIdx + 1];
 	}

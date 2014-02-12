@@ -77,7 +77,9 @@ bool CalcuShadingByRay(TracingInstance* pLocalData, const KRay& ray, KColor& out
 		//
 		const KEnvShader* pEnvShader = KEnvShader::GetEnvShader();
 		if (pEnvShader) {
-			pEnvShader->Sample(ToVec3f(ray.GetOrg()), ToVec3f(ray.GetDir()), out_clr);
+			KVec3 n_ray_dir = ToVec3f(ray.GetDir());
+			n_ray_dir.normalize();
+			pEnvShader->Sample(ToVec3f(ray.GetOrg()), n_ray_dir, out_clr);
 		}
 	}
 
