@@ -20,7 +20,6 @@ static std::string g_curScenePath;
 bool InitializeKRayTracer()
 {
 	FreeImage_Initialise();
-	KEnvShader::Initialize();
 
 	g_pRoot = new KRayTracer_Root();
 	return true;
@@ -32,7 +31,6 @@ void DestroyKRayTracer()
 		delete g_pRoot;
 	g_pRoot = NULL;
 
-	KEnvShader::Shutdown();
 	FreeImage_DeInitialise();
 }
 

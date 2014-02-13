@@ -201,6 +201,8 @@ TracingInstance::TracingInstance(const KAccelStruct_BVH* scene, const RenderBuff
 		mSurfaceContexts[i].Allocate(surfaceCtxType);
 		mTransContexts[i].Allocate(transCtxType);
 	}
+	KSC_TypeInfo envCtxType = KSC_GetStructTypeByName("EnvContext", NULL);
+	mEvnContext.Allocate(envCtxType);
 
 	mSIMD_Width = KSC_GetSIMDWidth();
 	int simd_data_size = mSIMD_Width * sizeof(float);

@@ -161,7 +161,7 @@ public:
 	int mSIMD_Width;
 	int* mpHitIdx_SIMD;
 	float* mpTUV_SIMD;
-
+	EnvContext mEvnContext;
 
 private:
 	const KAccelStruct_BVH* mpScene;

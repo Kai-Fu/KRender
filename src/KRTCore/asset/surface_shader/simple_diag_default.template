@@ -1,2 +1,2 @@
 Shader = ./shader/simle_diagnostic.surface_shader
-showElement = 0
+showElement = <0>

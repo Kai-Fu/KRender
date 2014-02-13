@@ -5,6 +5,7 @@
 #include "../camera/camera_manager.h"
 #include "../shader/light_scheme.h"
 #include "../util/helper_func.h"
+#include "../shader/environment_shader.h"
 
 #include <assert.h>
 
@@ -19,6 +20,7 @@ SceneLoader::SceneLoader()
 	KMaterialLibrary::Initialize();
 	CameraManager::Initialize();
 	Texture::TextureManager::Initialize();
+	KEnvShader::Initialize();
 
 	mIsFromOBJ = false;
 	mIsSceneLoaded = false;
@@ -28,10 +30,11 @@ SceneLoader::SceneLoader()
 
 SceneLoader::~SceneLoader()
 {
-	LightScheme::Shutdown();
-	KMaterialLibrary::Shutdown();
-	CameraManager::Shutdown();
+	KEnvShader::Shutdown();
 	Texture::TextureManager::Shutdown();
+	CameraManager::Shutdown();
+	KMaterialLibrary::Shutdown();
+	LightScheme::Shutdown();
 
 	if (mpScene)
 		delete mpScene;

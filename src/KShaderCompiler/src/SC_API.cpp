@@ -63,7 +63,9 @@ bool KSC_Initialize(const char* sharedCode)
 			"float pow(float base, float exp);\n"
 			"int ipow(int base, int exp);\n"
 			"float sqrt(float arg);\n"
-			"float fabs(float arg);\n";
+			"float fabs(float arg);\n"
+			"float asin(float arg);\n"
+			"float acos(float arg);\n";
 
 		KSC_AddExternalFunction("sin", sinf);
 		KSC_AddExternalFunction("cos", cosf);
@@ -71,6 +73,8 @@ bool KSC_Initialize(const char* sharedCode)
 		KSC_AddExternalFunction("ipow", __int_pow);
 		KSC_AddExternalFunction("sqrt", sqrtf);
 		KSC_AddExternalFunction("fabs", fabsf);
+		KSC_AddExternalFunction("asin", asinf);
+		KSC_AddExternalFunction("acos", acosf);
 
 		s_predefineDomain = new SC::RootDomain(NULL);
 		if (!preContext.ParsePartial(intrinsicFuncDecal, s_predefineDomain))
