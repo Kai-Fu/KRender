@@ -251,6 +251,8 @@ protected:
 	void* mpFuncPtr;
 	FunctionHandle mShadeFunction;
 
+	std::string mTemplateFileDir;
+
 	std::hash_map<std::string, std::vector<BYTE> > mModifiedData;
 
 private:

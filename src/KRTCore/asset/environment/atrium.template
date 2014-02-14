@@ -1,2 +1,2 @@
 Shader = ./shader/backplate.env_shader
-bp_map = Z:/lighting_preview.tif
+bp_map = atrium_bp.tif

@@ -589,6 +589,8 @@ bool KSC_Shader::LoadTemplate(const char* templateFile)
 	f = KRayTracer::OpenFile(templatePath.c_str(), true, &templateDir);
 	if (f == NULL)
 		return false;
+
+	mTemplateFileDir = templateDir;
 	char line[256];
 	// The first line must be "Shader = xxx", where xxx should be the file that contains KSC code.
 	fgets(line, 256, f);
@@ -868,7 +870,18 @@ KSC_ShaderWithTexture::~KSC_ShaderWithTexture()
 void* KSC_ShaderWithTexture::CreateExternalData(const char* typeString, const char* valueString)
 {
 	if (0 == strcmp(typeString, "Texture2D")) {
-		return Texture::TextureManager::GetInstance()->CreateBitmapTexture(valueString);
+
+		// Try to load the bitmap file for the relative path of the template file directory first		
+		std::string tempPath = mTemplateFileDir;
+		tempPath += "/";
+		tempPath += valueString;
+		void *ret = Texture::TextureManager::GetInstance()->CreateBitmapTexture(tempPath.c_str());
+
+		// If failed to load from the template file directory, try to load from the scene file directory
+		if (!ret)
+			ret = Texture::TextureManager::GetInstance()->CreateBitmapTexture(valueString);
+
+		return ret;
 	}
 	else if (0 == strcmp(typeString, "Texture3D")) {
 		// TODO:
