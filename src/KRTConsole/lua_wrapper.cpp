@@ -285,19 +285,36 @@ static int LuaWrapper_ClearLights(lua_State *L)
 	return 0;
 }
 
-static int LuaWrapper_GetNodeSurfaceMaterial(lua_State *L)
+static int LuaWrapper_CreateSurfaceShader(lua_State *L)
 {
 	int num_param = lua_gettop(L);
-	if (num_param != 1) {
-		printf("GetNodeSurfaceMaterial : Invalid input parameters.\n");
+	if (num_param != 2) {
+		printf("CreateSurfaceShader : Invalid input parameters.\n");
+		return 0;
+	}
+	
+	size_t str_len;
+	const char* templateFile = lua_tolstring(L, 1, &str_len);
+	const char* mtlName = lua_tolstring(L, 2, &str_len);
+	ShaderHandle hShader = KRT_CreateSurfaceShader(templateFile, mtlName);
+	lua_pushinteger(L, (lua_Integer)hShader);
+	return 1;
+}
+
+static int LuaWrapper_SetNodeSurfaceShader(lua_State *L)
+{
+	int num_param = lua_gettop(L);
+	if (num_param != 2) {
+		printf("SetNodeSurfaceShader : Invalid input parameters.\n");
 		return 0;
 	}
 	
 	size_t str_len;
 	const char* nodeName = lua_tolstring(L, 1, &str_len);
-	ShaderHandle hShader = KRT_GetNodeSurfaceMaterial(nodeName);
-	lua_pushinteger(L, (lua_Integer)hShader);
-	return 1;
+	int isNum;
+	ShaderHandle hShader = (ShaderHandle)lua_tointegerx(L, 2, &isNum);
+	KRT_SetNodeSurfaceShader(nodeName, hShader);
+	return 0;
 }
 
 static int LuaWrapper_SetShaderParameter(lua_State *L)
@@ -339,7 +356,7 @@ void BindLuaFunc()
 	luaL_openlibs(L_S);
 
 	/* register our function */
-	lua_register(L_S, "LoadScene", LuaWrapper_LoadScene);
+	lua_register(L_S, "_LoadScene", LuaWrapper_LoadScene);
 	lua_register(L_S, "UpdateTime", LuaWrapper_UpdateTime);
 	lua_register(L_S, "CloseScene", LuaWrapper_CloseScene);
 	lua_register(L_S, "Render", LuaWrapper_Render);
@@ -352,7 +369,8 @@ void BindLuaFunc()
 	lua_register(L_S, "SetRenderOptions", LuaWrapper_SetRenderOptions);
 	lua_register(L_S, "Quit", LuaWrapper_Quit);
 
-	lua_register(L_S, "GetNodeSurfaceMaterial", LuaWrapper_GetNodeSurfaceMaterial);
+	lua_register(L_S, "CreateSurfaceShader", LuaWrapper_CreateSurfaceShader);
+	lua_register(L_S, "SetNodeSurfaceShader", LuaWrapper_SetNodeSurfaceShader);
 	lua_register(L_S, "SetShaderParameter", LuaWrapper_SetShaderParameter);
 }
 

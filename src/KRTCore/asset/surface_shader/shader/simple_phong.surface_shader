@@ -3,9 +3,7 @@ struct PhongParam
 {
 	float3 diffuse_color;
 	float3 specular_color;
-	Texture2D diffuse_map;
-	Texture2D transparent_map;
-	bool enableReflection;
+	float3 translucent;
 };
 
 float dot(float3 a, float3 b)
@@ -16,12 +14,11 @@ float dot(float3 a, float3 b)
 
 void ShadeTransmission(PhongParam% uniforms, TransContext% ctx, float3& outClr)
 {
-	//float di = dot(ctx.inVec, ctx.normal);
-	outClr = float3(0,0,0);
-	if (uniforms.transparent_map) {
-		float3 translucent = Sample2D(uniforms.transparent_map, ctx.uv);
-		outClr = float3(1,1,1) - translucent;
-	}
+	float di = dot(ctx.lightVec, ctx.normal);
+	if (di < 0) di = -di;
+	
+	outClr = uniforms.translucent;
+	outClr = outClr * di;
 }
 
 void Shade(PhongParam% uniforms, SurfaceContext% ctx, float3& outClr)
@@ -31,46 +28,26 @@ void Shade(PhongParam% uniforms, SurfaceContext% ctx, float3& outClr)
 	float3 inL_Intensity = float3(0,0,0);
 	
 	float3 diffuseCoefficence;
-	if (uniforms.diffuse_map)
-		diffuseCoefficence = Sample2D(uniforms.diffuse_map, ctx.uv);
-	else
-		diffuseCoefficence = uniforms.diffuse_color;
-			
-	for (; GetNextLightSample(ctx.tracerData, inL_Dir, inL_Intensity);) {
-		float do = dot(ctx.outVec, ctx.normal);
-		if (do < 0)
-			return;
-		float di = dot(inL_Dir, ctx.normal);
-		if (di < 0)
-			di = 0;
-		
-		float3 dIntensity = float3(di, di, di) * inL_Intensity;
-		outClr = outClr + dIntensity * diffuseCoefficence;
-	}
+	diffuseCoefficence = uniforms.diffuse_color;
+	float do = dot(ctx.outVec, ctx.normal);
 	
-	if (uniforms.transparent_map) {
-		float3 translucent = Sample2D(uniforms.transparent_map, ctx.uv);
+	if (do > 0) {		
+		for (; GetNextLightSample(ctx.tracerData, inL_Dir, inL_Intensity);) {
 		
-		if (translucent.x < 1 || translucent.y < 1 || translucent.z < 1) {
-			float3 transClr = CalcSecondaryRay(ctx.tracerData, -ctx.outVec);
-			outClr = outClr * translucent + transClr * (float3(1,1,1) - translucent);
+			float di = dot(inL_Dir, ctx.normal);
+			if (di < 0)
+				di = 0;
+			
+			float3 dIntensity = float3(di, di, di) * inL_Intensity;
+			outClr = outClr + dIntensity * diffuseCoefficence;
 		}
 	}
 	
-	/*outClr = float3(0,0,0);
-	
 		
-	if (uniforms.enableReflection) {
-		float do_x2 = do * 2;
-		float3 reflectVec = ctx.normal * float3(do_x2, do_x2, do_x2) - ctx.outVec;
-		outClr = CalcSecondaryRay(ctx.tracerData, reflectVec) * diffuseCoefficence;
+	if (uniforms.translucent.x < 1 || uniforms.translucent.y < 1 || uniforms.translucent.z < 1) {
+		float3 transClr = CalcSecondaryRay(ctx.tracerData, -ctx.outVec);
+		outClr = outClr * (float3(1,1,1) - uniforms.translucent) + transClr * uniforms.translucent;
 	}
-	else
-		outClr = dIntensity * diffuseCoefficence;
-		
-	if (uniforms.transparent_map) {
-		float3 translucent = Sample2D(uniforms.transparent_map, ctx.uv);
-		float3 bgClr = CalcSecondaryRay(ctx.tracerData, -ctx.outVec);
-		outClr = outClr * translucent + bgClr * (float3(1,1,1) - translucent);
-	}*/
+	
+	
 }

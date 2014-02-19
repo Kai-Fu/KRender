@@ -1,0 +1,18 @@
+--SetConstant("CPU_COUNT", "1")
+
+LoadScene("test_static.abc")
+SetActiveCamera("Camera00Shape2")
+
+hSurfaceShader = CreateSurfaceShader(".//asset//surface_shader//simple_phong_default.template", "material001")
+SetShaderParameter(hSurfaceShader, "diffuse_color", {0.9, 0.9, 0.9})
+SetShaderParameter(hSurfaceShader, "translucent", {0,0,0})
+SetNodeSurfaceShader("Box001Shape", hSurfaceShader )
+SetNodeSurfaceShader("Box002Shape", hSurfaceShader )
+SetNodeSurfaceShader("Box003Shape", hSurfaceShader )
+
+hSurfaceShader1 = CreateSurfaceShader(".//asset//surface_shader//simple_phong_default.template", "material002")
+SetShaderParameter(hSurfaceShader1, "diffuse_color", {0.9, 0.3, 0.3})
+SetShaderParameter(hSurfaceShader1, "translucent", {0.9, 0.3, 0.3})
+SetNodeSurfaceShader("GeoSphere002Shape", hSurfaceShader1)
+
+Render(1000, 1000, "test.png")

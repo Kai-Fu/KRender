@@ -100,13 +100,13 @@ extern "C" {
 	KRT_API void KRT_ResetSubSceneNodeTransform(TopSceneHandle scene, unsigned nodeIdx);
 
 	KRT_API TopSceneHandle KRT_GetScene();
-
-	KRT_API ShaderHandle KRT_CreateSurfaceMaterial(const char* shaderName, const char* mtlName);
-	KRT_API ShaderHandle KRT_GetSurfaceMaterial(const char* mtlName);
+	
+	KRT_API ShaderHandle KRT_CreateSurfaceShader(const char* templateFile, const char* mtlName);
+	KRT_API ShaderHandle KRT_GetSurfaceShader(const char* mtlName);
 	KRT_API bool KRT_SetShaderParameter(ShaderHandle hShader, const char* paramName, void* valueData, unsigned dataSize);
 
-	KRT_API ShaderHandle KRT_GetNodeSurfaceMaterial(const char* nodeName);
-	KRT_API void KRT_SetNodeSurfaceMaterial(const char* nodeName, ShaderHandle shader);
+	KRT_API ShaderHandle KRT_GetNodeSurfaceShader(const char* nodeName);
+	KRT_API void KRT_SetNodeSurfaceShader(const char* nodeName, ShaderHandle shader);
 
 
 }

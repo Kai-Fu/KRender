@@ -80,27 +80,17 @@ function GetCurrentDirectory()
 	return _currentScriptDir
 end
 
-function ConvertFBX( fbxFile, outDir )
-	
-	out_file = outDir .. '/scene.scn'
-	clearAndCreateFolder(outDir)
-	cmd = "KFBXTranslator " .. '"' .. fbxFile .. '" "' .. out_file .. '"'
-	res = os.execute(cmd)
-	if res == -1 then
-		return nil, nil
-	else
-		-- returns the converted file name and the frame count(0 if the FBX is static scene)
-		frame_updates = {}
-		for frame_i = 0, res do
-			local cur_frame_file = out_file .. ".frame" .. string.format("%05d", frame_i)
-			table.insert(frame_updates, cur_frame_file)
-		end
-		return out_file, frame_updates
-	end
-end
-
 function Run( scriptFile )
 	_currentScriptDir = getPathDirectory(scriptFile)
 	dofile(scriptFile)
+end
+
+function LoadScene( sceneFile )
+	if fileExists(sceneFile) then
+		return _LoadScene(sceneFile)
+	else 
+		otherSceneFilePath = _currentScriptDir .. "/" .. sceneFile
+		return _LoadScene(otherSceneFilePath)
+	end
 end
 	

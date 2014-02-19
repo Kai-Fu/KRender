@@ -6,6 +6,7 @@
 #include "../base/raw_geometry.h"
 #include "../shader/environment_shader.h"
 #include "../api/KRT_API.h"
+#include "../sampling/hammersley_sphere.h"
 #include <KShaderCompiler/inc/SC_API.h>
 
 #include <FreeImage.h>
@@ -187,6 +188,15 @@ static SC::Boolean _GetNextLightSample(SurfaceContext::TracingData* pData, KVec3
 	return 0;
 }
 
+static void _ComputeAO(SurfaceContext::TracingData* pData, KColor* outClr)
+{
+	int ao_sampCnt = AREA_LIGHT_SAMP_CNT * 20;
+	for (int ao_i = 0; ao_i < ao_sampCnt; ++ao_i) {
+
+	}
+	//Sampling::HammersleySphere(
+}
+
 bool KRT_Initialize()
 {
 	char* predefines = 
@@ -289,8 +299,8 @@ bool KRT_Initialize()
 "		nface[1] = edge1[2]*edge2[0] - edge1[0]*edge2[2];\n"
 "		nface[2] = edge1[0]*edge2[1] - edge1[1]*edge2[0];\n"
 
-"		float_n dot_nd = nface[0]*ray_dir_n[0] + nface[1]*ray_dir_n[1] + nface[2]*ray_dir_n[2];\n"
-"		is_valid = is_valid && (dot_nd <= 0);\n"// Backward face, ignore it
+//"		float_n dot_nd = nface[0]*ray_dir_n[0] + nface[1]*ray_dir_n[1] + nface[2]*ray_dir_n[2];\n"
+//"		is_valid = is_valid && (dot_nd <= 0);\n"// Backward face, ignore it
 
 		// if determinant is near zero, ray lies in plane of triangle
 "		//det = DOT(edge1, pvec);\n"
@@ -382,8 +392,8 @@ bool KRT_Initialize()
 "		nface[1] = edge1[2]*edge2[0] - edge1[0]*edge2[2];\n"
 "		nface[2] = edge1[0]*edge2[1] - edge1[1]*edge2[0];\n"
 
-"		float_n dot_nd = nface[0]*ray_dir_n[0] + nface[1]*ray_dir_n[1] + nface[2]*ray_dir_n[2];\n"
-"		is_valid = is_valid && (dot_nd <= 0);\n"// Backward face, ignore it
+//"		float_n dot_nd = nface[0]*ray_dir_n[0] + nface[1]*ray_dir_n[1] + nface[2]*ray_dir_n[2];\n"
+//"		is_valid = is_valid && (dot_nd <= 0);\n"// Backward face, ignore it
 
 		// if determinant is near zero, ray lies in plane of triangle
 		//det = DOT(edge1, pvec);
@@ -623,7 +633,7 @@ unsigned KRT_AddMeshToSubScene(Geom::RawMesh* pMesh, SubSceneHandle subScene)
 	return meshIdx;
 }
 
-ShaderHandle KRT_CreateSurfaceMaterial(const char* shaderName, const char* mtlName)
+ShaderHandle KRT_CreateSurfaceShader(const char* shaderName, const char* mtlName)
 {
 	KMaterialLibrary* mtl_lib = KMaterialLibrary::GetInstance();
 	ISurfaceShader* pSS = mtl_lib->CreateMaterial(shaderName, mtlName);
@@ -637,7 +647,7 @@ bool KRT_SetShaderParameter(ShaderHandle hShader, const char* paramName, void* v
 	return true;
 }
 
-ShaderHandle KRT_GetSurfaceMaterial(const char* mtlName)
+ShaderHandle KRT_GetSurfaceShader(const char* mtlName)
 {
 	KMaterialLibrary* mtl_lib = KMaterialLibrary::GetInstance();
 	ISurfaceShader* pSurfShader = mtl_lib->OpenMaterial(mtlName);
@@ -712,7 +722,7 @@ static KNode* _GetSceneNode(const char* nodeName)
 	return NULL;
 }
 
-ShaderHandle KRT_GetNodeSurfaceMaterial(const char* nodeName)
+ShaderHandle KRT_GetNodeSurfaceShader(const char* nodeName)
 {
 	KNode* pNode = _GetSceneNode(nodeName);
 	if (pNode)
@@ -721,7 +731,7 @@ ShaderHandle KRT_GetNodeSurfaceMaterial(const char* nodeName)
 		return NULL;
 }
 
-void KRT_SetNodeSurfaceMaterial(const char* nodeName, ShaderHandle shader)
+void KRT_SetNodeSurfaceShader(const char* nodeName, ShaderHandle shader)
 {
 	KNode* pNode = _GetSceneNode(nodeName);
 	if (pNode)

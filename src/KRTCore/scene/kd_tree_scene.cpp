@@ -502,6 +502,7 @@ bool KAccelStruct_KDTree::IntersectLeaf(UINT32 idx, const KRay& ray, TracingInst
 	double t0 = 0, t1 = FLT_MAX;
 	if (!IntersectBBox(ray, leafData.bbox, t0, t1))
 		return false;
+	if (t0 < 0) t0 = 0;
 	if (t0 > ctx.ray_t)
 		return false; // ok, the required distance is reached
 

@@ -10,8 +10,20 @@ int main(int arg_cnt, const char* args[])
 	RunLuaCommandFromFile("startup.lua");
 
 	if (arg_cnt > 1) {
-		for (int i = 1; i < arg_cnt; ++i)
-		RunLuaCommandFromFile(args[i]);
+		for (int i = 1; i < arg_cnt; ++i) {
+			std::string temp_cmd = "Run(\"";
+			temp_cmd += args[i];
+			temp_cmd += "\")";
+
+			std::string temp_cmd1;
+			for (int i = 0; i < temp_cmd.length(); ++i) {
+				if (temp_cmd[i] == '\\')
+					temp_cmd1 += "\\\\";
+				else
+					temp_cmd1 += temp_cmd[i];
+		   }
+			RunLuaCommand(temp_cmd1.c_str());
+		}
 	}
 	else {
 		char command[1024];

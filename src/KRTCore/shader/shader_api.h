@@ -145,6 +145,7 @@ public:
 	
 	bool CastRay(const KRay& ray, IntersectContext& out_ctx);
 	bool IsPointOccluded(const KRay& ray, float len);
+	void ComputeLightTransimission(const KRay& ray, float len, KColor& out_trans);
 
 	void ConvertToSurfaceContext(const IntersectContext& hitCtx, const ShadingContext& shadingCtx, SurfaceContext& surfaceCtx);
 	SurfaceContext& GetCurrentSurfaceCtxStorage();

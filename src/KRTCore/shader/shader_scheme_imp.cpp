@@ -49,60 +49,22 @@ bool LightScheme::GetLightIter(TracingInstance* pLocalData, const KVec2& sampleP
 			KVec3d lightDir = lightPos - adjustedPos;
 			float l_n = ToVec3f(lightDir) * shadingCtx->normal;
 			float l_fn = ToVec3f(lightDir) * shadingCtx->face_normal;
-			if (l_n > 0) {
 
-				if (l_fn < 0) 
-					AdjustHitPos(pLocalData, *hit_ctx, *shadingCtx, adjustedPos);
+			if (l_n > 0 && l_fn < 0) 
+				AdjustHitPos(pLocalData, *hit_ctx, *shadingCtx, adjustedPos);
 
-				KVec3d temp_light_pos(lightPos);
-				lightDir = adjustedPos - temp_light_pos;
+			KVec3d temp_light_pos(lightPos);
+			lightDir = adjustedPos - temp_light_pos;
 					
-				KRay ray;
-				lightDir = adjustedPos - temp_light_pos;
-				ray.Init(temp_light_pos, lightDir, NULL);
-				ray.mExcludeBBoxNode = INVALID_INDEX;
-				ray.mExcludeTriID = INVALID_INDEX;
+			KRay ray;
+			lightDir = temp_light_pos - adjustedPos;
+			ray.Init(adjustedPos, lightDir, NULL);
+			ray.mExcludeBBoxNode = hit_ctx->bbox_node_idx;
+			ray.mExcludeTriID = hit_ctx->tri_id;
 
-				float lum = 1.0f;
-				while (lum > 0) {
-					IntersectContext test_ctx;
-					test_ctx.ray_t = 1.0;
-					isOccluded = pLocalData->CastRay(ray, test_ctx);
-					if (isOccluded) {
-						if (test_ctx.bbox_node_idx == hit_ctx->bbox_node_idx && test_ctx.tri_id == hit_ctx->tri_id)
-							break;
-
-						// Calculate how much light can pass through the hit surface
-						KColor temp_trans;
-						ShadingContext shading_context;
-						pLocalData->CalcuShadingContext(ray, test_ctx, shading_context);
-						TransContext& transCtx = pLocalData->GetCurrentTransCtxStorage();
-						pLocalData->ConvertToTransContext(test_ctx, shading_context, transCtx);
-						shading_context.surface_shader->ShaderTransmission(transCtx, temp_trans);
-						transmission.Modulate(temp_trans);
-
-						lum = transmission.Luminance();
-						if (lum > 0.001f) {
-							KVec3d go_dis = lightDir*test_ctx.ray_t;
-							temp_light_pos += go_dis;
-							lightDir -= go_dis;
-							ray.Init(temp_light_pos, lightDir, NULL);
-							ray.mExcludeBBoxNode = test_ctx.bbox_node_idx;
-							ray.mExcludeTriID = test_ctx.tri_id; 
-
-						}
-						else {
-							transmission.Clear();
-							break;
-						}
-					}
-					else 
-						break;
-
-				}
-			}
-			else
-				transmission.Clear();
+			KColor trans_coefficent;
+			pLocalData->ComputeLightTransimission(ray, 1.0f, trans_coefficent);
+			transmission.Modulate(trans_coefficent);
 
 		}
 

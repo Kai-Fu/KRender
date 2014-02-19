@@ -5,7 +5,7 @@
 #include "../scene/bvh_scene.h"
 #include "../image/basic_map.h"
 #include "../entry/entry.h"
-
+#include "../shader//surface_shader.h"
 #include <assert.h>
 
 #define RAND_SEQUENCE_LEN 1023
@@ -453,6 +453,52 @@ bool TracingInstance::IsPointOccluded(const KRay& ray, float len)
 	}
 	else
 		return false;
+}
+
+void TracingInstance::ComputeLightTransimission(const KRay& ray, float len, KColor& out_trans)
+{
+	KRay temp_ray = ray;
+	KVec3d temp_pos = temp_ray.GetOrg();
+	KVec3d temp_target_dir = temp_ray.GetDir();
+
+	KColor transmission(1,1,1);
+	float lum = 1.0f;
+	while (lum > 0) {
+		IntersectContext test_ctx;
+		test_ctx.ray_t = len;
+		bool isOccluded = CastRay(temp_ray, test_ctx);
+		if (isOccluded) {
+
+			// Calculate how much light can pass through the hit surface
+			KColor temp_trans;
+			ShadingContext shading_context;
+			CalcuShadingContext(temp_ray, test_ctx, shading_context);
+			TransContext& transCtx = GetCurrentTransCtxStorage();
+			ConvertToTransContext(test_ctx, shading_context, transCtx);
+			shading_context.surface_shader->ShaderTransmission(transCtx, temp_trans);
+			transmission.Modulate(temp_trans);
+
+			lum = transmission.Luminance();
+			if (lum > 0.001f) {
+				KVec3d go_dis = temp_target_dir * test_ctx.ray_t;
+				temp_pos += go_dis;
+				temp_target_dir -= go_dis;
+				temp_ray.Init(temp_pos, temp_target_dir, NULL);
+				temp_ray.mExcludeBBoxNode = test_ctx.bbox_node_idx;
+				temp_ray.mExcludeTriID = test_ctx.tri_id; 
+
+			}
+			else {
+				transmission.Clear();
+				break;
+			}
+		}
+		else 
+			break;
+
+	}
+
+	out_trans = transmission;
 }
 
 SurfaceContext::SurfaceContext()
